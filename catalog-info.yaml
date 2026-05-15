@@ -1,0 +1,59 @@
+# =============================================================================
+# Kubernal IDP – Backstage Software Catalog (Root Entity)
+# =============================================================================
+
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: kubernal-idp
+  description: Internal Developer Platform – Self-service application platform
+  tags:
+    - idp
+    - platform
+    - kubernetes
+  links:
+    - url: https://github.com/<PLACEHOLDER_ORG>/kubernal
+      title: GitHub Repository
+    - url: http://localhost:4000/api/v1/health
+      title: API Health
+spec:
+  owner: platform-team
+  domain: platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: kubernal-api
+  description: Kubernal IDP Orchestrator API
+  tags:
+    - api
+    - nodejs
+    - express
+  annotations:
+    github.com/project-slug: <PLACEHOLDER_ORG>/kubernal
+    backstage.io/techdocs-ref: dir:.
+spec:
+  type: service
+  lifecycle: production
+  owner: platform-team
+  system: kubernal-idp
+  providesApis:
+    - kubernal-api
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: kubernal-api
+  description: Kubernal IDP REST API
+  tags:
+    - rest
+    - api
+spec:
+  type: openapi
+  lifecycle: production
+  owner: platform-team
+  system: kubernal-idp
+  definition:
+    $text: ./apps/api/openapi.yaml

@@ -1,0 +1,19 @@
+{
+  "name": "@kubernal/backstage",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "yarn start",
+    "start": "yarn workspace app start",
+    "build": "yarn workspace app build",
+    "build-image": "yarn workspace app build-image",
+    "tsc": "tsc",
+    "lint": "backstage-cli package lint"
+  },
+  "workspaces": {
+    "packages": [
+      "packages/*",
+      "plugins/*"
+    ]
+  }
+}

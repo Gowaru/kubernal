@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubernal-staging
+  labels:
+    kubernal.io/environment: staging
+    kubernal.io/managed-by: kubernal

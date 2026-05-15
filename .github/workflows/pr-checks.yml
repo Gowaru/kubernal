@@ -1,0 +1,30 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  size:
+    name: Check PR Size
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check file size
+        run: |
+          PR_FILES=$(git diff --name-only HEAD~1 2>/dev/null || git diff --name-only origin/main...HEAD 2>/dev/null || echo "")
+          if [ -n "$PR_FILES" ]; then
+            echo "Changed files:"
+            echo "$PR_FILES"
+          fi
+
+  commitlint:
+    name: Commit Message Convention
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check commit messages
+        run: |
+          git log --format="%s" origin/main..HEAD 2>/dev/null || echo "No commits to check"

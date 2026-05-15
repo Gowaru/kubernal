@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+coverage/
+
+# Prisma
+apps/api/prisma/*.generated.ts
+
+# Backstage
+apps/backstage/.cache/
+apps/backstage/dist-types/
+
+# Docker
+docker-data/
+
+# Kubernetes local
+.kubeconfig

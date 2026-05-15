@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubernal-dev
+  labels:
+    kubernal.io/environment: dev
+    kubernal.io/managed-by: kubernal

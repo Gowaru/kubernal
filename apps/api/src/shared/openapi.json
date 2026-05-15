@@ -1,0 +1,1407 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Kubernal IDP API",
+    "version": "0.1.0",
+    "description": "Internal Developer Platform - Self-service application orchestrator",
+    "contact": {
+      "name": "Platform Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "Local development"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" },
+                    "service": { "type": "string", "example": "kubernal-api" },
+                    "version": { "type": "string", "example": "0.1.0" },
+                    "timestamp": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "List all users",
+        "operationId": "listUsers",
+        "responses": {
+          "200": {
+            "description": "Paginated list of users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Users"],
+        "summary": "Create a new user",
+        "operationId": "createUser",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "name"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "name": { "type": "string" },
+                  "role": { "type": "string", "enum": ["developer", "platform_engineer", "security_admin"] },
+                  "teamId": { "type": "string", "format": "uuid" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "409": { "description": "Email already exists" }
+        }
+      }
+    },
+    "/api/v1/users/{id}": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get user by ID",
+        "operationId": "getUser",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "User details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "patch": {
+        "tags": ["Users"],
+        "summary": "Update a user",
+        "operationId": "updateUser",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "role": { "type": "string", "enum": ["developer", "platform_engineer", "security_admin"] },
+                  "teamId": { "type": "string", "format": "uuid", "nullable": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "delete": {
+        "tags": ["Users"],
+        "summary": "Delete a user",
+        "operationId": "deleteUser",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "User deleted" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
+    },
+    "/api/v1/teams": {
+      "get": {
+        "tags": ["Teams"],
+        "summary": "List all teams",
+        "operationId": "listTeams",
+        "responses": {
+          "200": {
+            "description": "Paginated list of teams",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Teams"],
+        "summary": "Create a new team",
+        "operationId": "createTeam",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "namespacePrefix"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "quotaCpu": { "type": "string", "default": "4" },
+                  "quotaMemory": { "type": "string", "default": "8Gi" },
+                  "namespacePrefix": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created team",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Team" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/api/v1/teams/{id}": {
+      "get": {
+        "tags": ["Teams"],
+        "summary": "Get team by ID",
+        "operationId": "getTeam",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Team" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "patch": {
+        "tags": ["Teams"],
+        "summary": "Update a team",
+        "operationId": "updateTeam",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "quotaCpu": { "type": "string" },
+                  "quotaMemory": { "type": "string" },
+                  "namespacePrefix": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated team",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Team" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "delete": {
+        "tags": ["Teams"],
+        "summary": "Delete a team",
+        "operationId": "deleteTeam",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "Team deleted" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
+    },
+    "/api/v1/templates": {
+      "get": {
+        "tags": ["Templates"],
+        "summary": "List all Golden Path templates",
+        "operationId": "listTemplates",
+        "responses": {
+          "200": {
+            "description": "Paginated list of templates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Templates"],
+        "summary": "Register a new Golden Path template",
+        "operationId": "createTemplate",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "category", "description", "repository"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "category": { "type": "string", "enum": ["backend", "frontend", "fullstack", "library", "function"] },
+                  "description": { "type": "string" },
+                  "repository": { "type": "string", "format": "uri" },
+                  "version": { "type": "string", "default": "1.0.0" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created template",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/GoldenPathTemplate" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/api/v1/templates/{id}": {
+      "get": {
+        "tags": ["Templates"],
+        "summary": "Get template by ID",
+        "operationId": "getTemplate",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/GoldenPathTemplate" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "patch": {
+        "tags": ["Templates"],
+        "summary": "Update a template",
+        "operationId": "updateTemplate",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "category": { "type": "string", "enum": ["backend", "frontend", "fullstack", "library", "function"] },
+                  "description": { "type": "string" },
+                  "repository": { "type": "string", "format": "uri" },
+                  "version": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated template",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/GoldenPathTemplate" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "delete": {
+        "tags": ["Templates"],
+        "summary": "Delete a template",
+        "operationId": "deleteTemplate",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "Template deleted" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
+    },
+    "/api/v1/applications": {
+      "get": {
+        "tags": ["Applications"],
+        "summary": "List all applications",
+        "operationId": "listApplications",
+        "responses": {
+          "200": {
+            "description": "Paginated list of applications",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Applications"],
+        "summary": "Create a new application from a Golden Path",
+        "operationId": "createApplication",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "templateId", "teamId", "ownerId"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "templateId": { "type": "string", "format": "uuid" },
+                  "teamId": { "type": "string", "format": "uuid" },
+                  "ownerId": { "type": "string", "format": "uuid" },
+                  "repositoryUrl": { "type": "string", "format": "uri" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created application (status: creating)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Application" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/api/v1/applications/{id}": {
+      "get": {
+        "tags": ["Applications"],
+        "summary": "Get application by ID",
+        "operationId": "getApplication",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Application details with environments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Application" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "patch": {
+        "tags": ["Applications"],
+        "summary": "Update an application",
+        "operationId": "updateApplication",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "templateId": { "type": "string", "format": "uuid" },
+                  "teamId": { "type": "string", "format": "uuid" },
+                  "ownerId": { "type": "string", "format": "uuid" },
+                  "repositoryUrl": { "type": "string", "format": "uri", "nullable": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated application",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Application" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "delete": {
+        "tags": ["Applications"],
+        "summary": "Delete an application",
+        "operationId": "deleteApplication",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "Application deleted" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
+    },
+    "/api/v1/environments": {
+      "get": {
+        "tags": ["Environments"],
+        "summary": "List all environments",
+        "operationId": "listEnvironments",
+        "responses": {
+          "200": {
+            "description": "Paginated list of environments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Environments"],
+        "summary": "Create an environment for an application",
+        "operationId": "createEnvironment",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "type", "applicationId", "namespace"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "type": { "type": "string", "enum": ["dev", "staging", "prod"] },
+                  "applicationId": { "type": "string", "format": "uuid" },
+                  "namespace": { "type": "string" },
+                  "clusterName": { "type": "string", "default": "kubernal" },
+                  "requiresApproval": { "type": "boolean", "default": false }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created environment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Environment" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/api/v1/environments/{id}": {
+      "get": {
+        "tags": ["Environments"],
+        "summary": "Get environment by ID",
+        "operationId": "getEnvironment",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Environment details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Environment" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "patch": {
+        "tags": ["Environments"],
+        "summary": "Update an environment",
+        "operationId": "updateEnvironment",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "type": { "type": "string", "enum": ["dev", "staging", "prod"] },
+                  "applicationId": { "type": "string", "format": "uuid" },
+                  "namespace": { "type": "string" },
+                  "clusterName": { "type": "string" },
+                  "requiresApproval": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated environment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Environment" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "delete": {
+        "tags": ["Environments"],
+        "summary": "Delete an environment",
+        "operationId": "deleteEnvironment",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "Environment deleted" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
+    },
+    "/api/v1/deployments": {
+      "get": {
+        "tags": ["Deployments"],
+        "summary": "List all deployments",
+        "operationId": "listDeployments",
+        "responses": {
+          "200": {
+            "description": "Paginated list of deployments (newest first)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Deployments"],
+        "summary": "Create a new deployment",
+        "operationId": "createDeployment",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["applicationId", "environmentId", "version", "commitSha"],
+                "properties": {
+                  "applicationId": { "type": "string", "format": "uuid" },
+                  "environmentId": { "type": "string", "format": "uuid" },
+                  "version": { "type": "string" },
+                  "commitSha": { "type": "string" },
+                  "trigger": { "type": "string", "enum": ["manual", "git_push", "scheduled", "rollback"], "default": "manual" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created deployment (status: pending)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Deployment" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/api/v1/deployments/{id}": {
+      "get": {
+        "tags": ["Deployments"],
+        "summary": "Get deployment by ID",
+        "operationId": "getDeployment",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deployment details with pipelines",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Deployment" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
+    },
+    "/api/v1/deployments/{id}/transition": {
+      "post": {
+        "tags": ["Deployments"],
+        "summary": "Transition deployment status",
+        "description": "Valid transitions: pending->building/cancelled/failed, building->deploying/failed/cancelled, deploying->healthy/failed/cancelled, healthy->rolled_back",
+        "operationId": "transitionDeployment",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["building", "deploying", "healthy", "failed", "rolled_back", "cancelled"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Deployment" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFoundError" },
+          "422": { "description": "Invalid transition" }
+        }
+      }
+    },
+    "/api/v1/deployments/{id}/approve": {
+      "post": {
+        "tags": ["Deployments"],
+        "summary": "Approve a pending deployment for prod",
+        "operationId": "approveDeployment",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["approvedById"],
+                "properties": {
+                  "approvedById": { "type": "string", "format": "uuid" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Deployment approved and transitioned to deploying",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Deployment" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFoundError" },
+          "422": { "description": "Deployment is not in a state requiring approval" }
+        }
+      }
+    },
+    "/api/v1/deployments/{id}/violations": {
+      "post": {
+        "tags": ["Deployments"],
+        "summary": "Record policy violations for a deployment",
+        "operationId": "recordViolations",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["violations"],
+                "properties": {
+                  "violations": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "policyId": { "type": "string", "format": "uuid" },
+                        "policyName": { "type": "string" },
+                        "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+                        "message": { "type": "string" },
+                        "resource": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Violations recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Deployment" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
+    },
+    "/api/v1/pipelines": {
+      "get": {
+        "tags": ["Pipelines"],
+        "summary": "List all pipelines",
+        "operationId": "listPipelines",
+        "responses": {
+          "200": {
+            "description": "Paginated list of pipelines",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Pipelines"],
+        "summary": "Register a new pipeline for a deployment",
+        "operationId": "createPipeline",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["deploymentId", "name"],
+                "properties": {
+                  "deploymentId": { "type": "string", "format": "uuid" },
+                  "name": { "type": "string" },
+                  "logsUrl": { "type": "string", "format": "uri" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created pipeline",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Pipeline" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/api/v1/pipelines/{id}": {
+      "get": {
+        "tags": ["Pipelines"],
+        "summary": "Get pipeline by ID",
+        "operationId": "getPipeline",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pipeline details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Pipeline" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
+    },
+    "/api/v1/pipelines/{id}/status": {
+      "post": {
+        "tags": ["Pipelines"],
+        "summary": "Update pipeline status",
+        "operationId": "updatePipelineStatus",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["running", "success", "failed", "cancelled"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Pipeline" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
+    },
+    "/api/v1/policies": {
+      "get": {
+        "tags": ["Policies"],
+        "summary": "List all security policies",
+        "operationId": "listPolicies",
+        "responses": {
+          "200": {
+            "description": "Paginated list of policies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Policies"],
+        "summary": "Create a new security policy",
+        "operationId": "createPolicy",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "description", "category", "severity", "engine"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "category": { "type": "string", "enum": ["security", "compliance", "cost", "operations"] },
+                  "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+                  "engine": { "type": "string", "enum": ["kyverno", "opa", "custom"] },
+                  "rules": { "type": "object" },
+                  "enabled": { "type": "boolean", "default": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/SecurityPolicy" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/api/v1/policies/{id}": {
+      "get": {
+        "tags": ["Policies"],
+        "summary": "Get policy by ID",
+        "operationId": "getPolicy",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Policy details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/SecurityPolicy" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "patch": {
+        "tags": ["Policies"],
+        "summary": "Update a policy",
+        "operationId": "updatePolicy",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "category": { "type": "string", "enum": ["security", "compliance", "cost", "operations"] },
+                  "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+                  "engine": { "type": "string", "enum": ["kyverno", "opa", "custom"] },
+                  "rules": { "type": "object" },
+                  "enabled": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/SecurityPolicy" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      },
+      "delete": {
+        "tags": ["Policies"],
+        "summary": "Delete a policy",
+        "operationId": "deletePolicy",
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "Policy deleted" },
+          "404": { "$ref": "#/components/responses/NotFoundError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      },
+      "NotFoundError": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string" },
+              "message": { "type": "string" },
+              "details": { "type": "object" }
+            },
+            "required": ["code", "message"]
+          }
+        },
+        "required": ["success", "error"]
+      },
+      "PaginatedResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "type": "object" }
+          },
+          "total": { "type": "integer" }
+        },
+        "required": ["data", "total"]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "name": { "type": "string" },
+          "role": { "type": "string", "enum": ["developer", "platform_engineer", "security_admin"] },
+          "teamId": { "type": "string", "format": "uuid", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "email", "name", "role", "createdAt", "updatedAt"]
+      },
+      "Team": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "quotaCpu": { "type": "string" },
+          "quotaMemory": { "type": "string" },
+          "namespacePrefix": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "name", "quotaCpu", "quotaMemory", "namespacePrefix", "createdAt", "updatedAt"]
+      },
+      "GoldenPathTemplate": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "version": { "type": "string" },
+          "category": { "type": "string", "enum": ["backend", "frontend", "fullstack", "library", "function"] },
+          "description": { "type": "string" },
+          "repository": { "type": "string", "format": "uri" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "name", "version", "category", "description", "repository", "createdAt"]
+      },
+      "Application": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "templateId": { "type": "string", "format": "uuid" },
+          "teamId": { "type": "string", "format": "uuid" },
+          "ownerId": { "type": "string", "format": "uuid" },
+          "repositoryUrl": { "type": "string", "format": "uri", "nullable": true },
+          "status": { "type": "string", "enum": ["creating", "active", "failed", "archived"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "name", "templateId", "teamId", "ownerId", "status", "createdAt", "updatedAt"]
+      },
+      "Environment": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["dev", "staging", "prod"] },
+          "applicationId": { "type": "string", "format": "uuid" },
+          "namespace": { "type": "string" },
+          "clusterName": { "type": "string" },
+          "requiresApproval": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "name", "type", "applicationId", "namespace", "clusterName", "requiresApproval", "createdAt"]
+      },
+      "Deployment": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "applicationId": { "type": "string", "format": "uuid" },
+          "environmentId": { "type": "string", "format": "uuid" },
+          "version": { "type": "string" },
+          "commitSha": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "building", "deploying", "healthy", "failed", "rolled_back", "cancelled"] },
+          "trigger": { "type": "string", "enum": ["manual", "git_push", "scheduled", "rollback"] },
+          "approvedById": { "type": "string", "format": "uuid", "nullable": true },
+          "policyViolations": { "type": "array", "items": { "type": "object" } },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "completedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "applicationId", "environmentId", "version", "commitSha", "status", "trigger", "startedAt", "createdAt"]
+      },
+      "Pipeline": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "deploymentId": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "status": { "type": "string", "enum": ["running", "success", "failed", "cancelled"] },
+          "stages": { "type": "array", "items": { "type": "object" } },
+          "logsUrl": { "type": "string", "nullable": true },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "completedAt": { "type": "string", "format": "date-time", "nullable": true }
+        },
+        "required": ["id", "deploymentId", "name", "status", "startedAt"]
+      },
+      "SecurityPolicy": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "category": { "type": "string", "enum": ["security", "compliance", "cost", "operations"] },
+          "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+          "engine": { "type": "string", "enum": ["kyverno", "opa", "custom"] },
+          "rules": { "type": "object" },
+          "enabled": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "name", "description", "category", "severity", "engine", "enabled", "createdAt"]
+      }
+    }
+  },
+  "tags": [
+    { "name": "Health", "description": "Health check endpoints" },
+    { "name": "Users", "description": "User management" },
+    { "name": "Teams", "description": "Team management" },
+    { "name": "Templates", "description": "Golden Path template management" },
+    { "name": "Applications", "description": "Application lifecycle management" },
+    { "name": "Environments", "description": "Environment management (dev/staging/prod)" },
+    { "name": "Deployments", "description": "Deployment orchestration with status machine" },
+    { "name": "Pipelines", "description": "CI/CD pipeline tracking" },
+    { "name": "Policies", "description": "Security & compliance policy management" }
+  ]
+}

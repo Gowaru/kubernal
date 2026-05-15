@@ -1,0 +1,153 @@
+// =============================================================================
+// Kubernal IDP – Prisma Schema
+// PostgreSQL 16 – Modèle de domaine
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Utilisateur ────────────────────────────────────────────────────────────
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  role      String   @default("developer") // developer | platform_engineer | security_admin
+  teamId    String?
+  team      Team?    @relation(fields: [teamId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ownedApplications Application[] @relation("Owner")
+  approvedDeployments Deployment[] @relation("Approver")
+}
+
+// ─── Équipe ─────────────────────────────────────────────────────────────────
+model Team {
+  id              String   @id @default(uuid())
+  name            String   @unique
+  description     String?
+  quotaCpu        String   @default("4")
+  quotaMemory     String   @default("8Gi")
+  namespacePrefix String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  members      User[]
+  applications Application[]
+}
+
+// ─── Template (Golden Path) ─────────────────────────────────────────────────
+model GoldenPathTemplate {
+  id          String   @id @default(uuid())
+  name        String
+  version     String   @default("1.0.0")
+  category    String   // backend | frontend | fullstack | library | function
+  description String
+  repository  String
+  parameters  Json     @default("{}")
+  steps       Json     @default("[]")
+  createdAt   DateTime @default(now())
+
+  applications Application[]
+}
+
+// ─── Application ────────────────────────────────────────────────────────────
+model Application {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  templateId    String
+  template      GoldenPathTemplate @relation(fields: [templateId], references: [id])
+  teamId        String
+  team          Team     @relation(fields: [teamId], references: [id])
+  ownerId       String
+  owner         User     @relation("Owner", fields: [ownerId], references: [id])
+  repositoryUrl String?
+  status        String   @default("creating") // creating | active | failed | archived
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  environments  Environment[]
+  deployments   Deployment[]
+}
+
+// ─── Environnement ──────────────────────────────────────────────────────────
+model Environment {
+  id               String @id @default(uuid())
+  name             String
+  type             String // dev | staging | prod
+  applicationId    String
+  application      Application @relation(fields: [applicationId], references: [id])
+  namespace        String
+  clusterName      String @default("kubernal")
+  requiresApproval Boolean @default(false)
+  createdAt        DateTime @default(now())
+
+  deployments Deployment[]
+}
+
+// ─── Déploiement ────────────────────────────────────────────────────────────
+model Deployment {
+  id               String    @id @default(uuid())
+  applicationId    String
+  application      Application @relation(fields: [applicationId], references: [id])
+  environmentId    String
+  environment      Environment @relation(fields: [environmentId], references: [id])
+  version          String
+  commitSha        String
+  status           String    @default("pending") // pending | building | deploying | healthy | failed | rolled_back | cancelled
+  trigger          String    @default("manual") // manual | git_push | scheduled | rollback
+  approvedById     String?
+  approvedBy       User?     @relation("Approver", fields: [approvedById], references: [id])
+  artifacts        Json      @default("[]")
+  policyViolations Json      @default("[]")
+  startedAt        DateTime  @default(now())
+  completedAt      DateTime?
+  createdAt        DateTime  @default(now())
+
+  pipelines Pipeline[]
+}
+
+// ─── Pipeline ───────────────────────────────────────────────────────────────
+model Pipeline {
+  id           String    @id @default(uuid())
+  deploymentId String
+  deployment   Deployment @relation(fields: [deploymentId], references: [id])
+  name         String
+  status       String    @default("running") // running | success | failed | cancelled
+  stages       Json      @default("[]")
+  logsUrl      String?
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+// ─── Politique de Sécurité ─────────────────────────────────────────────────
+model SecurityPolicy {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String
+  category    String   // security | compliance | cost | operations
+  severity    String   // critical | high | medium | low
+  engine      String   // kyverno | opa | custom
+  rules       Json     @default("{}")
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+// ─── Observabilité ─────────────────────────────────────────────────────────
+model ObservabilityConfig {
+  id              String  @id @default(uuid())
+  applicationId   String  @unique
+  teamId          String
+  dashboardUrl    String?
+  alertsEnabled   Boolean @default(true)
+  logRetentionDays Int    @default(30)
+  tracingSampleRate Float @default(0.1)
+  createdAt       DateTime @default(now())
+}
