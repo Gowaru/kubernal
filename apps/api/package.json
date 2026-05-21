@@ -2,6 +2,7 @@
   "name": "@kubernal/api",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "main": "dist/main.js",
   "scripts": {
     "dev": "tsx watch src/main.ts",

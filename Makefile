@@ -130,11 +130,84 @@ kind-ingress: ## Installe NGINX Ingress Controller dans Kind
 .PHONY: kind-namespaces
 kind-namespaces: ## Crée les namespaces K8s
 	@echo "$(BLUE)→ Création des namespaces...$(RESET)"
-	kubectl apply -f infra/kubernetes/namespaces/
+	kubectl apply -f infra/k8s/namespaces/
 	@echo "$(GREEN)✓ Namespaces créés$(RESET)"
 
 .PHONY: kind-setup
-kind-setup: kind-up kind-ingress kind-namespaces ## Setup complet du cluster Kind
+kind-setup: kind-up kind-ingress kind-namespaces ## Setup complet du cluster Kind (cluster + ingress + namespaces)
+
+# ─── Déploiement K8s local ─────────────────────────────────────────────────
+.PHONY: k8s-deploy-dev
+k8s-deploy-dev: ## Déploie l'API + Backstage + PostgreSQL dans kubernal-dev
+	@echo "$(BLUE)→ Déploiement sur kubernal-dev...$(RESET)"
+	kubectl apply -k infra/overlays/dev
+	@echo "$(GREEN)✓ Déploiement effectué sur kubernal-dev$(RESET)"
+
+.PHONY: k8s-deploy-staging
+k8s-deploy-staging: ## Déploie l'API + Backstage + PostgreSQL dans kubernal-staging
+	@echo "$(BLUE)→ Déploiement sur kubernal-staging...$(RESET)"
+	kubectl apply -k infra/overlays/staging
+	@echo "$(GREEN)✓ Déploiement effectué sur kubernal-staging$(RESET)"
+
+.PHONY: k8s-deploy-prod
+k8s-deploy-prod: ## Déploie l'API + Backstage + PostgreSQL dans kubernal-prod
+	@echo "$(BLUE)→ Déploiement sur kubernal-prod...$(RESET)"
+	kubectl apply -k infra/overlays/prod
+	@echo "$(GREEN)✓ Déploiement effectué sur kubernal-prod$(RESET)"
+
+.PHONY: k8s-deploy
+k8s-deploy: k8s-deploy-dev ## Déploie tout sur l'environnement dev (par défaut)
+
+.PHONY: k8s-deploy-all
+k8s-deploy-all: k8s-deploy-dev k8s-deploy-staging k8s-deploy-prod ## Déploie sur tous les environnements
+
+.PHONY: k8s-status
+k8s-status: ## Affiche l'état des déploiements K8s
+	@echo "$(BLUE)→ Pods:$(RESET)"
+	kubectl get pods --all-namespaces | grep -E "kubernal|postgres"
+	@echo "$(BLUE)→ Services:$(RESET)"
+	kubectl get services --all-namespaces | grep -E "kubernal|postgres"
+	@echo "$(BLUE)→ Ingress:$(RESET)"
+	kubectl get ingress --all-namespaces | grep -E "kubernal"
+
+# ─── ArgoCD ─────────────────────────────────────────────────────────────────
+.PHONY: argocd-install
+argocd-install: ## Installe ArgoCD dans le cluster Kind
+	@echo "$(BLUE)→ Installation d'ArgoCD...$(RESET)"
+	kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+	kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+	@echo "$(GREEN)✓ ArgoCD installé$(RESET)"
+
+.PHONY: argocd-password
+argocd-password: ## Récupère le mot de passe admin ArgoCD
+	@echo "$(BLUE)→ Mot de passe admin ArgoCD:$(RESET)"
+	kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+	@echo ""
+
+.PHONY: argocd-port-forward
+argocd-port-forward: ## Expose ArgoCD sur http://localhost:8080
+	@echo "$(BLUE)→ ArgoCD UI: http://localhost:8080$(RESET)"
+	kubectl port-forward -n argocd svc/argocd-server 8080:443
+
+.PHONY: argocd-login
+argocd-login: ## Login à ArgoCD via CLI
+	@echo "$(BLUE)→ Connexion à ArgoCD...$(RESET)"
+	argocd login localhost:8080 --insecure --username admin --password $$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+
+.PHONY: argocd-apply-project
+argocd-apply-project: ## Apply l'AppProject Kubernal
+	@echo "$(BLUE)→ Application du projet ArgoCD...$(RESET)"
+	kubectl apply -f infra/argocd/projects/
+	@echo "$(GREEN)✓ Projet ArgoCD appliqué$(RESET)"
+
+.PHONY: argocd-apply-apps
+argocd-apply-apps: ## Apply les Applications ArgoCD
+	@echo "$(BLUE)→ Application des Applications ArgoCD...$(RESET)"
+	kubectl apply -f infra/argocd/applications/
+	@echo "$(GREEN)✓ Applications ArgoCD appliquées$(RESET)"
+
+.PHONY: argocd-setup
+argocd-setup: argocd-install argocd-apply-project argocd-apply-apps ## Setup complet ArgoCD (install + project + apps)
 
 # ─── Développement local ───────────────────────────────────────────────────
 .PHONY: dev-api
@@ -145,7 +218,7 @@ dev-api: ## Lance l'API en mode développement
 .PHONY: dev-backstage
 dev-backstage: ## Lance Backstage en mode développement
 	@echo "$(BLUE)→ Démarrage de Backstage...$(RESET)"
-	cd apps/backstage && yarn dev
+	cd apps/backstage && yarn start
 
 .PHONY: backstage-install
 backstage-install: ## Installe les dépendances Backstage (yarn install)
@@ -172,7 +245,7 @@ docker-build-api: ## Build l'image Docker de l'API (tag: kubernal/api:latest)
 .PHONY: docker-build-backstage
 docker-build-backstage: ## Build l'image Docker de Backstage (tag: kubernal/backstage:latest)
 	@echo "$(BLUE)→ Build de l'image Backstage...$(RESET)"
-	docker build -t kubernal/backstage:latest -f apps/backstage/packages/backend/Dockerfile apps/backstage
+	docker build -t kubernal/backstage:latest -f apps/backstage/packages/backend/Dockerfile .
 	@echo "$(GREEN)✓ Image kubernal/backstage:latest créée$(RESET)"
 
 # ─── Migration Prisma ──────────────────────────────────────────────────────

@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kubernal-api
+  labels:
+    app: kubernal-api
+    kubernal.io/managed-by: kubernal
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /api/v1/$2
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: kubernal.local
+      http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: kubernal-api
+                port:
+                  number: 4000

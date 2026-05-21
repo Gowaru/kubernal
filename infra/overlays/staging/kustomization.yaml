@@ -3,14 +3,7 @@ kind: Kustomization
 namespace: kubernal-staging
 
 resources:
-  - ../../api/configmap.yaml
-  - ../../api/secret.yaml
-  - ../../api/deployment.yaml
-  - ../../api/service.yaml
-  - ../../backstage/configmap.yaml
-  - ../../backstage/secret.yaml
-  - ../../backstage/deployment.yaml
-  - ../../backstage/service.yaml
+  - ../../k8s/
 
 patches:
   - target:

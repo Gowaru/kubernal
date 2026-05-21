@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubernal-api-config
+  labels:
+    app: kubernal-api
+    kubernal.io/managed-by: kubernal
+data:
+  NODE_ENV: "production"
+  PORT: "4000"
+  CORS_ORIGIN: "http://backstage.kubernal.local"
+  LOG_LEVEL: "info"

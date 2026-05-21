@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubernal-api
+  labels:
+    app: kubernal-api
+    kubernal.io/environment: dev
+    kubernal.io/managed-by: kubernal
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubernal-api
+  template:
+    metadata:
+      labels:
+        app: kubernal-api
+        kubernal.io/environment: dev
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/gowaru/kubernal-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: kubernal-api-config
+            - secretRef:
+                name: kubernal-api-secret
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"

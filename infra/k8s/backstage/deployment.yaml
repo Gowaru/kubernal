@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backstage
+  labels:
+    app: backstage
+    kubernal.io/environment: dev
+    kubernal.io/managed-by: kubernal
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backstage
+  template:
+    metadata:
+      labels:
+        app: backstage
+        kubernal.io/environment: dev
+    spec:
+      containers:
+        - name: backstage
+          image: ghcr.io/gowaru/kubernal-backstage:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 7007
+              protocol: TCP
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backstage-secret
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: config
+              mountPath: /app/app-config.yaml
+              subPath: app-config.yaml
+            - name: config
+              mountPath: /app/catalog-info.yaml
+              subPath: catalog-info.yaml
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 7007
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 7007
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+      volumes:
+        - name: config
+          configMap:
+            name: backstage-config
