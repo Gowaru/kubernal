@@ -88,8 +88,14 @@ up: ## Démarre PostgreSQL et les services locaux (Docker Compose)
 .PHONY: down
 down: ## Arrête les services Docker
 	@echo "$(YELLOW)→ Arrêt des services Docker...$(RESET)"
-	docker compose -f infra/docker-compose.yml down
+	docker compose -f infra/docker-compose.yml --profile ui down
 	@echo "$(GREEN)✓ Services arrêtés$(RESET)"
+
+.PHONY: up-ui
+up-ui: ## Démarre tous les services (PostgreSQL + pgAdmin UI + exporter)
+	@echo "$(BLUE)→ Démarrage de tous les services (incl. pgAdmin)...$(RESET)"
+	docker compose -f infra/docker-compose.yml --profile ui up -d
+	@echo "$(GREEN)✓ Tous les services démarrés — pgAdmin: http://localhost:5050$(RESET)"
 
 .PHONY: logs
 logs: ## Affiche les logs des services Docker
@@ -141,14 +147,39 @@ dev-backstage: ## Lance Backstage en mode développement
 	@echo "$(BLUE)→ Démarrage de Backstage...$(RESET)"
 	cd apps/backstage && yarn dev
 
+.PHONY: backstage-install
+backstage-install: ## Installe les dépendances Backstage (yarn install)
+	@echo "$(BLUE)→ Installation des dépendances Backstage...$(RESET)"
+	cd apps/backstage && yarn install --frozen-lockfile
+	@echo "$(GREEN)✓ Backstage prêt$(RESET)"
+
+.PHONY: backstage-migrate
+backstage-migrate: ## Applique les migrations Backstage (création tables)
+	@echo "$(BLUE)→ Migration Backstage...$(RESET)"
+	cd apps/backstage && yarn backstage-cli package migrate
+	@echo "$(GREEN)✓ Migration Backstage effectuée$(RESET)"
+
 .PHONY: dev
 dev: up dev-api ## Lance la stack de développement (Docker + API)
+
+# ─── Docker Build ───────────────────────────────────────────────────────────
+.PHONY: docker-build-api
+docker-build-api: ## Build l'image Docker de l'API (tag: kubernal/api:latest)
+	@echo "$(BLUE)→ Build de l'image API...$(RESET)"
+	docker build -t kubernal/api:latest -f apps/api/Dockerfile .
+	@echo "$(GREEN)✓ Image kubernal/api:latest créée$(RESET)"
+
+.PHONY: docker-build-backstage
+docker-build-backstage: ## Build l'image Docker de Backstage (tag: kubernal/backstage:latest)
+	@echo "$(BLUE)→ Build de l'image Backstage...$(RESET)"
+	docker build -t kubernal/backstage:latest -f apps/backstage/packages/backend/Dockerfile apps/backstage
+	@echo "$(GREEN)✓ Image kubernal/backstage:latest créée$(RESET)"
 
 # ─── Migration Prisma ──────────────────────────────────────────────────────
 .PHONY: prisma-generate
 prisma-generate: ## Génère le client Prisma
 	@echo "$(BLUE)→ Génération du client Prisma...$(RESET)"
-	npm run prisma:generate -w apps/api
+	npx prisma generate --schema=apps/api/prisma/schema.prisma
 
 .PHONY: prisma-migrate
 prisma-migrate: ## Applique les migrations Prisma

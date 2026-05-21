@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: kubernal
+  namespace: argocd
+  labels:
+    kubernal.io/managed-by: kubernal
+spec:
+  description: Kubernal IDP Platform
+  sourceRepos:
+    - 'https://github.com/Gowaru/kubernal'
+  destinations:
+    - namespace: 'kubernal-dev'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'kubernal-staging'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'kubernal-prod'
+      server: 'https://kubernetes.default.svc'
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+  roles:
+    - name: admin
+      policies:
+        - p, proj:kubernal:admin, applications, *, kubernal/*, allow

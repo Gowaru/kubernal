@@ -36,7 +36,7 @@ async function main() {
       version: "1.0.0",
       category: "backend",
       description: "Node.js + Express backend service with PostgreSQL, Prisma, and OpenTelemetry",
-      repository: "https://github.com/<PLACEHOLDER_ORG>/template-nodejs-backend",
+      repository: "https://github.com/Gowaru/template-nodejs-backend",
       parameters: {
         serviceName: { type: "string", description: "Service name" },
         port: { type: "number", description: "HTTP port", default: 3000 },

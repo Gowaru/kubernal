@@ -29,12 +29,14 @@ logs/
 # Test coverage
 coverage/
 
+
 # Prisma
 apps/api/prisma/*.generated.ts
 
 # Backstage
 apps/backstage/.cache/
 apps/backstage/dist-types/
+apps/backstage/.yarn/
 
 # Docker
 docker-data/

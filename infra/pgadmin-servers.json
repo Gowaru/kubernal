@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Kubernal IDP (Local)",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "kubernal_idp",
+      "Username": "kubernal",
+      "Password": "kubernal_dev",
+      "SSLMode": "prefer"
+    }
+  }
+}

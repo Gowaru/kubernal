@@ -1,10 +1,7 @@
-# =============================================================================
-# Kubernal IDP – Backstage App Configuration
-# =============================================================================
-
 app:
   title: Kubernal IDP
-  baseUrl: http://localhost:7007
+  baseUrl: http://localhost:3000
+  packages: all
 
 organization:
   name: Kubernal
@@ -14,10 +11,10 @@ backend:
   listen:
     port: 7007
   csp:
-    connect-src: ["'self'", 'http:', 'https:']
+    connect-src: ["'self'", "http:", "https:"]
   cors:
-    origin: http://localhost:4000
-    methods: [GET, POST, PUT, DELETE, PATCH]
+    origin: http://localhost:3000
+    methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
     credentials: true
   database:
     client: pg
@@ -25,8 +22,13 @@ backend:
       host: ${POSTGRES_HOST:-localhost}
       port: ${POSTGRES_PORT:-5432}
       user: ${POSTGRES_USER:-kubernal}
-      password: ${POSTGRES_PASSWORD:-<PLACEHOLDER_DB_PASSWORD>}
+      password: ${POSTGRES_PASSWORD:-kubernal_dev}
       database: ${POSTGRES_DB:-kubernal_backstage}
+  actions:
+    pluginSources:
+      - auth
+      - catalog
+      - scaffolder
 
 integrations:
   github:
@@ -35,32 +37,61 @@ integrations:
 
 techdocs:
   builder: local
-  generators:
-    techdocs: docker
+  generator:
+    runIn: docker
+  publisher:
+    type: local
 
 auth:
-  environment: development
   providers:
-    guest:
-      dangerouslyAllowOutsideDevelopment: true
+    guest: {}
+
+scaffolder:
+  actions:
+    - name: kubernal:create-deployment
+      description: Create a deployment in Kubernal IDP
+      input:
+        type: object
+        properties:
+          applicationId:
+            type: string
+            description: Application ID
+          environmentId:
+            type: string
+            description: Environment ID
+          version:
+            type: string
+            description: Version to deploy
+          commitSha:
+            type: string
+            description: Commit SHA
 
 catalog:
   import:
     entityFilename: catalog-info.yaml
     pullRequestBranchName: backstage-integration
   rules:
-    - allow: [Component, System, API, Group, User, Resource, Location]
+    - allow: [Component, System, API, Resource, Location, Template, Group, User]
   locations:
     - type: file
-      target: ../../catalog-info.yaml
-
-    - type: file
-      name: kubernal-api-components
-      target: ../../apps/api/catalog-info.yaml
+      target: ../../../../catalog-info.yaml
 
     - type: file
       name: kubernal-templates
-      target: ../../templates/all.yaml
+      target: ../../../../templates/all.yaml
+      rules:
+        - allow: [Template]
+
+kubernetes:
+  serviceLocatorMethod:
+    type: multiTenant
+  clusterLocatorMethods:
+    - type: config
+      clusters:
+        - url: https://kubernal-control-plane:6443
+          name: kubernal
+          authProvider: serviceAccount
+          skipTLSVerify: true
 
 kubernal:
   api:
@@ -72,3 +103,12 @@ kubernal:
       requiresApproval: true
     - name: prod
       requiresApproval: true
+
+proxy:
+  endpoints:
+    "/kubernal/api":
+      target: http://localhost:4000/api/v1
+      changeOrigin: true
+
+permission:
+  enabled: true

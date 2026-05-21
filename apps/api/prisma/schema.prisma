@@ -44,7 +44,7 @@ model Team {
 // ─── Template (Golden Path) ─────────────────────────────────────────────────
 model GoldenPathTemplate {
   id          String   @id @default(uuid())
-  name        String
+  name        String   @unique
   version     String   @default("1.0.0")
   category    String   // backend | frontend | fullstack | library | function
   description String
