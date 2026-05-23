@@ -4,3 +4,9 @@ namespace: kubernal-dev
 
 resources:
   - ../../k8s/
+
+images:
+  - name: ghcr.io/gowaru/kubernal-api
+    newTag: latest
+  - name: ghcr.io/gowaru/kubernal-backstage
+    newTag: latest

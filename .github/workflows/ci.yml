@@ -1,10 +1,10 @@
-name: CI - Build, Scan, Sign & Deploy API
+name: CI - Build & GitOps Sync
 
 on:
   push:
-    branches: [main]
+    branches: [develop, main]
   pull_request:
-    branches: [main]
+    branches: [develop, main]
   workflow_dispatch:
 
 concurrency:
@@ -15,13 +15,9 @@ env:
   NODE_VERSION: '22'
   REGISTRY: ghcr.io
   IMAGE_NAME_API: ${{ github.repository_owner }}/kubernal-api
-  K8S_MANIFEST_PATH: infra/kubernetes/api/deployment.yaml
-  GITOPS_MODE: manifest-update
+  IMAGE_NAME_BACKSTAGE: ${{ github.repository_owner }}/kubernal-backstage
 
 jobs:
-  # ───────────────────────────
-  # QUALITY GATES
-  # ───────────────────────────
   lint-typecheck:
     name: Lint & Typecheck
     runs-on: ubuntu-latest
@@ -86,25 +82,21 @@ jobs:
       - run: npm run format
 
   # ─────────────────────────────────────────────────────────────
-  # BUILD + SCAN + SIGN + GITOPS
+  # BUILD & PUSH (sur push develop/main uniquement)
   # ─────────────────────────────────────────────────────────────
-  build-scan-sign-deploy:
-    name: Build, Scan, Sign & GitOps Sync
-    if: github.ref == 'refs/heads/main'
+  build-api:
+    name: Build & Push API
+    if: github.event_name == 'push' && (github.ref_name == 'develop' || github.ref_name == 'main')
     needs: [lint-typecheck, test, format]
     runs-on: ubuntu-latest
     permissions:
-      contents: write      # pour pusher les manifests (mode manifest-update)
-      packages: write      # pour pusher l'image sur GHCR
-      security-events: write  # pour uploader les résultats Trivy
-      id-token: write      # pour Cosign keyless signing (optionnel)
+      packages: write
+      id-token: write
+      security-events: write
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # nécessaire pour git push avec historique
 
-      # Login GHCR
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -112,7 +104,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Metadata pour les tags
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -120,11 +111,10 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}
           tags: |
             type=sha,prefix=,suffix=,format=short
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ github.ref_name == 'develop' }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
-      # Build & Push
       - name: Build and push API image
         uses: docker/build-push-action@v6
         id: build-push
@@ -137,7 +127,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Scan avec Trivy
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -154,11 +143,11 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-      # Signature avec Cosign (mode keyless avec GitHub OIDC)
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3
 
       - name: Sign image with Cosign (keyless)
+        if: github.ref_name == 'main'
         run: |
           cosign sign --yes \
             --oidc-issuer https://token.actions.githubusercontent.com \
@@ -166,39 +155,102 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # GITOPS SYNC : Mise à jour directe du manifest
-      - name: Update K8s manifest with new image digest
-        if: env.GITOPS_MODE == 'manifest-update'
+  build-backstage:
+    name: Build & Push Backstage
+    if: github.event_name == 'push' && (github.ref_name == 'develop' || github.ref_name == 'main')
+    needs: [lint-typecheck, test, format]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKSTAGE }}
+          tags: |
+            type=sha,prefix=,suffix=,format=short
+            type=raw,value=latest,enable=${{ github.ref_name == 'develop' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push Backstage image
+        uses: docker/build-push-action@v6
+        id: build-push
+        with:
+          context: apps/backstage
+          file: apps/backstage/packages/backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ─────────────────────────────────────────────────────────────
+  # GITOPS SYNC – Kustomize overlay update
+  # ─────────────────────────────────────────────────────────────
+  gitops-sync:
+    name: GitOps Sync – Kustomize overlay
+    if: github.event_name == 'push' && (github.ref_name == 'develop' || github.ref_name == 'main')
+    needs: [build-api, build-backstage]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install kustomize
         run: |
-          NEW_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}@${{ steps.build-push.outputs.digest }}"
-          echo "Updating manifest to: $NEW_IMAGE"
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
 
-          # Installation de yq pour manipuler le YAML
-          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.44.1/yq_linux_amd64
-          chmod +x /usr/local/bin/yq
-
-          # Mise à jour du manifest
-          yq eval -i ".spec.template.spec.containers[0].image = \"$NEW_IMAGE\"" ${{ env.K8S_MANIFEST_PATH }}
-
-          # Commit & push si changements
-          if ! git diff --quiet ${{ env.K8S_MANIFEST_PATH }}; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add ${{ env.K8S_MANIFEST_PATH }}
-            git commit -m "chore(gitops): update API image to ${{ steps.build-push.outputs.digest }}"
-            git push
-            echo "Manifest updated and pushed"
-          else
-            echo "No changes to manifest"
+      - name: Determine overlays to update
+        id: overlays
+        run: |
+          if [ "${{ github.ref_name }}" = "develop" ]; then
+            echo "targets=dev" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_name }}" = "main" ]; then
+            echo "targets=staging prod" >> $GITHUB_OUTPUT
           fi
 
-      # Notification
-      - name: Deployment summary
+      - name: Update overlay images with SHA tag
         run: |
-          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "| Étape | Résultat |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|----------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Build | \`${{ steps.build-push.outputs.digest }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Scan Trivy | [Voir résultats](/${{ github.repository }}/security/code-scanning) |" >> $GITHUB_STEP_SUMMARY
-          echo "| Signature Cosign | Keyless OIDC |" >> $GITHUB_STEP_SUMMARY
-          echo "| GitOps Sync | Mode: \`${{ env.GITOPS_MODE }}\` |" >> $GITHUB_STEP_SUMMARY
+          SHA7="${GITHUB_SHA:0:7}"
+          TAG="sha-${SHA7}"
+
+          for overlay in ${{ steps.overlays.outputs.targets }}; do
+            echo "Updating overlay: infra/overlays/$overlay"
+            kustomize edit set image \
+              ghcr.io/gowaru/kubernal-api:${TAG} \
+              ghcr.io/gowaru/kubernal-backstage:${TAG} \
+              --kustomize-dir infra/overlays/$overlay
+          done
+
+          echo "Updated images to tag: ${TAG}"
+
+      - name: Commit and push overlay changes
+        run: |
+          if ! git diff --quiet infra/overlays/; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add infra/overlays/
+            git commit -m "chore(gitops): update overlay images to sha-${GITHUB_SHA:0:7}"
+            git push
+            echo "Overlay images updated and pushed"
+          else
+            echo "No changes to overlays"
+          fi
