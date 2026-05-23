@@ -16,11 +16,25 @@ spec:
       labels:
         app: kubernal-api
         kubernal.io/environment: dev
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "4000"
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: api
           image: ghcr.io/gowaru/kubernal-api:latest
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 4000
               protocol: TCP

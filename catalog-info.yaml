@@ -88,7 +88,7 @@ spec:
   owner: platform-team
   system: kubernal-idp
   definition:
-    $text: apps/api/src/shared/openapi.json
+    $text: https://raw.githubusercontent.com/Gowaru/kubernal/main/apps/api/src/shared/openapi.json
 
 ---
 apiVersion: backstage.io/v1alpha1

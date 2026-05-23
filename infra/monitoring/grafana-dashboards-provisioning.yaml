@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  labels:
+    app: grafana
+    kubernal.io/managed-by: kubernal
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: Kubernal
+        type: file
+        options:
+          path: /var/lib/grafana/dashboards
+          foldersFromFilesStructure: true
+  api-dashboard.json: |
+    {
+      "title": "Kubernal API",
+      "uid": "kubernal-api",
+      "version": 1,
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "tags": ["kubernal", "api"],
+      "panels": [
+        {
+          "title": "HTTP Request Rate",
+          "type": "graph",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "targets": [{
+            "expr": "sum(rate(kubernal_http_requests_total[5m]))",
+            "legendFormat": "Requests/s"
+          }]
+        },
+        {
+          "title": "HTTP Duration (p95)",
+          "type": "graph",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "targets": [{
+            "expr": "histogram_quantile(0.95, sum(rate(kubernal_http_request_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p95"
+          }]
+        },
+        {
+          "title": "HTTP Status Codes",
+          "type": "graph",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "targets": [{
+            "expr": "sum by (status) (rate(kubernal_http_requests_total[5m]))",
+            "legendFormat": "{{status}}"
+          }]
+        },
+        {
+          "title": "Deployments Created",
+          "type": "stat",
+          "gridPos": { "h": 4, "w": 4, "x": 12, "y": 8 },
+          "targets": [{
+            "expr": "kubernal_deployments_total"
+          }]
+        },
+        {
+          "title": "Deployments by Status",
+          "type": "piechart",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+          "targets": [{
+            "expr": "kubernal_deployments_by_status",
+            "legendFormat": "{{status}}"
+          }]
+        }
+      ],
+      "refresh": "30s",
+      "time": { "from": "now-1h", "to": "now" }
+    }

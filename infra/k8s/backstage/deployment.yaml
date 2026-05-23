@@ -16,11 +16,23 @@ spec:
       labels:
         app: backstage
         kubernal.io/environment: dev
+        kubernal.io/managed-by: kubernal
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: backstage
           image: ghcr.io/gowaru/kubernal-backstage:latest
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 7007
               protocol: TCP
@@ -38,14 +50,12 @@ spec:
               mountPath: /app/catalog-info.yaml
               subPath: catalog-info.yaml
           livenessProbe:
-            httpGet:
-              path: /api/health
+            tcpSocket:
               port: 7007
             initialDelaySeconds: 30
             periodSeconds: 30
           readinessProbe:
-            httpGet:
-              path: /api/health
+            tcpSocket:
               port: 7007
             initialDelaySeconds: 15
             periodSeconds: 15

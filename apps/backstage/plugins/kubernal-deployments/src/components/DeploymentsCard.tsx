@@ -12,9 +12,9 @@ import {
   StatusRunning,
 } from "@backstage/core-components";
 import { useApi } from "@backstage/core-plugin-api";
-import { kubernalDeploymentsApiRef } from "../api.js";
-import useAsync from "react-use/lib/useAsync.js";
+import { kubernalDeploymentsApiRef } from "../api";
 
+import useAsync from "react-use/lib/useAsync";
 const statusIcon = (status: string) => {
   switch (status) {
     case "healthy":

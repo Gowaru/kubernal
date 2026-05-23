@@ -3,7 +3,7 @@ import {
   createRoutableExtension,
   createComponentExtension,
 } from "@backstage/core-plugin-api";
-import { rootRouteRef } from "./routes.js";
+import { rootRouteRef } from "./routes";
 
 export const kubernalDeploymentsPlugin = createPlugin({
   id: "kubernal-deployments",
@@ -18,7 +18,7 @@ export const EntityKubernalDeploymentsCard =
       name: "EntityKubernalDeploymentsCard",
       component: {
         lazy: () =>
-          import("./components/DeploymentsCard.js").then(
+          import("./components/DeploymentsCard").then(
             (m) => m.DeploymentsCard,
           ),
       },
@@ -29,7 +29,7 @@ export const KubernalDeploymentsPage = kubernalDeploymentsPlugin.provide(
   createRoutableExtension({
     name: "KubernalDeploymentsPage",
     component: () =>
-      import("./components/DeploymentsPage.js").then((m) => m.DeploymentsPage),
+      import("./components/DeploymentsPage").then((m) => m.DeploymentsPage),
     mountPoint: rootRouteRef,
   }),
 );

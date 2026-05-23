@@ -1,0 +1,8 @@
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: kubernal-templates
+  description: Collection of Kubernal Golden Path templates
+spec:
+  targets:
+    - ./nodejs-backend/template.yaml

@@ -12,3 +12,11 @@ docker-data/
 .env.*.local
 .DS_Store
 Thumbs.db
+apps/backstage/
+infra/
+templates/
+catalog-info.yaml
+Makefile
+AGENTS.md
+k8s-namespace.yaml
+README.md

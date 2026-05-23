@@ -125,6 +125,8 @@ data:
       lifecycle: production
       owner: platform-team
       system: kubernal-idp
+      definition:
+        $text: http://kubernal-api:4000/api/v1/docs.json
     ---
     apiVersion: backstage.io/v1alpha1
     kind: Resource

@@ -23,6 +23,7 @@ export const SidebarContent = NavContentBlueprint.make({
 
       // Skipped items
       nav.take('page:search'); // Using search modal instead
+      nav.take('page:kubernetes'); // Standalone page needs entity context (plugin bug)
 
       return (
         <Sidebar>

@@ -259,6 +259,42 @@ prisma-migrate: ## Applique les migrations Prisma
 	@echo "$(BLUE)→ Migration Prisma...$(RESET)"
 	npm run prisma:migrate -w apps/api
 
+# ─── Kyverno ────────────────────────────────────────────────────────────────
+.PHONY: kyverno-install
+kyverno-install: ## Installe Kyverno dans le cluster Kind
+	@echo "$(BLUE)→ Installation de Kyverno...$(RESET)"
+	kubectl create -f https://raw.githubusercontent.com/kyverno/kyverno/main/config/install.yaml
+	@echo "$(GREEN)✓ Kyverno installé$(RESET)"
+
+.PHONY: kyverno-policies
+kyverno-policies: ## Applique les politiques Kyverno
+	@echo "$(BLUE)→ Application des politiques Kyverno...$(RESET)"
+	kubectl apply -f infra/kyverno/
+	@echo "$(GREEN)✓ Politiques Kyverno appliquées$(RESET)"
+
+.PHONY: kyverno-setup
+kyverno-setup: kyverno-install kyverno-policies ## Setup complet Kyverno
+
+# ─── Monitoring (Prometheus + Grafana) ─────────────────────────────────────
+.PHONY: monitoring-install
+monitoring-install: ## Déploie Prometheus et Grafana dans kubernal-dev
+	@echo "$(BLUE)→ Déploiement de Prometheus & Grafana...$(RESET)"
+	kubectl apply -f infra/monitoring/
+	@echo "$(GREEN)✓ Monitoring déployé$(RESET)"
+
+.PHONY: monitoring-port-forward-grafana
+monitoring-port-forward-grafana: ## Expose Grafana sur http://localhost:3001
+	@echo "$(BLUE)→ Grafana: http://localhost:3001$(RESET)"
+	kubectl port-forward -n kubernal-dev svc/grafana 3001:3000
+
+.PHONY: monitoring-port-forward-prometheus
+monitoring-port-forward-prometheus: ## Expose Prometheus sur http://localhost:9091
+	@echo "$(BLUE)→ Prometheus: http://localhost:9091$(RESET)"
+	kubectl port-forward -n kubernal-dev svc/prometheus 9091:9090
+
+.PHONY: monitoring-setup
+monitoring-setup: monitoring-install ## Setup complet Monitoring
+
 # ─── Healthcheck ────────────────────────────────────────────────────────────
 .PHONY: health
 health: ## Vérifie l'état des services
