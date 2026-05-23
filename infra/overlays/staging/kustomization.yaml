@@ -20,3 +20,17 @@ patches:
       - op: replace
         path: /spec/replicas
         value: 2
+  - target:
+      kind: Ingress
+      name: kubernal-api
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: api.staging.kubernal.local
+  - target:
+      kind: Ingress
+      name: backstage
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: backstage.staging.kubernal.local
