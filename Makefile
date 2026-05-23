@@ -136,6 +136,9 @@ kind-namespaces: ## Crée les namespaces K8s
 .PHONY: kind-setup
 kind-setup: kind-up kind-ingress kind-namespaces ## Setup complet du cluster Kind (cluster + ingress + namespaces)
 
+.PHONY: kind-setup-full
+kind-setup-full: kind-setup kyverno-setup monitoring-install k8s-deploy-dev argocd-setup ## Setup complet du cluster Kind (tout : cluster + ingress + namespaces + kyverno + monitoring + deploy + argocd)
+
 # ─── Déploiement K8s local ─────────────────────────────────────────────────
 .PHONY: k8s-deploy-dev
 k8s-deploy-dev: ## Déploie l'API + Backstage + PostgreSQL dans kubernal-dev
@@ -187,7 +190,7 @@ argocd-password: ## Récupère le mot de passe admin ArgoCD
 .PHONY: argocd-port-forward
 argocd-port-forward: ## Expose ArgoCD sur http://localhost:8080
 	@echo "$(BLUE)→ ArgoCD UI: http://localhost:8080$(RESET)"
-	kubectl port-forward -n argocd svc/argocd-server 8080:443
+	kubectl port-forward -n argocd svc/argocd-server 8080:80
 
 .PHONY: argocd-login
 argocd-login: ## Login à ArgoCD via CLI
@@ -206,8 +209,14 @@ argocd-apply-apps: ## Apply les Applications ArgoCD
 	kubectl apply -f infra/argocd/applications/
 	@echo "$(GREEN)✓ Applications ArgoCD appliquées$(RESET)"
 
+.PHONY: argocd-ingress
+argocd-ingress: ## Crée l'Ingress ArgoCD (argo.kubernal.local)
+	@echo "$(BLUE)→ Création de l'Ingress ArgoCD...$(RESET)"
+	kubectl apply -f infra/k8s/argocd/ingress.yaml
+	@echo "$(GREEN)✓ Ingress ArgoCD créé — http://argocd.kubernal.local$(RESET)"
+
 .PHONY: argocd-setup
-argocd-setup: argocd-install argocd-apply-project argocd-apply-apps ## Setup complet ArgoCD (install + project + apps)
+argocd-setup: argocd-install argocd-ingress argocd-apply-project argocd-apply-apps ## Setup complet ArgoCD (install + ingress + project + apps)
 
 # ─── Développement local ───────────────────────────────────────────────────
 .PHONY: dev-api
