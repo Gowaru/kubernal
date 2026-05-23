@@ -31,7 +31,7 @@ spec:
         pattern:
           metadata:
             labels:
-              kubernal.io/managed-by: "?*"
+              kubernal.io/managed-by: '?*'
     - name: check-environment-label
       match:
         any:
@@ -48,4 +48,4 @@ spec:
         pattern:
           metadata:
             labels:
-              kubernal.io/environment: "?*"
+              kubernal.io/environment: '?*'

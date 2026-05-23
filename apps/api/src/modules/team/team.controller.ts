@@ -1,5 +1,5 @@
-import type { Request, Response } from "express";
-import { teamService } from "./team.service.js";
+import type { Request, Response } from 'express';
+import { teamService } from './team.service.js';
 
 export const teamController = {
   async list(_req: Request, res: Response) {

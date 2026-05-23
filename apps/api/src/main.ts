@@ -1,7 +1,7 @@
-import { createApp } from "./app.js";
-import { logger } from "./shared/logger.js";
+import { createApp } from './app.js';
+import { logger } from './shared/logger.js';
 
-const PORT = parseInt(process.env.PORT ?? "4000", 10);
+const PORT = parseInt(process.env.PORT ?? '4000', 10);
 
 const app = createApp();
 

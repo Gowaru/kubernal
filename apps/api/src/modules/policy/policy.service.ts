@@ -1,5 +1,5 @@
-import { NotFoundError } from "../../shared/errors.js";
-import { policyRepository } from "./policy.repository.js";
+import { NotFoundError } from '../../shared/errors.js';
+import { policyRepository } from './policy.repository.js';
 
 export const policyService = {
   async list() {
@@ -8,7 +8,7 @@ export const policyService = {
 
   async getById(id: string) {
     const policy = await policyRepository.findById(id);
-    if (!policy) throw new NotFoundError("SecurityPolicy", id);
+    if (!policy) throw new NotFoundError('SecurityPolicy', id);
     return policy;
   },
 
@@ -24,7 +24,17 @@ export const policyService = {
     return policyRepository.create(data);
   },
 
-  async update(id: string, data: { name?: string; description?: string; category?: string; severity?: string; rules?: Record<string, unknown>; enabled?: boolean }) {
+  async update(
+    id: string,
+    data: {
+      name?: string;
+      description?: string;
+      category?: string;
+      severity?: string;
+      rules?: Record<string, unknown>;
+      enabled?: boolean;
+    },
+  ) {
     await this.getById(id);
     return policyRepository.update(id, data);
   },

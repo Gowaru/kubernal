@@ -1,5 +1,5 @@
-import { db } from "../../shared/database.js";
-import { toJsonValue } from "../../shared/json.js";
+import { db } from '../../shared/database.js';
+import { toJsonValue } from '../../shared/json.js';
 
 export const templateRepository = {
   findAll() {
@@ -28,7 +28,17 @@ export const templateRepository = {
     });
   },
 
-  update(id: string, data: { name?: string; version?: string; description?: string; repository?: string; parameters?: Record<string, unknown>; steps?: Record<string, unknown>[] }) {
+  update(
+    id: string,
+    data: {
+      name?: string;
+      version?: string;
+      description?: string;
+      repository?: string;
+      parameters?: Record<string, unknown>;
+      steps?: Record<string, unknown>[];
+    },
+  ) {
     const { parameters, steps, ...rest } = data;
     return db.goldenPathTemplate.update({
       where: { id },

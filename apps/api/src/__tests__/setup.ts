@@ -1,10 +1,10 @@
-import { vi } from "vitest";
+import { vi } from 'vitest';
 
-process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test?schema=public";
-process.env.CORS_ORIGIN = "http://localhost:3000,http://localhost:7007";
-process.env.LOG_LEVEL = "silent";
+process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test?schema=public';
+process.env.CORS_ORIGIN = 'http://localhost:3000,http://localhost:7007';
+process.env.LOG_LEVEL = 'silent';
 
-vi.mock("../shared/database.js", () => {
+vi.mock('../shared/database.js', () => {
   const mockPrisma = {
     user: {
       findMany: vi.fn().mockResolvedValue([]),

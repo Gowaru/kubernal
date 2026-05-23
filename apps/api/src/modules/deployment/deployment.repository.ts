@@ -1,11 +1,11 @@
-import { db } from "../../shared/database.js";
-import { toJsonArray } from "../../shared/json.js";
+import { db } from '../../shared/database.js';
+import { toJsonArray } from '../../shared/json.js';
 
 export const deploymentRepository = {
   findAll() {
     return db.deployment.findMany({
       include: { application: true, environment: true, approvedBy: true, pipelines: true },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
   },
 
@@ -20,14 +20,14 @@ export const deploymentRepository = {
     return db.deployment.findMany({
       where: { applicationId },
       include: { environment: true, approvedBy: true },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
   },
 
   findByEnvironment(environmentId: string) {
     return db.deployment.findMany({
       where: { environmentId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
   },
 
@@ -55,7 +55,7 @@ export const deploymentRepository = {
   approve(id: string, approvedById: string) {
     return db.deployment.update({
       where: { id },
-      data: { approvedById, status: "deploying" },
+      data: { approvedById, status: 'deploying' },
     });
   },
 

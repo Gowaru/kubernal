@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const createPipelineSchema = z.object({
   deploymentId: z.string().uuid(),
@@ -7,5 +7,5 @@ export const createPipelineSchema = z.object({
 });
 
 export const updatePipelineStatusSchema = z.object({
-  status: z.enum(["running", "success", "failed", "cancelled"]),
+  status: z.enum(['running', 'success', 'failed', 'cancelled']),
 });

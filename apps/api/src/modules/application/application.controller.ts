@@ -1,5 +1,5 @@
-import type { Request, Response } from "express";
-import { applicationService } from "./application.service.js";
+import type { Request, Response } from 'express';
+import { applicationService } from './application.service.js';
 
 export const applicationController = {
   async list(_req: Request, res: Response) {

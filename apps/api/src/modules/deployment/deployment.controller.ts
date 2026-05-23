@@ -1,5 +1,5 @@
-import type { Request, Response } from "express";
-import { deploymentService } from "./deployment.service.js";
+import type { Request, Response } from 'express';
+import { deploymentService } from './deployment.service.js';
 
 export const deploymentController = {
   async list(_req: Request, res: Response) {

@@ -1,5 +1,5 @@
-import type { Request, Response } from "express";
-import { templateService } from "./template.service.js";
+import type { Request, Response } from 'express';
+import { templateService } from './template.service.js';
 
 export const templateController = {
   async list(_req: Request, res: Response) {

@@ -1,5 +1,5 @@
-import { NotFoundError, ConflictError } from "../../shared/errors.js";
-import { userRepository } from "./user.repository.js";
+import { NotFoundError, ConflictError } from '../../shared/errors.js';
+import { userRepository } from './user.repository.js';
 
 export const userService = {
   async list() {
@@ -8,7 +8,7 @@ export const userService = {
 
   async getById(id: string) {
     const user = await userRepository.findById(id);
-    if (!user) throw new NotFoundError("User", id);
+    if (!user) throw new NotFoundError('User', id);
     return user;
   },
 

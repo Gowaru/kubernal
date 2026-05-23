@@ -35,9 +35,9 @@ spec:
               protocol: TCP
           env:
             - name: GF_AUTH_ANONYMOUS_ENABLED
-              value: "true"
+              value: 'true'
             - name: GF_AUTH_ANONYMOUS_ORG_ROLE
-              value: "Admin"
+              value: 'Admin'
             - name: GF_SECURITY_ADMIN_USER
               value: admin
             - name: GF_SECURITY_ADMIN_PASSWORD
@@ -49,11 +49,11 @@ spec:
               mountPath: /etc/grafana/provisioning/dashboards
           resources:
             requests:
-              cpu: "100m"
-              memory: "128Mi"
+              cpu: '100m'
+              memory: '128Mi'
             limits:
-              cpu: "500m"
-              memory: "256Mi"
+              cpu: '500m'
+              memory: '256Mi'
       volumes:
         - name: datasources
           configMap:

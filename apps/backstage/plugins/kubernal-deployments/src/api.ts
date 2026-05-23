@@ -1,4 +1,4 @@
-import { createApiRef } from "@backstage/core-plugin-api";
+import { createApiRef } from '@backstage/core-plugin-api';
 
 export interface Deployment {
   id: string;
@@ -25,14 +25,14 @@ export interface KubernalDeploymentsApi {
 }
 
 export const kubernalDeploymentsApiRef = createApiRef<KubernalDeploymentsApi>({
-  id: "plugin.kubernal-deployments.service",
+  id: 'plugin.kubernal-deployments.service',
 });
 
 export class KubernalDeploymentsApiClient implements KubernalDeploymentsApi {
   private readonly baseUrl: string;
 
   constructor(options: { baseUrl?: string } = {}) {
-    this.baseUrl = options.baseUrl ?? "/kubernal/api";
+    this.baseUrl = options.baseUrl ?? '/kubernal/api';
   }
 
   async getDeployments(): Promise<Deployment[]> {
@@ -58,8 +58,8 @@ export class KubernalDeploymentsApiClient implements KubernalDeploymentsApi {
     commitSha: string;
   }): Promise<Deployment> {
     const response = await fetch(`${this.baseUrl}/deployments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
     const result = await response.json();

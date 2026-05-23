@@ -1,5 +1,5 @@
-import React from "react";
-import { Grid } from "@material-ui/core";
+import React from 'react';
+import { Grid } from '@material-ui/core';
 import {
   Page,
   Header,
@@ -12,24 +12,24 @@ import {
   StatusWarning,
   StatusAborted,
   StatusRunning,
-} from "@backstage/core-components";
-import { useApi } from "@backstage/core-plugin-api";
-import { kubernalDeploymentsApiRef } from "../api";
+} from '@backstage/core-components';
+import { useApi } from '@backstage/core-plugin-api';
+import { kubernalDeploymentsApiRef } from '../api';
 
-import useAsync from "react-use/lib/useAsync";
+import useAsync from 'react-use/lib/useAsync';
 const statusIcon = (status: string) => {
   switch (status) {
-    case "healthy":
+    case 'healthy':
       return <StatusOK />;
-    case "failed":
+    case 'failed':
       return <StatusError />;
-    case "building":
-    case "deploying":
+    case 'building':
+    case 'deploying':
       return <StatusRunning />;
-    case "pending":
+    case 'pending':
       return <StatusWarning />;
-    case "cancelled":
-    case "rolled_back":
+    case 'cancelled':
+    case 'rolled_back':
       return <StatusAborted />;
     default:
       return <StatusWarning />;
@@ -39,25 +39,29 @@ const statusIcon = (status: string) => {
 export const DeploymentsPage = () => {
   const api = useApi(kubernalDeploymentsApiRef);
 
-  const { value, loading, error } = useAsync(
-    () => api.getDeployments(),
-    [],
-  );
+  const { value, loading, error } = useAsync(() => api.getDeployments(), []);
 
   if (loading) return <Progress />;
   if (error) return <ResponseErrorPanel error={error} />;
 
   const columns = [
-    { title: "Status", field: "status", render: (row: { status: string }) => statusIcon(row.status) },
-    { title: "Application", field: "applicationId" },
-    { title: "Version", field: "version" },
-    { title: "Trigger", field: "trigger" },
-    { title: "Created", field: "createdAt" },
+    {
+      title: 'Status',
+      field: 'status',
+      render: (row: { status: string }) => statusIcon(row.status),
+    },
+    { title: 'Application', field: 'applicationId' },
+    { title: 'Version', field: 'version' },
+    { title: 'Trigger', field: 'trigger' },
+    { title: 'Created', field: 'createdAt' },
   ];
 
   return (
     <Page themeId="tool">
-      <Header title="Deployments" subtitle="All deployments across all applications" />
+      <Header
+        title="Deployments"
+        subtitle="All deployments across all applications"
+      />
       <Content>
         <Grid container spacing={3}>
           <Grid item xs={12}>

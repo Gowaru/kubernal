@@ -1,8 +1,10 @@
-import { db } from "../../shared/database.js";
+import { db } from '../../shared/database.js';
 
 export const teamRepository = {
   findAll() {
-    return db.team.findMany({ include: { members: true, _count: { select: { applications: true } } } });
+    return db.team.findMany({
+      include: { members: true, _count: { select: { applications: true } } },
+    });
   },
 
   findById(id: string) {
@@ -13,11 +15,20 @@ export const teamRepository = {
     return db.team.findUnique({ where: { name } });
   },
 
-  create(data: { name: string; description?: string; quotaCpu?: string; quotaMemory?: string; namespacePrefix: string }) {
+  create(data: {
+    name: string;
+    description?: string;
+    quotaCpu?: string;
+    quotaMemory?: string;
+    namespacePrefix: string;
+  }) {
     return db.team.create({ data, include: { members: true } });
   },
 
-  update(id: string, data: { name?: string; description?: string | null; quotaCpu?: string; quotaMemory?: string }) {
+  update(
+    id: string,
+    data: { name?: string; description?: string | null; quotaCpu?: string; quotaMemory?: string },
+  ) {
     return db.team.update({ where: { id }, data });
   },
 

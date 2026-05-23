@@ -6,7 +6,7 @@ metadata:
     app: prometheus
     kubernal.io/managed-by: kubernal
   annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/ssl-redirect: 'false'
 spec:
   ingressClassName: nginx
   rules:

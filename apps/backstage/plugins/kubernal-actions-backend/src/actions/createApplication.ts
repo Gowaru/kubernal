@@ -1,10 +1,12 @@
-import { createTemplateAction } from "@backstage/plugin-scaffolder-node";
+import { createTemplateAction } from '@backstage/plugin-scaffolder-node';
 
 interface CreateApplicationActionOptions {
   apiBaseUrl: string;
 }
 
-export function createCreateApplicationAction(options: CreateApplicationActionOptions) {
+export function createCreateApplicationAction(
+  options: CreateApplicationActionOptions,
+) {
   return createTemplateAction<{
     name: string;
     description?: string;
@@ -12,18 +14,18 @@ export function createCreateApplicationAction(options: CreateApplicationActionOp
     templateId?: string;
     teamId?: string;
   }>({
-    id: "kubernal:create-application",
-    description: "Creates a new application in Kubernal IDP",
+    id: 'kubernal:create-application',
+    description: 'Creates a new application in Kubernal IDP',
     schema: {
       input: {
-        type: "object",
-        required: ["name"],
+        type: 'object',
+        required: ['name'],
         properties: {
-          name: { type: "string", title: "Application name" },
-          description: { type: "string", title: "Description" },
-          owner: { type: "string", title: "Owner" },
-          templateId: { type: "string", title: "Template ID" },
-          teamId: { type: "string", title: "Team ID" },
+          name: { type: 'string', title: 'Application name' },
+          description: { type: 'string', title: 'Description' },
+          owner: { type: 'string', title: 'Owner' },
+          templateId: { type: 'string', title: 'Template ID' },
+          teamId: { type: 'string', title: 'Team ID' },
         },
       },
     },
@@ -33,15 +35,15 @@ export function createCreateApplicationAction(options: CreateApplicationActionOp
       ctx.logger.info(`Creating application '${name}' in Kubernal IDP`);
 
       // Resolve teamId from owner if needed
-      const resolvedTeamId = ctx.input.teamId || "default";
+      const resolvedTeamId = ctx.input.teamId || 'default';
 
       const response = await fetch(`${options.apiBaseUrl}/applications`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
-          description: description ?? "",
-          templateId: templateId ?? "00000000-0000-0000-0000-000000000000",
+          description: description ?? '',
+          templateId: templateId ?? '00000000-0000-0000-0000-000000000000',
           teamId: resolvedTeamId,
           ownerId: owner,
         }),
@@ -53,8 +55,8 @@ export function createCreateApplicationAction(options: CreateApplicationActionOp
       }
 
       const app = await response.json();
-      ctx.output("applicationId", app.data.id);
-      ctx.output("applicationName", app.data.name);
+      ctx.output('applicationId', app.data.id);
+      ctx.output('applicationName', app.data.name);
     },
   });
 }

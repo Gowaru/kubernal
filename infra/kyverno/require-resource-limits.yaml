@@ -22,14 +22,14 @@ spec:
                 matchLabels:
                   kubernal.io/managed-by: kubernal
       validate:
-        message: "Resource requests and limits are required for all containers."
+        message: 'Resource requests and limits are required for all containers.'
         pattern:
           spec:
             containers:
               - resources:
                   requests:
-                    cpu: "?*"
-                    memory: "?*"
+                    cpu: '?*'
+                    memory: '?*'
                   limits:
-                    cpu: "?*"
-                    memory: "?*"
+                    cpu: '?*'
+                    memory: '?*'

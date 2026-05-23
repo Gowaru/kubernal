@@ -1,9 +1,9 @@
-import { db } from "../../shared/database.js";
-import { toJsonValue } from "../../shared/json.js";
+import { db } from '../../shared/database.js';
+import { toJsonValue } from '../../shared/json.js';
 
 export const policyRepository = {
   findAll() {
-    return db.securityPolicy.findMany({ orderBy: { createdAt: "desc" } });
+    return db.securityPolicy.findMany({ orderBy: { createdAt: 'desc' } });
   },
 
   findById(id: string) {
@@ -32,7 +32,17 @@ export const policyRepository = {
     });
   },
 
-  update(id: string, data: { name?: string; description?: string; category?: string; severity?: string; rules?: Record<string, unknown>; enabled?: boolean }) {
+  update(
+    id: string,
+    data: {
+      name?: string;
+      description?: string;
+      category?: string;
+      severity?: string;
+      rules?: Record<string, unknown>;
+      enabled?: boolean;
+    },
+  ) {
     const { rules, ...rest } = data;
     return db.securityPolicy.update({
       where: { id },

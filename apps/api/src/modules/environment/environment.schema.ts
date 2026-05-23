@@ -1,11 +1,11 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const createEnvironmentSchema = z.object({
   name: z.string().min(1).max(50),
-  type: z.enum(["dev", "staging", "prod"]),
+  type: z.enum(['dev', 'staging', 'prod']),
   applicationId: z.string().uuid(),
   namespace: z.string().min(1).max(63),
-  clusterName: z.string().optional().default("kubernal"),
+  clusterName: z.string().optional().default('kubernal'),
   requiresApproval: z.boolean().optional().default(false),
 });
 

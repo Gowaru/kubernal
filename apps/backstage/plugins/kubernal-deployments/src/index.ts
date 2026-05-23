@@ -1,1 +1,5 @@
-export { kubernalDeploymentsPlugin, EntityKubernalDeploymentsCard, KubernalDeploymentsPage } from "./plugin";
+export {
+  kubernalDeploymentsPlugin,
+  EntityKubernalDeploymentsCard,
+  KubernalDeploymentsPage,
+} from './plugin';

@@ -1,5 +1,5 @@
-import { db } from "../../shared/database.js";
-import { toJsonValue } from "../../shared/json.js";
+import { db } from '../../shared/database.js';
+import { toJsonValue } from '../../shared/json.js';
 
 export const pipelineRepository = {
   findAll() {

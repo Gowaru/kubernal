@@ -1,5 +1,5 @@
-import { NotFoundError } from "../../shared/errors.js";
-import { environmentRepository } from "./environment.repository.js";
+import { NotFoundError } from '../../shared/errors.js';
+import { environmentRepository } from './environment.repository.js';
 
 export const environmentService = {
   async list() {
@@ -8,7 +8,7 @@ export const environmentService = {
 
   async getById(id: string) {
     const env = await environmentRepository.findById(id);
-    if (!env) throw new NotFoundError("Environment", id);
+    if (!env) throw new NotFoundError('Environment', id);
     return env;
   },
 
@@ -23,7 +23,10 @@ export const environmentService = {
     return environmentRepository.create(data);
   },
 
-  async update(id: string, data: { name?: string; namespace?: string; requiresApproval?: boolean }) {
+  async update(
+    id: string,
+    data: { name?: string; namespace?: string; requiresApproval?: boolean },
+  ) {
     await this.getById(id);
     return environmentRepository.update(id, data);
   },

@@ -31,11 +31,11 @@ spec:
               drop:
                 - ALL
           args:
-            - "--config.file=/etc/prometheus/prometheus.yml"
-            - "--storage.tsdb.path=/prometheus"
-            - "--web.console.libraries=/usr/share/prometheus/console_libraries"
-            - "--web.console.templates=/usr/share/prometheus/consoles"
-            - "--web.enable-lifecycle"
+            - '--config.file=/etc/prometheus/prometheus.yml'
+            - '--storage.tsdb.path=/prometheus'
+            - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+            - '--web.console.templates=/usr/share/prometheus/consoles'
+            - '--web.enable-lifecycle'
           ports:
             - containerPort: 9090
               protocol: TCP
@@ -46,11 +46,11 @@ spec:
               mountPath: /prometheus
           resources:
             requests:
-              cpu: "100m"
-              memory: "256Mi"
+              cpu: '100m'
+              memory: '256Mi'
             limits:
-              cpu: "500m"
-              memory: "1Gi"
+              cpu: '500m'
+              memory: '1Gi'
       volumes:
         - name: config
           configMap:

@@ -1,12 +1,15 @@
-import { coreServices, createBackendModule } from "@backstage/backend-plugin-api";
-import { scaffolderActionsExtensionPoint } from "@backstage/plugin-scaffolder-node";
-import { createCreateApplicationAction } from "./actions/createApplication";
-import { createCreateEnvironmentAction } from "./actions/createEnvironment";
-import { createCreateDeploymentAction } from "./actions/createDeployment";
+import {
+  coreServices,
+  createBackendModule,
+} from '@backstage/backend-plugin-api';
+import { scaffolderActionsExtensionPoint } from '@backstage/plugin-scaffolder-node';
+import { createCreateApplicationAction } from './actions/createApplication';
+import { createCreateEnvironmentAction } from './actions/createEnvironment';
+import { createCreateDeploymentAction } from './actions/createDeployment';
 
 const kubernalActionsModule = createBackendModule({
-  pluginId: "scaffolder",
-  moduleId: "kubernal-actions",
+  pluginId: 'scaffolder',
+  moduleId: 'kubernal-actions',
   register(env) {
     env.registerInit({
       deps: {
@@ -15,7 +18,8 @@ const kubernalActionsModule = createBackendModule({
       },
       async init({ scaffolder, config }) {
         const apiBaseUrl =
-          config.getString("kubernal.api.baseUrl") ?? "http://localhost:4000/api/v1";
+          config.getString('kubernal.api.baseUrl') ??
+          'http://localhost:4000/api/v1';
 
         scaffolder.addActions(
           createCreateApplicationAction({ apiBaseUrl }),

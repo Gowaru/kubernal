@@ -6,7 +6,7 @@ metadata:
     app: kubernal-api
     kubernal.io/managed-by: kubernal
 data:
-  NODE_ENV: "production"
-  PORT: "4000"
-  CORS_ORIGIN: "http://backstage.kubernal.local"
-  LOG_LEVEL: "info"
+  NODE_ENV: 'production'
+  PORT: '4000'
+  CORS_ORIGIN: 'http://backstage.kubernal.local'
+  LOG_LEVEL: 'info'

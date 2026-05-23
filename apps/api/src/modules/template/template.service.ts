@@ -1,5 +1,5 @@
-import { NotFoundError } from "../../shared/errors.js";
-import { templateRepository } from "./template.repository.js";
+import { NotFoundError } from '../../shared/errors.js';
+import { templateRepository } from './template.repository.js';
 
 export const templateService = {
   async list() {
@@ -8,7 +8,7 @@ export const templateService = {
 
   async getById(id: string) {
     const template = await templateRepository.findById(id);
-    if (!template) throw new NotFoundError("Template", id);
+    if (!template) throw new NotFoundError('Template', id);
     return template;
   },
 
@@ -24,7 +24,17 @@ export const templateService = {
     return templateRepository.create(data);
   },
 
-  async update(id: string, data: { name?: string; version?: string; description?: string; repository?: string; parameters?: Record<string, unknown>; steps?: Record<string, unknown>[] }) {
+  async update(
+    id: string,
+    data: {
+      name?: string;
+      version?: string;
+      description?: string;
+      repository?: string;
+      parameters?: Record<string, unknown>;
+      steps?: Record<string, unknown>[];
+    },
+  ) {
     await this.getById(id);
     return templateRepository.update(id, data);
   },

@@ -1,10 +1,10 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const createTeamSchema = z.object({
   name: z.string().min(1).max(50),
   description: z.string().max(500).optional(),
-  quotaCpu: z.string().optional().default("4"),
-  quotaMemory: z.string().optional().default("8Gi"),
+  quotaCpu: z.string().optional().default('4'),
+  quotaMemory: z.string().optional().default('8Gi'),
   namespacePrefix: z.string().min(1).max(30),
 });
 

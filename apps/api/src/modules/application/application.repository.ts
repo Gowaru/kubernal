@@ -1,4 +1,4 @@
-import { db } from "../../shared/database.js";
+import { db } from '../../shared/database.js';
 
 export const applicationRepository = {
   findAll() {
@@ -33,7 +33,15 @@ export const applicationRepository = {
     });
   },
 
-  update(id: string, data: { name?: string; description?: string | null; repositoryUrl?: string | null; status?: string }) {
+  update(
+    id: string,
+    data: {
+      name?: string;
+      description?: string | null;
+      repositoryUrl?: string | null;
+      status?: string;
+    },
+  ) {
     return db.application.update({ where: { id }, data });
   },
 

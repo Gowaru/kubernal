@@ -1,5 +1,5 @@
-import type { Request, Response } from "express";
-import { pipelineService } from "./pipeline.service.js";
+import type { Request, Response } from 'express';
+import { pipelineService } from './pipeline.service.js';
 
 export const pipelineController = {
   async list(_req: Request, res: Response) {

@@ -1,5 +1,5 @@
-import type { Request, Response } from "express";
-import { environmentService } from "./environment.service.js";
+import type { Request, Response } from 'express';
+import { environmentService } from './environment.service.js';
 
 export const environmentController = {
   async list(_req: Request, res: Response) {

@@ -1,5 +1,5 @@
-import type { Request, Response } from "express";
-import { policyService } from "./policy.service.js";
+import type { Request, Response } from 'express';
+import { policyService } from './policy.service.js';
 
 export const policyController = {
   async list(_req: Request, res: Response) {

@@ -1,10 +1,12 @@
-import { createTemplateAction } from "@backstage/plugin-scaffolder-node";
+import { createTemplateAction } from '@backstage/plugin-scaffolder-node';
 
 interface CreateDeploymentActionOptions {
   apiBaseUrl: string;
 }
 
-export function createCreateDeploymentAction(options: CreateDeploymentActionOptions) {
+export function createCreateDeploymentAction(
+  options: CreateDeploymentActionOptions,
+) {
   return createTemplateAction<{
     applicationId: string;
     environmentId: string;
@@ -12,41 +14,42 @@ export function createCreateDeploymentAction(options: CreateDeploymentActionOpti
     commitSha: string;
     trigger?: string;
   }>({
-    id: "kubernal:create-deployment",
-    description: "Creates a new deployment in Kubernal IDP",
+    id: 'kubernal:create-deployment',
+    description: 'Creates a new deployment in Kubernal IDP',
     schema: {
       input: {
-        type: "object",
-        required: ["applicationId", "environmentId", "version", "commitSha"],
+        type: 'object',
+        required: ['applicationId', 'environmentId', 'version', 'commitSha'],
         properties: {
-          applicationId: { type: "string", title: "Application ID" },
-          environmentId: { type: "string", title: "Environment ID" },
-          version: { type: "string", title: "Version" },
-          commitSha: { type: "string", title: "Commit SHA" },
+          applicationId: { type: 'string', title: 'Application ID' },
+          environmentId: { type: 'string', title: 'Environment ID' },
+          version: { type: 'string', title: 'Version' },
+          commitSha: { type: 'string', title: 'Commit SHA' },
           trigger: {
-            type: "string",
-            title: "Trigger",
-            enum: ["manual", "git_push", "scheduled", "rollback"],
+            type: 'string',
+            title: 'Trigger',
+            enum: ['manual', 'git_push', 'scheduled', 'rollback'],
           },
         },
       },
     },
     async handler(ctx) {
-      const { applicationId, environmentId, version, commitSha, trigger } = ctx.input;
+      const { applicationId, environmentId, version, commitSha, trigger } =
+        ctx.input;
 
       ctx.logger.info(
         `Creating deployment v${version} for app ${applicationId} in env ${environmentId}`,
       );
 
       const response = await fetch(`${options.apiBaseUrl}/deployments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           applicationId,
           environmentId,
           version,
           commitSha,
-          trigger: trigger ?? "manual",
+          trigger: trigger ?? 'manual',
         }),
       });
 
@@ -56,8 +59,8 @@ export function createCreateDeploymentAction(options: CreateDeploymentActionOpti
       }
 
       const deployment = await response.json();
-      ctx.output("deploymentId", deployment.data.id);
-      ctx.output("deploymentStatus", deployment.data.status);
+      ctx.output('deploymentId', deployment.data.id);
+      ctx.output('deploymentStatus', deployment.data.status);
     },
   });
 }

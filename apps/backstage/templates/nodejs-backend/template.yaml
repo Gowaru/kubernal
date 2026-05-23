@@ -26,7 +26,7 @@ spec:
           title: Service Name
           type: string
           description: Unique name for your service
-          pattern: "^[a-z0-9-]+$"
+          pattern: '^[a-z0-9-]+$'
           ui:autofocus: true
         description:
           title: Description
