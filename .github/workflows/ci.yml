@@ -128,8 +128,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:cache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:cache,mode=max
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
@@ -174,10 +174,11 @@ jobs:
       - name: Setup Yarn
         run: |
           corepack enable
+          yarn set version stable
           yarn --version
 
       - name: Install Backstage dependencies
-        run: yarn install --immutable
+        run: yarn install
         working-directory: apps/backstage
 
       - name: Build Backstage backend
@@ -210,8 +211,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKSTAGE }}:cache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKSTAGE }}:cache,mode=max
 
   # ─────────────────────────────────────────────────────────────
   # GITOPS SYNC – Kustomize overlay update
