@@ -128,8 +128,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:cache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:cache,mode=max
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
@@ -173,8 +171,7 @@ jobs:
 
       - name: Setup Yarn
         run: |
-          corepack enable
-          yarn set version stable
+          npm install -g yarn@4.4.1
           yarn --version
 
       - name: Install Backstage dependencies
@@ -182,7 +179,9 @@ jobs:
         working-directory: apps/backstage
 
       - name: Build Backstage backend
-        run: yarn tsc && yarn build:backend
+        run: |
+          yarn tsc
+          yarn build:backend
         working-directory: apps/backstage
 
       - name: Log in to GHCR
@@ -211,8 +210,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKSTAGE }}:cache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKSTAGE }}:cache,mode=max
 
   # ─────────────────────────────────────────────────────────────
   # GITOPS SYNC – Kustomize overlay update
