@@ -197,9 +197,9 @@ jobs:
           for overlay in ${{ steps.overlays.outputs.targets }}; do
             echo "Updating overlay: infra/overlays/$overlay"
             kustomize edit set image \
+              --kustomize-dir infra/overlays/$overlay \
               ghcr.io/gowaru/kubernal-api:${TAG} \
-              ghcr.io/gowaru/kubernal-backstage:${TAG} \
-              --kustomize-dir infra/overlays/$overlay
+              ghcr.io/gowaru/kubernal-backstage:${TAG}
           done
 
           echo "Updated images to tag: ${TAG}"
