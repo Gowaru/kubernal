@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "api-design-principles": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/backend-development/skills/api-design-principles/SKILL.md",
+      "computedHash": "19715a3a3ff7bf7b1e2ab1cb631ebe810d5b050ed6b3ab0c358e39e5e2e6d33a"
+    },
     "code-review-analysis": {
       "source": "aj-geddes/useful-ai-prompts",
       "sourceType": "github",
@@ -13,17 +19,47 @@
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "063a0e6448123cd359ad0044cc46b0e490cc7964d45ef4bb9fd842bd2ffbca67"
     },
+    "k8s-debug": {
+      "source": "akin-ozer/cc-devops-skills",
+      "sourceType": "github",
+      "skillPath": "devops-skills-plugin/skills/k8s-debug/SKILL.md",
+      "computedHash": "a91bf31a88f0d1c566f1d64eb9b9a948f9706614b19ba9e09794be49267adaf5"
+    },
+    "k8s-security-policies": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/kubernetes-operations/skills/k8s-security-policies/SKILL.md",
+      "computedHash": "47d2fe175423c7bc4f26019b3acf0ea7d3f37159172a217466c50b8d1b83cbb4"
+    },
+    "nodejs-backend-patterns": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/javascript-typescript/skills/nodejs-backend-patterns/SKILL.md",
+      "computedHash": "b63b54d09c77cec0e84cdd42424c12909785f14bdb286c835c45420b885ff1f3"
+    },
     "nodejs-express-server": {
       "source": "aj-geddes/useful-ai-prompts",
       "sourceType": "github",
       "skillPath": "skills/nodejs-express-server/SKILL.md",
       "computedHash": "94af4eda308df6d27b94cc866de0d3d857755c91da01808d3d8130d91ebaf231"
     },
+    "prisma-client-api": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-client-api/SKILL.md",
+      "computedHash": "0434410e48fb796bbdc3ad0050654bfc9cf72c89b30dbad098ee5c9f655b7f85"
+    },
     "rest-api-design": {
       "source": "aj-geddes/useful-ai-prompts",
       "sourceType": "github",
       "skillPath": "skills/rest-api-design/SKILL.md",
       "computedHash": "e249c58df5d9d59407fc4de70b0d75bb336d917bbe0a75695d6ec8cf13cfaf35"
+    },
+    "typescript-advanced-types": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/javascript-typescript/skills/typescript-advanced-types/SKILL.md",
+      "computedHash": "8cbf2bf600f392d7260e476e3202932a876e2281cda3b15a8b6a5a43f383252d"
     },
     "ui-ux-pro-max": {
       "source": "nextlevelbuilder/ui-ux-pro-max-skill",
