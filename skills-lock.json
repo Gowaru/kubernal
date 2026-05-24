@@ -13,11 +13,23 @@
       "skillPath": "skills/code-review-analysis/SKILL.md",
       "computedHash": "8b202d0882735add2bbadaa0f20a3f6abe2c50c4ada94396bcaa3e26efa3dfb8"
     },
+    "docker-expert": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/docker-expert/SKILL.md",
+      "computedHash": "0974b5f64fcd284c1bd662810e2388f7beb9be6784c597de4d0ad4213ccbd6af"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "063a0e6448123cd359ad0044cc46b0e490cc7964d45ef4bb9fd842bd2ffbca67"
+    },
+    "git-commit": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/git-commit/SKILL.md",
+      "computedHash": "2607fc60629b82b257136dd2a7a373f0a4466c0b49df7746d845d59313c99b21"
     },
     "k8s-debug": {
       "source": "akin-ozer/cc-devops-skills",
@@ -31,6 +43,12 @@
       "skillPath": "plugins/kubernetes-operations/skills/k8s-security-policies/SKILL.md",
       "computedHash": "47d2fe175423c7bc4f26019b3acf0ea7d3f37159172a217466c50b8d1b83cbb4"
     },
+    "multi-stage-dockerfile": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/multi-stage-dockerfile/SKILL.md",
+      "computedHash": "698bf93a84dae18fd7bd0b1d35c21427307fde78fbdf4624be9726f5f98189ca"
+    },
     "nodejs-backend-patterns": {
       "source": "wshobson/agents",
       "sourceType": "github",
@@ -42,6 +60,12 @@
       "sourceType": "github",
       "skillPath": "skills/nodejs-express-server/SKILL.md",
       "computedHash": "94af4eda308df6d27b94cc866de0d3d857755c91da01808d3d8130d91ebaf231"
+    },
+    "prisma-cli": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-cli/SKILL.md",
+      "computedHash": "b9d9314e3716af725997843c5026ba0e258fb2d27a986190bf2ad53be67b72b9"
     },
     "prisma-client-api": {
       "source": "prisma/skills",

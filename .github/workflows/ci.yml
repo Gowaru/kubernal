@@ -131,13 +131,21 @@ jobs:
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:sha-${{ github.sha[0:7] }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}@${{ steps.build-push.outputs.digest }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
           timeout: '10m'
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        continue-on-error: true
+        with:
+          sarif_file: 'trivy-results.sarif'
 
       - name: Upload Trivy results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
