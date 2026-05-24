@@ -175,11 +175,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install kustomize
-        run: |
-          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-          sudo mv kustomize /usr/local/bin/
-
       - name: Determine overlays to update
         id: overlays
         run: |
@@ -189,17 +184,20 @@ jobs:
             echo "targets=staging prod" >> $GITHUB_OUTPUT
           fi
 
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
       - name: Update overlay images with SHA tag
         run: |
           SHA7="${GITHUB_SHA:0:7}"
           TAG="sha-${SHA7}"
 
           for overlay in ${{ steps.overlays.outputs.targets }}; do
-            echo "Updating overlay: infra/overlays/$overlay"
-            kustomize edit set image \
-              --kustomize-dir infra/overlays/$overlay \
-              ghcr.io/gowaru/kubernal-api:${TAG} \
-              ghcr.io/gowaru/kubernal-backstage:${TAG}
+            KFILE="infra/overlays/$overlay/kustomization.yaml"
+            echo "Updating $KFILE → tag: ${TAG}"
+            yq eval ".images[] |= select(.name == \"ghcr.io/gowaru/kubernal-api\" or .name == \"ghcr.io/gowaru/kubernal-backstage\") |= .newTag = \"${TAG}\"" -i "$KFILE"
           done
 
           echo "Updated images to tag: ${TAG}"
