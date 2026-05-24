@@ -132,7 +132,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}@${{ steps.build-push.outputs.digest }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:${{ steps.meta.outputs.version }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -171,7 +171,7 @@ jobs:
 
       - name: Setup Yarn
         run: |
-          npm install -g yarn@4.4.1
+          corepack enable
           yarn --version
 
       - name: Install Backstage dependencies

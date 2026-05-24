@@ -37,7 +37,7 @@ apps/api/prisma/*.generated.ts
 # Backstage
 apps/backstage/.cache/
 apps/backstage/dist-types/
-apps/backstage/.yarn/
+apps/backstage/.yarn/cache/
 
 # Docker
 docker-data/
