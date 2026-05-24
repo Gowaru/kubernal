@@ -171,6 +171,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Yarn
+        run: |
+          corepack enable
+          yarn --version
+
+      - name: Install Backstage dependencies
+        run: yarn install --immutable
+        working-directory: apps/backstage
+
+      - name: Build Backstage backend
+        run: yarn tsc && yarn build:backend
+        working-directory: apps/backstage
+
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -191,7 +204,6 @@ jobs:
 
       - name: Build and push Backstage image
         uses: docker/build-push-action@v6
-        id: build-push
         with:
           context: apps/backstage
           file: apps/backstage/packages/backend/Dockerfile
