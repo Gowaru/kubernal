@@ -141,11 +141,18 @@ jobs:
           timeout: '10m'
 
       - name: Upload Trivy results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
         if: always()
         continue-on-error: true
-        with:
-          sarif_file: 'trivy-results.sarif'
+        run: |
+          if [ -f trivy-results.sarif ]; then
+            gh api -X POST \
+              -H "Accept: application/vnd.github+json" \
+              /repos/${{ github.repository }}/code-scanning/sarifs \
+              -f sarif_file=@trivy-results.sarif
+          else
+            echo "No SARIF file to upload"
+          fi
+        shell: bash
 
       - name: Upload Trivy results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
