@@ -29,6 +29,8 @@ logs/
 
 # Test coverage
 coverage/
+playwright-tests/
+test-results/
 
 
 # Prisma
