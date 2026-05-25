@@ -1,0 +1,26 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubernal-api
+  labels:
+    app: kubernal-api
+    kubernal.io/managed-by: kubernal
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["resourcequotas", "limitranges"]
+    verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["serviceaccounts"]
+    verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings"]
+    verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["secrets", "configmaps"]
+    verbs: ["create", "get", "list", "watch", "update", "patch", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch"]
