@@ -7,4 +7,4 @@ images:
   - name: ghcr.io/gowaru/kubernal-api
     newTag: sha-c3fd08d
   - name: ghcr.io/gowaru/kubernal-backstage
-    newTag: sha-c3fd08d
+    newTag: latest

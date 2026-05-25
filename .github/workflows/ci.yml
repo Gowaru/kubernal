@@ -197,7 +197,7 @@ jobs:
           for overlay in ${{ steps.overlays.outputs.targets }}; do
             KFILE="infra/overlays/$overlay/kustomization.yaml"
             echo "Updating $KFILE → tag: ${TAG}"
-            yq eval ".images[] |= select(.name == \"ghcr.io/gowaru/kubernal-api\" or .name == \"ghcr.io/gowaru/kubernal-backstage\") |= .newTag = \"${TAG}\"" -i "$KFILE"
+            yq eval '(.images[] | select(.name == "ghcr.io/gowaru/kubernal-api")).newTag = "'"${TAG}"'"' -i "$KFILE"
           done
 
           echo "Updated images to tag: ${TAG}"
