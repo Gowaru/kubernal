@@ -19,6 +19,9 @@ data:
         origin: http://backstage.kubernal.local
         methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
         credentials: true
+      reading:
+        allow:
+          - host: kubernal-api:4000
       database:
         client: pg
         connection:
@@ -26,10 +29,11 @@ data:
           port: 5432
           user: kubernal
           password: ${POSTGRES_PASSWORD}
-          database: kubernal_backstage
+          database: backstage
     auth:
       providers:
-        guest: {}
+        guest:
+          dangerouslyAllowOutsideDevelopment: true
     catalog:
       rules:
         - allow: [Component, System, API, Resource, Location, Template, Group, User]
