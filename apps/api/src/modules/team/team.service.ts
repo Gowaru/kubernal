@@ -6,6 +6,9 @@ import {
   ensureNamespace,
   ensureResourceQuota,
   ensureLimitRange,
+  splitQuota,
+  getTeamNamespaceNames,
+  TEAM_ENVIRONMENTS,
   coreApi,
 } from '../../shared/k8s-client.js';
 
@@ -32,7 +35,7 @@ export const teamService = {
 
     const team = await teamRepository.create(data);
 
-    await provisionTeamNamespace(team.id, team.name, team.namespacePrefix, data.quotaCpu, data.quotaMemory);
+    await provisionTeamEnvironments(team.id, team.name, team.namespacePrefix, data.quotaCpu, data.quotaMemory);
 
     return team;
   },
@@ -44,12 +47,15 @@ export const teamService = {
     const team = await this.getById(id);
     const updated = await teamRepository.update(id, data);
 
-    await ensureResourceQuota(
-      team.namespacePrefix,
-      `${team.namespacePrefix}-quota`,
-      data.quotaCpu ?? team.quotaCpu,
-      data.quotaMemory ?? team.quotaMemory,
-    );
+    const cpu = data.quotaCpu ?? team.quotaCpu;
+    const memory = data.quotaMemory ?? team.quotaMemory;
+    const splits = splitQuota(cpu, memory);
+
+    for (const [i, env] of TEAM_ENVIRONMENTS.entries()) {
+      const ns = `${team.namespacePrefix}-${env.type}`;
+      const split = splits[i]!;
+      await ensureResourceQuota(ns, `${ns}-quota`, split.cpu, split.memory);
+    }
 
     return updated;
   },
@@ -58,16 +64,19 @@ export const teamService = {
     const team = await this.getById(id);
     await teamRepository.delete(id);
 
-    try {
-      await coreApi.deleteNamespace({ name: team.namespacePrefix });
-      logger.info({ namespace: team.namespacePrefix }, 'Team namespace deleted');
-    } catch (err) {
-      logger.warn({ namespace: team.namespacePrefix, err }, 'Could not delete team namespace');
+    const namespaces = getTeamNamespaceNames(team.namespacePrefix);
+    for (const ns of namespaces) {
+      try {
+        await coreApi.deleteNamespace({ name: ns });
+        logger.info({ namespace: ns }, 'Team namespace deleted');
+      } catch (err) {
+        logger.warn({ namespace: ns, err }, 'Could not delete team namespace');
+      }
     }
   },
 };
 
-async function provisionTeamNamespace(
+async function provisionTeamEnvironments(
   teamId: string,
   teamName: string,
   namespacePrefix: string,
@@ -75,10 +84,17 @@ async function provisionTeamNamespace(
   quotaMemory = '8Gi',
 ) {
   const labels = getNamespaceLabels(teamName, teamId);
+  const splits = splitQuota(quotaCpu, quotaMemory);
 
-  await ensureNamespace(namespacePrefix, labels);
-  await ensureResourceQuota(namespacePrefix, `${namespacePrefix}-quota`, quotaCpu, quotaMemory);
-  await ensureLimitRange(namespacePrefix);
+  for (const [i, env] of TEAM_ENVIRONMENTS.entries()) {
+    const ns = `${namespacePrefix}-${env.type}`;
+    const envLabels = { ...labels, 'kubernal.io/environment': env.type };
+    const split = splits[i]!;
 
-  logger.info({ namespace: namespacePrefix, team: teamName }, 'Team namespace provisioned');
+    await ensureNamespace(ns, envLabels);
+    await ensureResourceQuota(ns, `${ns}-quota`, split.cpu, split.memory);
+    await ensureLimitRange(ns);
+
+    logger.info({ namespace: ns, team: teamName, environment: env.type }, 'Team environment provisioned');
+  }
 }

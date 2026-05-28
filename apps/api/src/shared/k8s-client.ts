@@ -14,6 +14,58 @@ try {
 export const coreApi = kc.makeApiClient(CoreV1Api);
 export const rbacApi = kc.makeApiClient(RbacAuthorizationV1Api);
 
+export type ResourceSplit = { cpu: string; memory: string };
+
+export interface TeamEnvironment {
+  type: string;
+  cpuFactor: number;
+  memoryFactor: number;
+}
+
+export const TEAM_ENVIRONMENTS: TeamEnvironment[] = [
+  { type: 'dev', cpuFactor: 0.25, memoryFactor: 0.25 },
+  { type: 'staging', cpuFactor: 0.25, memoryFactor: 0.25 },
+  { type: 'prod', cpuFactor: 0.5, memoryFactor: 0.5 },
+];
+
+export function getTeamNamespaceNames(prefix: string): string[] {
+  return TEAM_ENVIRONMENTS.map(e => `${prefix}-${e.type}`);
+}
+
+function parseCpu(cpu: string): number {
+  if (cpu.endsWith('m')) return parseInt(cpu.slice(0, -1), 10);
+  return Math.round(parseFloat(cpu) * 1000);
+}
+
+function formatCpu(millicores: number): string {
+  if (millicores % 1000 === 0) return String(millicores / 1000);
+  return `${millicores}m`;
+}
+
+function parseMemory(mem: string): number {
+  const match = mem.match(/^(\d+(?:\.\d+)?)\s*(Ki|Mi|Gi|Ti)?$/);
+  if (!match) return parseInt(mem, 10);
+  const val = parseFloat(match[1]!);
+  const unit = match[2] ?? 'Mi';
+  const multipliers: Record<string, number> = { Ki: 1 / 1024, Mi: 1, Gi: 1024, Ti: 1048576 };
+  return Math.round(val * (multipliers[unit] ?? 1));
+}
+
+function formatMemory(mi: number): string {
+  if (mi >= 1024 && mi % 1024 === 0) return `${mi / 1024}Gi`;
+  return `${mi}Mi`;
+}
+
+export function splitQuota(cpu: string, memory: string): ResourceSplit[] {
+  const cpuMc = parseCpu(cpu);
+  const memMi = parseMemory(memory);
+
+  return TEAM_ENVIRONMENTS.map(e => ({
+    cpu: formatCpu(Math.round(cpuMc * e.cpuFactor)),
+    memory: formatMemory(Math.round(memMi * e.memoryFactor)),
+  }));
+}
+
 export function getNamespaceLabels(teamName: string, teamId: string): Record<string, string> {
   return {
     'kubernal.io/managed-by': 'kubernal',
