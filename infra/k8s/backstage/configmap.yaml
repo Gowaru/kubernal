@@ -31,7 +31,15 @@ data:
           password: ${POSTGRES_PASSWORD}
           database: backstage
     auth:
+      environment: development
       providers:
+        github:
+          development:
+            clientId: ${GITHUB_CLIENT_ID}
+            clientSecret: ${GITHUB_CLIENT_SECRET}
+            signIn:
+              resolvers:
+                - resolver: usernameMatchingUserEntityName
         guest:
           dangerouslyAllowOutsideDevelopment: true
     catalog:

@@ -42,6 +42,16 @@ spec:
                 secretKeyRef:
                   name: backstage-secret
                   key: POSTGRES_PASSWORD
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backstage-secret
+                  key: GITHUB_CLIENT_ID
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backstage-secret
+                  key: GITHUB_CLIENT_SECRET
           volumeMounts:
             - name: config
               mountPath: /app/app-config.yaml

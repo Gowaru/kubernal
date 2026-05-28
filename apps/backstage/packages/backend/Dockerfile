@@ -66,6 +66,9 @@ COPY --chown=node:node examples ./examples
 COPY --chown=node:node catalog-info.yaml ./catalog-info.yaml
 COPY --chown=node:node templates ./templates
 
+# Copy frontend static files for app-backend plugin
+COPY --chown=node:node packages/app/dist ./packages/app/dist
+
 # Then copy the rest of the backend bundle, along with any other files we might want.
 COPY --chown=node:node packages/backend/dist/bundle.tar.gz app-config*.yaml ./
 RUN tar xzf bundle.tar.gz && rm bundle.tar.gz
