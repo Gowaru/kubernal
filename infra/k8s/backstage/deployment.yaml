@@ -23,6 +23,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: backstage
+          command: ["node", "packages/backend", "--config", "/app/app-config.yaml"]
           image: ghcr.io/gowaru/kubernal-backstage:latest
           imagePullPolicy: IfNotPresent
           securityContext:
