@@ -35,6 +35,7 @@ test-results/
 
 # Prisma
 apps/api/prisma/*.generated.ts
+apps/api/prisma/migrations/
 
 # Backstage
 apps/backstage/.cache/
@@ -47,3 +48,7 @@ docker-data/
 # Kubernetes local
 .kubeconfig
 kustomize
+
+# TLS certificates (regenerated on demand)
+infra/k8s/tls/*.key
+infra/k8s/tls/*.crt
