@@ -9,14 +9,14 @@ data:
   app-config.yaml: |
     app:
       title: Kubernal IDP
-      baseUrl: http://backstage.kubernal.local
+      baseUrl: https://backstage.kubernal.local:30443
     organization:
       name: Kubernal
     backend:
-      baseUrl: http://backstage.kubernal.local
+      baseUrl: https://backstage.kubernal.local:30443
       listen: ':7007'
       cors:
-        origin: http://backstage.kubernal.local
+        origin: https://backstage.kubernal.local:30443
         methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
         credentials: true
       reading:

@@ -10,6 +10,8 @@ import catalogImportPlugin from '@backstage/plugin-catalog-import/alpha';
 import catalogGraphPlugin from '@backstage/plugin-catalog-graph/alpha';
 import userSettingsPlugin from '@backstage/plugin-user-settings/alpha';
 import authPlugin from '@backstage/plugin-auth';
+import notificationsPlugin from '@backstage/plugin-notifications/alpha';
+import signalsPlugin from '@backstage/plugin-signals/alpha';
 import { kubernalDeploymentsPlugin } from '@kubernal/backstage-plugin-deployments';
 import { navModule } from './modules/nav';
 
@@ -26,6 +28,8 @@ export default createApp({
     catalogGraphPlugin,
     userSettingsPlugin,
     authPlugin,
+    notificationsPlugin,
+    signalsPlugin,
     kubernalDeploymentsPlugin,
     navModule,
   ],
