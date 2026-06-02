@@ -25,6 +25,7 @@ export interface Team {
   namespacePrefix: string;
   createdAt: Date;
   updatedAt: Date;
+  _count?: { applications: number };
 }
 
 // --- Template (Golden Path) ---
@@ -90,6 +91,11 @@ export type DeploymentStatus =
   | 'cancelled';
 export type DeploymentTrigger = 'manual' | 'git_push' | 'scheduled' | 'rollback';
 
+export interface Artifact {
+  name: string;
+  size: string;
+}
+
 export interface Deployment {
   id: string;
   applicationId: string;
@@ -98,12 +104,14 @@ export interface Deployment {
   commitSha: string;
   status: DeploymentStatus;
   trigger: DeploymentTrigger;
-  approvedBy: string | null;
-  artifacts: string[];
+  approvedBy: User | null;
+  artifacts: Artifact[];
   policyViolations: PolicyViolation[];
   startedAt: Date;
   completedAt: Date | null;
   createdAt: Date;
+  application?: Application;
+  environment?: Environment;
 }
 
 // --- Pipeline ---

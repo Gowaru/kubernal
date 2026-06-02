@@ -141,19 +141,19 @@ kind-setup-full: kind-setup kyverno-setup monitoring-install k8s-deploy-dev argo
 
 # ─── Déploiement K8s local ─────────────────────────────────────────────────
 .PHONY: k8s-deploy-dev
-k8s-deploy-dev: ## Déploie l'API + Backstage + PostgreSQL dans kubernal-dev
+k8s-deploy-dev: ## Déploie l'API + Portal + PostgreSQL dans kubernal-dev
 	@echo "$(BLUE)→ Déploiement sur kubernal-dev...$(RESET)"
 	kubectl apply -k infra/overlays/dev
 	@echo "$(GREEN)✓ Déploiement effectué sur kubernal-dev$(RESET)"
 
 .PHONY: k8s-deploy-staging
-k8s-deploy-staging: ## Déploie l'API + Backstage + PostgreSQL dans kubernal-staging
+k8s-deploy-staging: ## Déploie l'API + Portal + PostgreSQL dans kubernal-staging
 	@echo "$(BLUE)→ Déploiement sur kubernal-staging...$(RESET)"
 	kubectl apply -k infra/overlays/staging
 	@echo "$(GREEN)✓ Déploiement effectué sur kubernal-staging$(RESET)"
 
 .PHONY: k8s-deploy-prod
-k8s-deploy-prod: ## Déploie l'API + Backstage + PostgreSQL dans kubernal-prod
+k8s-deploy-prod: ## Déploie l'API + Portal + PostgreSQL dans kubernal-prod
 	@echo "$(BLUE)→ Déploiement sur kubernal-prod...$(RESET)"
 	kubectl apply -k infra/overlays/prod
 	@echo "$(GREEN)✓ Déploiement effectué sur kubernal-prod$(RESET)"
@@ -224,25 +224,13 @@ dev-api: ## Lance l'API en mode développement
 	@echo "$(BLUE)→ Démarrage de l'API...$(RESET)"
 	npm run dev -w apps/api
 
-.PHONY: dev-backstage
-dev-backstage: ## Lance Backstage en mode développement
-	@echo "$(BLUE)→ Démarrage de Backstage...$(RESET)"
-	cd apps/backstage && yarn start
-
-.PHONY: backstage-install
-backstage-install: ## Installe les dépendances Backstage (yarn install)
-	@echo "$(BLUE)→ Installation des dépendances Backstage...$(RESET)"
-	cd apps/backstage && yarn install --frozen-lockfile
-	@echo "$(GREEN)✓ Backstage prêt$(RESET)"
-
-.PHONY: backstage-migrate
-backstage-migrate: ## Applique les migrations Backstage (création tables)
-	@echo "$(BLUE)→ Migration Backstage...$(RESET)"
-	cd apps/backstage && yarn backstage-cli package migrate
-	@echo "$(GREEN)✓ Migration Backstage effectuée$(RESET)"
+.PHONY: dev-portal
+dev-portal: ## Lance le portail développeur en mode développement
+	@echo "$(BLUE)→ Démarrage du portail développeur...$(RESET)"
+	npm run dev -w apps/portal
 
 .PHONY: dev
-dev: up dev-api ## Lance la stack de développement (Docker + API)
+dev: up dev-api dev-portal ## Lance la stack de développement (Docker + API + Portal)
 
 # ─── Docker Build ───────────────────────────────────────────────────────────
 .PHONY: docker-build-api
@@ -251,11 +239,11 @@ docker-build-api: ## Build l'image Docker de l'API (tag: kubernal/api:latest)
 	docker build -t kubernal/api:latest -f apps/api/Dockerfile .
 	@echo "$(GREEN)✓ Image kubernal/api:latest créée$(RESET)"
 
-.PHONY: docker-build-backstage
-docker-build-backstage: ## Build l'image Docker de Backstage (tag: kubernal/backstage:latest)
-	@echo "$(BLUE)→ Build de l'image Backstage...$(RESET)"
-	docker build -t kubernal/backstage:latest -f apps/backstage/packages/backend/Dockerfile .
-	@echo "$(GREEN)✓ Image kubernal/backstage:latest créée$(RESET)"
+.PHONY: docker-build-portal
+docker-build-portal: ## Build l'image Docker du portail développeur (tag: kubernal/portal:latest)
+	@echo "$(BLUE)→ Build de l'image du portail...$(RESET)"
+	docker build -t kubernal/portal:latest -f apps/portal/Dockerfile .
+	@echo "$(GREEN)✓ Image kubernal/portal:latest créée$(RESET)"
 
 # ─── Migration Prisma ──────────────────────────────────────────────────────
 .PHONY: prisma-generate

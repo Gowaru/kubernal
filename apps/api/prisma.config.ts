@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { env } from 'prisma/config';
 import type { PrismaConfig } from 'prisma';
 

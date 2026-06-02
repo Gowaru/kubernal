@@ -85,9 +85,6 @@ jobs:
       - run: npm ci
       - run: npm run format
 
-  # ─────────────────────────────────────────────────────────────
-  # BUILD & PUSH (sur push develop/main uniquement)
-  # ─────────────────────────────────────────────────────────────
   build-api:
     name: Build & Push API
     if: github.event_name == 'push' && (github.ref_name == 'develop' || github.ref_name == 'main')
@@ -159,9 +156,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # ─────────────────────────────────────────────────────────────
-  # GITOPS SYNC – Kustomize overlay update
-  # ─────────────────────────────────────────────────────────────
   gitops-sync:
     name: GitOps Sync – Kustomize overlay
     if: github.event_name == 'push' && (github.ref_name == 'develop' || github.ref_name == 'main')
