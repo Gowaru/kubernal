@@ -7,6 +7,31 @@ import { QuickActions } from '@/components/dashboard/QuickActions';
 import { useApplications } from '@/hooks/useApplications';
 import { useDeployments } from '@/hooks/useDeployments';
 
+function computeDeploymentTrend(deployments: { createdAt: Date | string }[] | undefined) {
+  if (!deployments || deployments.length === 0) return undefined;
+  const now = new Date();
+  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  const sixDaysAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
+  const recent = deployments.filter((d) => new Date(d.createdAt) >= threeDaysAgo).length;
+  const previous = deployments.filter((d) => {
+    const dDate = new Date(d.createdAt);
+    return dDate >= sixDaysAgo && dDate < threeDaysAgo;
+  }).length;
+  if (previous === 0) return recent > 0 ? { value: 100, positive: true } : undefined;
+  const change = Math.round(((recent - previous) / previous) * 100);
+  if (change === 0) return undefined;
+  return { value: Math.abs(change), positive: change > 0 };
+}
+
+function computeUptime(deployments: { status: string }[] | undefined) {
+  if (!deployments || deployments.length === 0) return 'N/A';
+  const healthy = deployments.filter((d) => d.status === 'healthy').length;
+  const failed = deployments.filter((d) => d.status === 'failed').length;
+  const total = healthy + failed;
+  if (total === 0) return 'N/A';
+  return `${((healthy / total) * 100).toFixed(2)}%`;
+}
+
 export default function Dashboard() {
   const { data: apps } = useApplications();
   const { data: deployments } = useDeployments();
@@ -31,7 +56,7 @@ export default function Dashboard() {
           value={totalDeployments}
           icon={Rocket}
           description="Total des déploiements"
-          trend={totalDeployments > 0 ? { value: 12, positive: true } : undefined}
+          trend={computeDeploymentTrend(deployments)}
         />
         <StatsCard
           title="Succès / Échecs"
@@ -41,16 +66,15 @@ export default function Dashboard() {
         />
         <StatsCard
           title="Uptime"
-          value="99.97%"
+          value={computeUptime(deployments)}
           icon={Activity}
           description="Uptime moyen (7 jours)"
-          trend={{ value: 0.02, positive: true }}
         />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <DeploymentChart />
+          <DeploymentChart deployments={deployments ?? []} />
         </div>
         <QuickActions />
       </div>

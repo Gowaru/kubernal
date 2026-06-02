@@ -8,7 +8,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useDeployment, useDeploymentViolations, useApproveDeployment } from '@/hooks/useDeployments';
+import type { Deployment } from '@kubernal/shared-types';
 import { useApplications } from '@/hooks/useApplications';
+import { usePipelines } from '@/hooks/usePipelines';
 import { StatusBadge } from '@/components/deployments/StatusBadge';
 import { PipelineTimeline } from '@/components/deployments/PipelineTimeline';
 import { BuildLogs } from '@/components/deployments/BuildLogs';
@@ -47,6 +49,8 @@ export default function DeploymentDetail() {
   const { data: deployment, isLoading, error } = useDeployment(id!);
   const { data: violations } = useDeploymentViolations(id!);
   const { data: applications } = useApplications();
+  const { data: pipelines } = usePipelines();
+  const pipeline = pipelines?.find((p) => p.deploymentId === id);
   const approveDeployment = useApproveDeployment();
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [approveStep, setApproveStep] = useState<'confirm' | 'progress' | 'success'>('confirm');
@@ -69,9 +73,9 @@ export default function DeploymentDetail() {
     setApproveStep('progress');
     setApproveProgress(0);
 
-    approveDeployment.mutate(id, {
-      onSuccess: () => {
-        queryClient.setQueryData(['deployments', id], (old: any) => {
+  approveDeployment.mutate({ id, approvedById: 'system' }, {
+    onSuccess: () => {
+      queryClient.setQueryData(['deployments', id], (old: Deployment | undefined) => {
           if (!old) return old;
           return { ...old, status: 'running', approvedBy: { id: 'optimistic', name: 'Vous', email: '' } };
         });
@@ -222,7 +226,7 @@ export default function DeploymentDetail() {
             <CardTitle className="text-base">Pipeline</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <PipelineTimeline status={deployment.status} />
+            <PipelineTimeline status={deployment.status} pipeline={pipeline} />
           </CardContent>
         </Card>
 

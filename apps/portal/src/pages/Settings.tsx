@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { useTheme } from '@/hooks/use-theme';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useTeams } from '@/hooks/useTeams';
 import { cn } from '@/lib/utils';
 import {
   Moon,
@@ -31,6 +33,7 @@ const notificationOptions = [
   { id: 'policy_violation', label: 'Violations de politique', description: 'Notifications lors de violations de politique de sécurité' },
 ];
 
+// TODO: connect to API when ApiKey model is implemented
 const demoKeys = [
   { id: '1', name: 'Production', key: 'kpl_2a8f...b3d1', created: '2025-12-15', lastUsed: '2026-05-28' },
   { id: '2', name: 'Staging', key: 'kpl_7c3e...f9a2', created: '2026-01-20', lastUsed: '2026-05-29' },
@@ -39,6 +42,8 @@ const demoKeys = [
 
 export default function Settings() {
   const { isDark, toggle: toggleTheme } = useTheme();
+  const { data: currentUser, isLoading: userLoading } = useCurrentUser();
+  const { data: teams } = useTeams();
   const [notifications, setNotifications] = useState<string[]>(['deploy_failure', 'policy_violation']);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -79,26 +84,26 @@ export default function Settings() {
           </CardTitle>
           <CardDescription>Informations de votre compte utilisateur</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nom</Label>
-              <Input id="name" value="Alex Martin" readOnly className="bg-muted/50" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" value="alex@example.com" readOnly className="bg-muted/50" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="role">Rôle</Label>
-              <Input id="role" value="Platform Engineer" readOnly className="bg-muted/50" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="team">Équipe</Label>
-              <Input id="team" value="Plateforme" readOnly className="bg-muted/50" />
-            </div>
+  <CardContent className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="name">Nom</Label>
+            <Input id="name" value={userLoading ? 'Chargement...' : (currentUser?.name ?? '')} readOnly className="bg-muted/50" />
           </div>
-        </CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" value={userLoading ? 'Chargement...' : (currentUser?.email ?? '')} readOnly className="bg-muted/50" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="role">Rôle</Label>
+            <Input id="role" value={userLoading ? 'Chargement...' : (currentUser?.role ?? '')} readOnly className="bg-muted/50" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="team">Équipe</Label>
+            <Input id="team" value={userLoading ? 'Chargement...' : (teams?.find(t => t.id === currentUser?.teamId)?.name ?? currentUser?.teamId ?? '')} readOnly className="bg-muted/50" />
+          </div>
+        </div>
+      </CardContent>
       </Card>
 
       <Card>
@@ -176,10 +181,11 @@ export default function Settings() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Key className="h-4 w-4 text-muted-foreground" />
-            Accès API
-          </CardTitle>
+    <CardTitle className="flex items-center gap-2 text-base">
+      <Key className="h-4 w-4 text-muted-foreground" />
+      Accès API
+      <Badge variant="outline" className="text-xs">Demo</Badge>
+    </CardTitle>
           <CardDescription>Gérez vos clés d'API pour l'intégration</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

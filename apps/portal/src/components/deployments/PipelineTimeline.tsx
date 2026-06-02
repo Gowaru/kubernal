@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { CheckCircle2, Loader2, XCircle, Ban, Circle, Undo2 } from 'lucide-react';
-import type { DeploymentStatus } from '@kubernal/shared-types';
+import type { DeploymentStatus, Pipeline, PipelineStage as PipelineStageType } from '@kubernal/shared-types';
 
 export type StageStatus = 'success' | 'running' | 'failed' | 'pending' | 'skipped' | 'rolled_back' | 'cancelled';
 
@@ -72,19 +72,37 @@ const STAGE_CONFIG: Record<StageStatus, { icon: typeof CheckCircle2; className: 
   cancelled: { icon: XCircle, className: 'text-gray-500' },
 };
 
-interface PipelineTimelineProps {
-  status: DeploymentStatus;
+function formatDurationMs(ms: number | null): string | undefined {
+  if (ms == null) return undefined;
+  if (ms < 1000) return `${ms}ms`;
+  if (ms < 60000) return `${Math.round(ms / 1000)}s`;
+  const mins = Math.floor(ms / 60000);
+  const secs = Math.round((ms % 60000) / 1000);
+  return `${mins}m ${secs}s`;
 }
 
-export function PipelineTimeline({ status }: PipelineTimelineProps) {
-  const stages = STAGES[status] ?? STAGES.pending;
+function mapPipelineStages(stages: PipelineStageType[]): Stage[] {
+  return stages.map((s) => ({
+    label: s.name,
+    status: s.status as StageStatus,
+    duration: formatDurationMs(s.durationMs),
+  }));
+}
+
+interface PipelineTimelineProps {
+  status: DeploymentStatus;
+  pipeline?: Pipeline;
+}
+
+export function PipelineTimeline({ status, pipeline }: PipelineTimelineProps) {
+  const stages = pipeline ? mapPipelineStages(pipeline.stages) : (STAGES[status] ?? STAGES.pending);
 
   return (
     <div className="space-y-0">
       {stages.map((stage, index) => {
         const config = STAGE_CONFIG[stage.status] ?? STAGE_CONFIG.pending;
         const Icon = config.icon;
-        const duration = stage.duration ?? STAGE_DURATIONS[stage.label];
+        const duration = stage.duration ?? (!pipeline ? STAGE_DURATIONS[stage.label] : undefined);
         const isLast = index === stages.length - 1;
 
         return (

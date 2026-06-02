@@ -60,11 +60,11 @@ export function useTransitionDeployment() {
 export function useApproveDeployment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { data } = await apiClient.post<{ data: Deployment }>(`/deployments/${id}/approve`);
+    mutationFn: async ({ id, approvedById }: { id: string; approvedById: string }) => {
+      const { data } = await apiClient.post<{ data: Deployment }>(`/deployments/${id}/approve`, { approvedById });
       return data.data;
     },
-    onSuccess: (_data, id) => {
+    onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['deployments'] });
       queryClient.invalidateQueries({ queryKey: ['deployments', id] });
     },

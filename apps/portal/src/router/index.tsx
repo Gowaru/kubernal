@@ -1,61 +1,43 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { createBrowserRouter, Outlet } from 'react-router-dom';
 import AppShell from '@/components/layout/AppShell';
-import Dashboard from '@/pages/Dashboard';
-import Catalogue from '@/pages/Catalogue';
-import AppDetail from '@/pages/AppDetail';
-import Deployments from '@/pages/Deployments';
-import DeploymentDetail from '@/pages/DeploymentDetail';
-import Observability from '@/pages/Observability';
-import Environments from '@/pages/Environments';
-import Teams from '@/pages/Teams';
-import Templates from '@/pages/Templates';
-import Policies from '@/pages/Policies';
-import Settings from '@/pages/Settings';
+
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Catalogue = lazy(() => import('@/pages/Catalogue'));
+const AppDetail = lazy(() => import('@/pages/AppDetail'));
+const Deployments = lazy(() => import('@/pages/Deployments'));
+const DeploymentDetail = lazy(() => import('@/pages/DeploymentDetail'));
+const Observability = lazy(() => import('@/pages/Observability'));
+const Environments = lazy(() => import('@/pages/Environments'));
+const Teams = lazy(() => import('@/pages/Teams'));
+const Templates = lazy(() => import('@/pages/Templates'));
+const Policies = lazy(() => import('@/pages/Policies'));
+const Settings = lazy(() => import('@/pages/Settings'));
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+    </div>
+  );
+}
 
 const router = createBrowserRouter([
   {
-    path: '/',
-    element: <AppShell><Dashboard /></AppShell>,
-  },
-  {
-    path: '/catalogue',
-    element: <AppShell><Catalogue /></AppShell>,
-  },
-  {
-    path: '/catalogue/:id',
-    element: <AppShell><AppDetail /></AppShell>,
-  },
-  {
-    path: '/deployments',
-    element: <AppShell><Deployments /></AppShell>,
-  },
-  {
-    path: '/deployments/:id',
-    element: <AppShell><DeploymentDetail /></AppShell>,
-  },
-  {
-    path: '/observability',
-    element: <AppShell><Observability /></AppShell>,
-  },
-  {
-    path: '/environments',
-    element: <AppShell><Environments /></AppShell>,
-  },
-  {
-    path: '/teams',
-    element: <AppShell><Teams /></AppShell>,
-  },
-  {
-    path: '/templates',
-    element: <AppShell><Templates /></AppShell>,
-  },
-  {
-    path: '/policies',
-    element: <AppShell><Policies /></AppShell>,
-  },
-  {
-    path: '/settings',
-    element: <AppShell><Settings /></AppShell>,
+    element: <AppShell><Outlet /></AppShell>,
+    children: [
+      { path: '/', element: <Suspense fallback={<PageLoader />}><Dashboard /></Suspense> },
+      { path: '/catalogue', element: <Suspense fallback={<PageLoader />}><Catalogue /></Suspense> },
+      { path: '/catalogue/:id', element: <Suspense fallback={<PageLoader />}><AppDetail /></Suspense> },
+      { path: '/deployments', element: <Suspense fallback={<PageLoader />}><Deployments /></Suspense> },
+      { path: '/deployments/:id', element: <Suspense fallback={<PageLoader />}><DeploymentDetail /></Suspense> },
+      { path: '/observability', element: <Suspense fallback={<PageLoader />}><Observability /></Suspense> },
+      { path: '/environments', element: <Suspense fallback={<PageLoader />}><Environments /></Suspense> },
+      { path: '/teams', element: <Suspense fallback={<PageLoader />}><Teams /></Suspense> },
+      { path: '/templates', element: <Suspense fallback={<PageLoader />}><Templates /></Suspense> },
+      { path: '/policies', element: <Suspense fallback={<PageLoader />}><Policies /></Suspense> },
+      { path: '/settings', element: <Suspense fallback={<PageLoader />}><Settings /></Suspense> },
+    ],
   },
 ]);
 
