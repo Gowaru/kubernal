@@ -1,19 +1,24 @@
 import { useMemo } from 'react';
-import { GitBranch, CheckCircle2, Tag, TrendingUp, Cpu, MemoryStick } from 'lucide-react';
+import { GitBranch, CheckCircle2, Tag, TrendingUp } from 'lucide-react';
 import { StatsCard } from '@/components/dashboard/StatsCard';
+import { getEnvSlug } from '@/lib/utils';
 import type { Deployment } from '@kubernal/shared-types';
 
 interface AppStatsCardsProps {
   deployments: Deployment[];
-  appId?: string;
 }
 
-export function AppStatsCards({ deployments, appId }: AppStatsCardsProps) {
+export function AppStatsCards({ deployments }: AppStatsCardsProps) {
   const totalDeployments = deployments.length;
 
   const uniqueEnvs = useMemo(() => {
-    const set = new Set(deployments.map((d) => d.environmentId));
-    return set.size;
+    const activeStatuses = new Set(['healthy', 'deploying', 'building', 'pending']);
+    return new Set(
+      deployments
+        .filter((d) => activeStatuses.has(d.status))
+        .map((d) => getEnvSlug(d))
+        .filter((slug): slug is string => !!slug),
+    ).size;
   }, [deployments]);
 
   const uniqueVersions = useMemo(() => {
@@ -27,17 +32,8 @@ export function AppStatsCards({ deployments, appId }: AppStatsCardsProps) {
     return Math.round((successes / totalDeployments) * 100);
   }, [deployments, totalDeployments]);
 
-  const simulatedMetrics = useMemo(() => {
-    if (!appId) return { cpu: 35, ramUsed: 1.8, ramTotal: 4 };
-    const seed = appId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-    const cpu = (seed % 30) + 20;
-    const ramSeed = ((seed * 7) % 20) + 10;
-    const ramUsed = Math.round((ramSeed / 100) * 4 * 10) / 10;
-    return { cpu, ramUsed, ramTotal: 4 };
-  }, [appId]);
-
   return (
-    <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+    <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
       <StatsCard
         title="Déploiements"
         value={totalDeployments}
@@ -62,18 +58,6 @@ export function AppStatsCards({ deployments, appId }: AppStatsCardsProps) {
             ? { value: successRate, positive: true }
             : { value: 100 - successRate, positive: false }
         }
-      />
-      <StatsCard
-        title="CPU"
-        value={`${simulatedMetrics.cpu}%`}
-        icon={Cpu}
-        description="Utilisation moyenne"
-      />
-      <StatsCard
-        title="RAM"
-        value={`${simulatedMetrics.ramUsed}/${simulatedMetrics.ramTotal} Go`}
-        icon={MemoryStick}
-        description="Utilisation"
       />
     </div>
   );

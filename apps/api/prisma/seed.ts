@@ -271,6 +271,7 @@ async function main() {
     const status = i < 28 ? (i < 20 ? 'healthy' : statuses[i % statuses.length]) : 'healthy';
     const trigger = triggers[i % triggers.length];
     const startedAt = new Date(now.getTime() - (35 - i) * 86400000);
+    const createdAt = new Date(startedAt.getTime() + Math.random() * 60000);
     const completedAt = ['healthy', 'failed', 'rolled_back', 'cancelled'].includes(status) ? new Date(startedAt.getTime() + 300000) : null;
     const hasViolations = i === 5 || i === 12 || i === 18 || i === 25;
 
@@ -284,6 +285,7 @@ async function main() {
         trigger,
         approvedById: env.requiresApproval && (status === 'healthy' || status === 'deploying') ? users.admin.id : null,
         startedAt,
+        createdAt,
         completedAt,
         artifacts: status === 'healthy' ? [
           { name: `app-${version}.tar.gz`, size: `${(Math.random() * 50 + 10).toFixed(0)}MB` },
@@ -301,7 +303,7 @@ async function main() {
   for (const dep of deploys) {
     const numPipelines = dep.status === 'cancelled' ? 0 : dep.status === 'pending' ? 0 : dep.status === 'building' ? 1 : Math.min(3, pipelineNames.length);
     for (let j = 0; j < numPipelines; j++) {
-      const isTerminal = dep.completedAt != null;
+      const isTerminal = dep.completedAt !== null;
       await db.pipeline.create({
         data: {
           deploymentId: dep.id,

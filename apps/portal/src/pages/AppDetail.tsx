@@ -23,7 +23,7 @@ import { AppInfoCard } from '@/components/applications/AppInfoCard';
 import { AppEnvCard } from '@/components/applications/AppEnvCard';
 import { StatusBadge } from '@/components/deployments/StatusBadge';
 import { DeploymentModal } from '@/components/deployments/DeploymentModal';
-import { formatRelativeTime } from '@/lib/utils';
+import { formatRelativeTime, getEnvSlug } from '@/lib/utils';
 import type { Deployment } from '@kubernal/shared-types';
 
 const STATUS_CONFIG: Record<string, { label: string; className: string; dot: string }> = {
@@ -44,8 +44,8 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; dot: str
   },
   archived: {
     label: 'Archivé',
-    className: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
-    dot: 'bg-gray-400',
+    className: 'bg-muted text-muted-foreground border-border',
+    dot: 'bg-muted-foreground',
   },
 };
 
@@ -138,13 +138,13 @@ export default function AppDetail() {
         )}
       </div>
 
-      <AppStatsCards deployments={appDeployments} appId={id} />
+      <AppStatsCards deployments={appDeployments} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <AppInfoCard
           team={team}
           template={template}
-          ownerName={application.ownerId?.slice(0, 8)}
+          ownerName={application.owner?.name}
           repositoryUrl={application.repositoryUrl}
         />
 
@@ -162,13 +162,14 @@ export default function AppDetail() {
           <CardTitle className="text-base">Déploiements récents</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Version</TableHead>
                 <TableHead>Environnement</TableHead>
                 <TableHead>Statut</TableHead>
-                <TableHead>Durée</TableHead>
+                <TableHead className="hidden sm:table-cell">Durée</TableHead>
                 <TableHead>Date</TableHead>
               </TableRow>
             </TableHeader>
@@ -192,12 +193,12 @@ export default function AppDetail() {
                         <span className="font-mono text-sm">{dep.version}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm text-muted-foreground">{dep.environmentId}</span>
+                        <span className="text-sm text-muted-foreground">{getEnvSlug(dep) ?? dep.environmentId}</span>
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={dep.status} />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
                           <Timer className="h-3.5 w-3.5" />
                           {formatDuration(dep.startedAt, dep.completedAt)}
@@ -213,6 +214,7 @@ export default function AppDetail() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
