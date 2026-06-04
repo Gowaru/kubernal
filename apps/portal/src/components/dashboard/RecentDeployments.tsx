@@ -11,37 +11,37 @@ const statusConfig: Record<DeploymentStatus, { label: string; className: string 
   pending: {
     label: 'En attente',
     className:
-      'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
   },
   building: {
     label: 'En construction',
     className:
-      'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      'bg-blue-500/10 text-blue-400 border-blue-500/20',
   },
   deploying: {
     label: 'Déploiement',
     className:
-      'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+      'bg-amber-500/10 text-amber-400 border-amber-500/20',
   },
   healthy: {
     label: 'Succès',
     className:
-      'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+      'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
   },
   failed: {
     label: 'Échec',
     className:
-      'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400 border-red-200 dark:border-red-800',
+      'bg-red-500/10 text-red-400 border-red-500/20',
   },
   rolled_back: {
     label: 'Rollback',
     className:
-      'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+      'bg-orange-500/10 text-orange-400 border-orange-500/20',
   },
   cancelled: {
     label: 'Annulé',
     className:
-      'bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-400 border-gray-200 dark:border-gray-700',
+      'bg-muted text-muted-foreground border-border',
   },
 };
 

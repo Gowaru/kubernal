@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   LayoutGrid,
@@ -10,6 +10,9 @@ import {
   FileJson,
   Shield,
   Settings,
+  Box,
+  Network,
+  AlertTriangle,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -18,6 +21,8 @@ import { cn } from '@/lib/utils';
 import { NAV_SECTIONS, PLATFORM_VERSION } from '@/lib/constants';
 import { useSidebar } from './SidebarStore';
 import { useDeployments } from '@/hooks/useDeployments';
+import { useK8sEvents } from '@/hooks/useK8sEvents';
+import { MOCK_CLUSTER } from '@/mocks/k8s-data';
 import {
   Tooltip,
   TooltipContent,
@@ -25,18 +30,64 @@ import {
 } from '@/components/ui/tooltip';
 
 const iconMap: Record<string, typeof LayoutDashboard> = {
-  LayoutDashboard, LayoutGrid, Rocket, Eye, Cloud, Users, FileJson, Shield, Settings,
+  LayoutDashboard, LayoutGrid, Rocket, Eye, Cloud, Users, FileJson, Shield, Settings, Box, Network, AlertTriangle,
+};
+
+const SHORTCUT_MAP: Record<string, string> = {
+  '1': '/',
+  '2': '/catalogue',
+  '3': '/deployments',
+  '4': '/observability',
+  '5': '/environments',
+  '6': '/k8s/pods',
+  '7': '/k8s/services',
+  '8': '/k8s/events',
+  '9': '/teams',
+  '0': '/templates',
 };
 
 export function Sidebar() {
   const { collapsed, mobileOpen, toggle, setMobileOpen, pendingApprovals, user, setPendingApprovals } = useSidebar();
   const { data: deployments } = useDeployments();
+  const { data: k8sEvents = [] } = useK8sEvents(MOCK_CLUSTER.namespace);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!deployments) return;
     const count = deployments.filter((d) => d.status === 'pending').length;
     setPendingApprovals(count);
   }, [deployments, setPendingApprovals]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable) {
+          return;
+        }
+      }
+      if (e.shiftKey && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        navigate('/policies');
+        return;
+      }
+      if (e.shiftKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        navigate('/settings');
+        return;
+      }
+      if (e.key in SHORTCUT_MAP) {
+        e.preventDefault();
+        navigate(SHORTCUT_MAP[e.key]);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [navigate]);
+
+  const warningEventCount = k8sEvents.filter((e) => e.type === 'Warning').length;
 
   const sidebarContent = (
     <div
@@ -95,7 +146,7 @@ export function Sidebar() {
                             'group relative flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium transition-all duration-200',
                             collapsed && 'justify-center px-0',
                             isActive
-                              ? 'text-blue-400'
+                              ? 'text-accent'
                               : 'text-sidebar-foreground hover:text-sidebar-accent-foreground',
                           )
                         }
@@ -105,7 +156,7 @@ export function Sidebar() {
                             {/* Active indicator */}
                             <span
                               className={cn(
-                                'absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-blue-500 transition-all duration-200',
+                                'absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-accent transition-all duration-200',
                                 isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-40',
                               )}
                             />
@@ -114,7 +165,7 @@ export function Sidebar() {
                               className={cn(
                                 'flex items-center justify-center rounded-lg p-1.5 transition-all duration-200',
                                 isActive
-                                  ? 'bg-blue-500/10 text-blue-400'
+                                  ? 'bg-accent/10 text-accent'
                                   : 'text-sidebar-foreground group-hover:bg-sidebar-accent group-hover:text-sidebar-accent-foreground',
                                 collapsed && 'p-2',
                               )}
@@ -129,6 +180,11 @@ export function Sidebar() {
                                   {showBadge && (
                                     <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
                                       {pendingApprovals}
+                                    </span>
+                                  )}
+                                  {item.badge === 'warning' && warningEventCount > 0 && (
+                                    <span className="ml-auto bg-amber-500/10 text-amber-400 text-xs font-medium px-2 py-0.5 rounded-full">
+                                      {warningEventCount}
                                     </span>
                                   )}
                                   <span className="text-[10px] text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors">
@@ -169,7 +225,7 @@ export function Sidebar() {
           <Tooltip delayDuration={100}>
             <TooltipTrigger asChild>
               <button className="flex w-full items-center justify-center">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-violet-600 text-xs font-bold text-white shadow-lg shadow-blue-500/20">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-accent to-accent/60 text-xs font-bold text-white shadow-lg shadow-accent/20">
                   {user.initials}
                 </div>
               </button>
@@ -181,7 +237,7 @@ export function Sidebar() {
           </Tooltip>
         ) : (
           <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent/50 p-2.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-violet-600 text-xs font-bold text-white shadow-sm">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-accent to-accent/60 text-xs font-bold text-white shadow-sm">
               {user.initials}
             </div>
             <div className="flex-1 min-w-0">

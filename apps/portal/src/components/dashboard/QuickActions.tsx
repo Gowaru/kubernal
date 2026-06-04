@@ -21,7 +21,7 @@ export function QuickActions() {
             className="w-full justify-start gap-3 h-11"
             onClick={() => setShowDeployModal(true)}
           >
-            <Rocket className="h-4 w-4 text-blue-400" />
+            <Rocket className="h-4 w-4 text-accent" />
             Nouveau déploiement
           </Button>
           <Button
@@ -29,7 +29,7 @@ export function QuickActions() {
             className="w-full justify-start gap-3 h-11"
             onClick={() => navigate('/observability')}
           >
-            <Eye className="h-4 w-4 text-violet-400" />
+            <Eye className="h-4 w-4 text-accent" />
             Voir les logs
           </Button>
           <Button
@@ -37,7 +37,7 @@ export function QuickActions() {
             className="w-full justify-start gap-3 h-11"
             onClick={() => navigate('/catalogue')}
           >
-            <PlusCircle className="h-4 w-4 text-emerald-400" />
+            <PlusCircle className="h-4 w-4 text-status-success" />
             Nouvelle application
           </Button>
           <Button
@@ -45,7 +45,7 @@ export function QuickActions() {
             className="w-full justify-start gap-3 h-11"
             onClick={() => window.location.reload()}
           >
-            <RefreshCw className="h-4 w-4 text-amber-400" />
+            <RefreshCw className="h-4 w-4 text-status-warning" />
             Rafraîchir
           </Button>
         </CardContent>

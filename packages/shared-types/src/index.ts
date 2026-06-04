@@ -64,6 +64,8 @@ export interface Application {
   status: ApplicationStatus;
   createdAt: Date;
   updatedAt: Date;
+  team?: Team;
+  owner?: User;
 }
 
 // --- Environment ---
@@ -197,3 +199,114 @@ export interface ApiError {
 }
 
 export type ApiResult<T> = { success: true; data: T } | { success: false; error: ApiError };
+
+// --- K8s & Infrastructure ---
+export type K8sPodPhase = 'Running' | 'Pending' | 'Succeeded' | 'Failed' | 'CrashLoopBackOff' | 'Unknown';
+
+export interface K8sContainerStatus {
+  name: string;
+  image: string;
+  ready: boolean;
+  restartCount: number;
+  state: 'running' | 'waiting' | 'terminated';
+  reason: string | null;
+}
+
+export interface K8sPod {
+  id: string;
+  name: string;
+  namespace: string;
+  nodeName: string;
+  status: K8sPodPhase;
+  ready: string;
+  restarts: number;
+  ip: string | null;
+  age: string;
+  startedAt: string | null;
+  containers: K8sContainerStatus[];
+  labels: Record<string, string>;
+}
+
+export interface K8sContainerResources {
+  containerName: string;
+  cpuRequest: string | null;
+  cpuLimit: string | null;
+  memoryRequest: string | null;
+  memoryLimit: string | null;
+  cpuUsage: string | null;
+  memoryUsage: string | null;
+}
+
+export interface K8sHPAStatus {
+  minReplicas: number;
+  maxReplicas: number;
+  currentReplicas: number;
+  desiredReplicas: number;
+  cpuTarget: number | null;
+  cpuCurrent: number | null;
+  memoryTarget: number | null;
+  memoryCurrent: number | null;
+}
+
+export type CrossplaneClaimStatus = 'Ready' | 'Binding' | 'Provisioning' | 'Failed' | 'Deleting';
+
+export type CrossplaneClaimKind = 'Postgres' | 'Redis' | 'Bucket' | 'Network' | 'Custom';
+
+export interface CrossplaneClaim {
+  id: string;
+  name: string;
+  kind: CrossplaneClaimKind;
+  status: CrossplaneClaimStatus;
+  class: string;
+  namespace: string;
+  message: string | null;
+  boundAt: string | null;
+  endpoint: string | null;
+}
+
+export type ArgoSyncStatus = 'Synced' | 'OutOfSync' | 'Unknown';
+
+export type ArgoHealthStatus = 'Healthy' | 'Progressing' | 'Degraded' | 'Suspended' | 'Unknown';
+
+export interface ArgoAppStatus {
+  sync: ArgoSyncStatus;
+  health: ArgoHealthStatus;
+  revision: string;
+  branch: string;
+  lastSyncAt: string | null;
+  message: string | null;
+}
+
+export type K8sEventType = 'Normal' | 'Warning';
+
+export interface K8sEvent {
+  id: string;
+  involvedObject: string;
+  reason: string;
+  message: string;
+  type: K8sEventType;
+  count: number;
+  lastTimestamp: string;
+  source: string;
+}
+
+export interface K8sClusterContext {
+  name: string;
+  namespace: string;
+  apiServerUrl: string;
+  version: string;
+  nodeCount: number;
+}
+
+export type K8sServiceType = 'ClusterIP' | 'NodePort' | 'LoadBalancer' | 'ExternalName';
+
+export interface K8sService {
+  name: string;
+  namespace: string;
+  type: K8sServiceType;
+  clusterIP: string;
+  ports: { name: string; port: number; targetPort: number; protocol: string; nodePort?: number }[];
+  selector: Record<string, string>;
+  status: 'Active' | 'Pending';
+  createdAt: string;
+}

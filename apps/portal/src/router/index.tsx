@@ -13,6 +13,10 @@ const Teams = lazy(() => import('@/pages/Teams'));
 const Templates = lazy(() => import('@/pages/Templates'));
 const Policies = lazy(() => import('@/pages/Policies'));
 const Settings = lazy(() => import('@/pages/Settings'));
+const K8sPodsPage = lazy(() => import('@/pages/k8s/K8sPodsPage'));
+const K8sServicesPage = lazy(() => import('@/pages/k8s/K8sServicesPage'));
+const K8sEventsPage = lazy(() => import('@/pages/k8s/K8sEventsPage'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
 
 function PageLoader() {
   return (
@@ -36,8 +40,12 @@ const router = createBrowserRouter([
       { path: '/teams', element: <Suspense fallback={<PageLoader />}><Teams /></Suspense> },
       { path: '/templates', element: <Suspense fallback={<PageLoader />}><Templates /></Suspense> },
       { path: '/policies', element: <Suspense fallback={<PageLoader />}><Policies /></Suspense> },
-      { path: '/settings', element: <Suspense fallback={<PageLoader />}><Settings /></Suspense> },
-    ],
+    { path: '/settings', element: <Suspense fallback={<PageLoader />}><Settings /></Suspense> },
+    { path: '/k8s/pods', element: <Suspense fallback={<PageLoader />}><K8sPodsPage /></Suspense> },
+    { path: '/k8s/services', element: <Suspense fallback={<PageLoader />}><K8sServicesPage /></Suspense> },
+    { path: '/k8s/events', element: <Suspense fallback={<PageLoader />}><K8sEventsPage /></Suspense> },
+    { path: '*', element: <Suspense fallback={<PageLoader />}><NotFound /></Suspense> },
+  ],
   },
 ]);
 

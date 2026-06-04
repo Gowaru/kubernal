@@ -20,12 +20,20 @@ export const NAV_SECTIONS = [
     ],
   },
   {
+    label: 'Kubernetes',
+    items: [
+      { label: 'Pods', href: '/k8s/pods', icon: 'Box', shortcut: '⌘6', badge: undefined },
+      { label: 'Services', href: '/k8s/services', icon: 'Network', shortcut: '⌘7', badge: undefined },
+      { label: 'Événements', href: '/k8s/events', icon: 'AlertTriangle', shortcut: '⌘8', badge: 'warning' as const },
+    ],
+  },
+  {
     label: 'Administration',
     items: [
-      { label: 'Équipes', href: '/teams', icon: 'Users', shortcut: '⌘6', badge: undefined },
-      { label: 'Templates', href: '/templates', icon: 'FileJson', shortcut: '⌘7', badge: undefined },
-      { label: 'Politiques', href: '/policies', icon: 'Shield', shortcut: '⌘8', badge: undefined },
-      { label: 'Réglages', href: '/settings', icon: 'Settings', shortcut: '⌘9', badge: undefined },
+      { label: 'Équipes', href: '/teams', icon: 'Users', shortcut: '⌘9', badge: undefined },
+      { label: 'Templates', href: '/templates', icon: 'FileJson', shortcut: '⌘0', badge: undefined },
+      { label: 'Politiques', href: '/policies', icon: 'Shield', shortcut: '⌘⇧P', badge: undefined },
+      { label: 'Réglages', href: '/settings', icon: 'Settings', shortcut: '⌘⇧S', badge: undefined },
     ],
   },
 ] as const;

@@ -24,8 +24,8 @@ const statusConfig: Record<string, { label: string; className: string; dot: stri
   },
   archived: {
     label: 'Archivé',
-    className: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
-    dot: 'bg-gray-400',
+    className: 'bg-muted text-muted-foreground border-border',
+    dot: 'bg-muted-foreground',
   },
 };
 
@@ -39,12 +39,12 @@ export function ApplicationCard({ application, onDeploy }: ApplicationCardProps)
   const status = statusConfig[application.status] ?? statusConfig.archived;
 
   return (
-    <Card className="group transition-all duration-200 hover:border-blue-500/30 hover:shadow-md hover:shadow-blue-500/5">
+    <Card className="group transition-all duration-200 hover:border-accent/30 hover:shadow-md hover:shadow-accent/5">
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <h3
-              className="font-semibold tracking-tight group-hover:text-blue-400 transition-colors cursor-pointer"
+              className="font-semibold tracking-tight group-hover:text-accent transition-colors cursor-pointer"
               onClick={() => navigate(`/catalogue/${application.id}`)}
             >
               {application.name}
