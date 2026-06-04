@@ -11,6 +11,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useUsers } from '@/hooks/useUsers';
 import { useTeams } from '@/hooks/useTeams';
+import { GenerateApiKeyModal, type ApiKey } from '@/components/settings/GenerateApiKeyModal';
 import { cn } from '@/lib/utils';
 import {
   Moon,
@@ -36,10 +37,10 @@ const notificationOptions = [
 ];
 
 // TODO: connect to API when ApiKey model is implemented
-const demoKeys = [
-  { id: '1', name: 'Production', key: 'kpl_2a8f...b3d1', created: '2025-12-15', lastUsed: '2026-05-28' },
-  { id: '2', name: 'Staging', key: 'kpl_7c3e...f9a2', created: '2026-01-20', lastUsed: '2026-05-29' },
-  { id: '3', name: 'CI/CD', key: 'kpl_4b1d...e7c8', created: '2026-03-10', lastUsed: '2026-05-27' },
+const initialKeys: ApiKey[] = [
+  { id: '1', name: 'Production', key: 'kpl_2a8f9c1e4b7d2a5f8e3b6c9d2a5f8e3b', created: '2025-12-15', lastUsed: '2026-05-28', expires: '2026-12-15' },
+  { id: '2', name: 'Staging', key: 'kpl_7c3e8b2a1d4f9c5e2b8a1d4f7c3e8b2a', created: '2026-01-20', lastUsed: '2026-05-29', expires: '2027-01-20' },
+  { id: '3', name: 'CI/CD', key: 'kpl_4b1d6c8e2a9f5b3d7c1e4a8f2b6d9c3e', created: '2026-03-10', lastUsed: '2026-05-27', expires: '2027-03-10' },
 ];
 
 export default function Settings() {
@@ -68,6 +69,12 @@ export default function Settings() {
   const [notifications, setNotifications] = useState<string[]>(['deploy_failure', 'policy_violation']);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>(initialKeys);
+  const [showGenerateKeyModal, setShowGenerateKeyModal] = useState(false);
+
+  const handleKeyGenerated = useCallback((newKey: ApiKey) => {
+    setApiKeys((prev) => [newKey, ...prev]);
+  }, []);
 
   const toggleNotification = useCallback((id: string) => {
     setNotifications((prev) =>
@@ -226,12 +233,12 @@ export default function Settings() {
           <CardDescription>Gérez vos clés d'API pour l'intégration</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button size="sm">
+          <Button size="sm" onClick={() => setShowGenerateKeyModal(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Générer une clé
           </Button>
           <div className="space-y-2">
-            {demoKeys.map((k) => (
+            {apiKeys.map((k) => (
               <div
                 key={k.id}
                 className="flex items-center justify-between rounded-lg border border-border p-3"
@@ -292,6 +299,12 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      <GenerateApiKeyModal
+        open={showGenerateKeyModal}
+        onOpenChange={setShowGenerateKeyModal}
+        onKeyGenerated={handleKeyGenerated}
+      />
     </div>
   );
 }
