@@ -67,13 +67,13 @@ const STAGE_CONFIG: Record<StageStatus, { icon: typeof CheckCircle2; className: 
   running: { icon: Loader2, className: 'text-blue-400 animate-spin' },
   failed: { icon: XCircle, className: 'text-red-400' },
   pending: { icon: Circle, className: 'text-muted-foreground' },
-  skipped: { icon: Ban, className: 'text-gray-500' },
+  skipped: { icon: Ban, className: 'text-muted-foreground' },
   rolled_back: { icon: Undo2, className: 'text-orange-400' },
-  cancelled: { icon: XCircle, className: 'text-gray-500' },
+  cancelled: { icon: XCircle, className: 'text-muted-foreground' },
 };
 
 function formatDurationMs(ms: number | null): string | undefined {
-  if (ms == null) return undefined;
+  if (ms === null || ms === undefined) return undefined;
   if (ms < 1000) return `${ms}ms`;
   if (ms < 60000) return `${Math.round(ms / 1000)}s`;
   const mins = Math.floor(ms / 60000);

@@ -288,7 +288,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
             </DialogHeader>
 
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
-              <Loader2 className="h-12 w-12 animate-spin text-blue-400" />
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
               <div className="w-full max-w-sm space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Progression</span>
@@ -296,7 +296,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
                   <div
-                    className="h-full rounded-full bg-blue-500 transition-all duration-300 ease-out"
+                    className="h-full rounded-full bg-primary transition-all duration-300 ease-out"
                     style={{ width: `${progress}%` }}
                   />
                 </div>

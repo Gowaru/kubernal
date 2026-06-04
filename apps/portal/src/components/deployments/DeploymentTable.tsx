@@ -24,6 +24,7 @@ import {
 } from '@tanstack/react-table';
 import { formatDate } from '@/lib/utils';
 import { StatusBadge } from './StatusBadge';
+import type { Deployment } from '@kubernal/shared-types';
 
 const triggerLabels: Record<string, string> = {
   manual: 'Manuel',
@@ -38,6 +39,11 @@ const environmentOptions = [
   { value: 'staging', label: 'Staging' },
   { value: 'prod', label: 'Production' },
 ];
+
+type EnrichedDeployment = Deployment & {
+  applicationName: string;
+  environmentType: string;
+};
 
 function formatDuration(startedAt: string | Date, completedAt: string | Date | null): string {
   if (!completedAt) return '-';
@@ -58,27 +64,24 @@ export function DeploymentTable() {
   const [search, setSearch] = useState('');
   const [envFilter, setEnvFilter] = useState('');
 
-  const enrichedDeployments = useMemo(() => {
+  const enrichedDeployments = useMemo<EnrichedDeployment[]>(() => {
     if (!deployments) return [];
     return deployments
       .map((dep) => ({
         ...dep,
-        applicationName: (dep as any).application?.name ?? dep.applicationId.slice(0, 8),
-        environmentType: (dep as any).environment?.type ?? '',
+        applicationName: dep.application?.name ?? dep.applicationId.slice(0, 8),
+        environmentType: dep.environment?.type ?? '',
       }))
       .filter((dep) => !envFilter || dep.environmentType === envFilter);
   }, [deployments, envFilter]);
 
-  const columnHelper = createColumnHelper<any>();
+  const columnHelper = createColumnHelper<EnrichedDeployment>();
 
   const columns = useMemo(() => [
     columnHelper.accessor('applicationName', {
       header: 'Application',
       cell: (info) => (
-        <span
-          className="font-medium cursor-pointer hover:text-primary transition-colors"
-          onClick={() => navigate(`/catalogue/${info.row.original.applicationId}`)}
-        >
+        <span className="font-medium">
           {info.getValue()}
         </span>
       ),
@@ -153,7 +156,7 @@ export function DeploymentTable() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => approveDeployment.mutate(row.id, {
+                onClick={() => approveDeployment.mutate({ id: row.id, approvedById: 'system' }, {
                   onSuccess: () => toast.success('Déploiement approuvé'),
                   onError: () => toast.error("Erreur lors de l'approbation"),
                 })}
@@ -218,16 +221,21 @@ export function DeploymentTable() {
         </div>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const responsive = ['trigger', 'startedAt', 'createdAt'].includes(header.column.id)
+                    ? 'hidden sm:table-cell'
+                    : '';
+                  return (
+                    <TableHead key={header.id} className={responsive}>
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  );
+                })}
               </TableRow>
             ))}
           </TableHeader>
@@ -242,12 +250,24 @@ export function DeploymentTable() {
               ))
             ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer"
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest('button')) return;
+                    navigate(`/deployments/${row.original.id}`);
+                  }}
+                >
+                  {row.getVisibleCells().map((cell) => {
+                    const responsive = ['trigger', 'startedAt', 'createdAt'].includes(cell.column.id)
+                      ? 'hidden sm:table-cell'
+                      : '';
+                    return (
+                      <TableCell key={cell.id} className={responsive}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))
             ) : (

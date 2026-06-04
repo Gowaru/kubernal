@@ -10,15 +10,15 @@ interface TeamCardProps {
 
 export function TeamCard({ team, appCount = 0 }: TeamCardProps) {
   return (
-    <Card className="group transition-all duration-200 hover:border-blue-500/30 hover:shadow-md hover:shadow-blue-500/5">
+    <Card className="group transition-all duration-200 hover:border-accent/30 hover:shadow-md hover:shadow-accent/5">
       <CardContent className="p-5">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400 ring-1 ring-violet-500/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-accent/20">
               <Users className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-semibold group-hover:text-blue-400 transition-colors">
+              <h3 className="font-semibold group-hover:text-accent transition-colors">
                 {team.name}
               </h3>
               <p className="text-xs text-muted-foreground">

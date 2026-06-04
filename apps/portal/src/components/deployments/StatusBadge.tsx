@@ -9,7 +9,7 @@ const statusConfig: Record<string, { label: string; className: string; icon: Luc
   healthy: { label: 'Succès', className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', icon: CheckCircle2 },
   failed: { label: 'Échec', className: 'bg-red-500/10 text-red-400 border-red-500/20', icon: XCircle },
   rolled_back: { label: 'Rollback', className: 'bg-orange-500/10 text-orange-400 border-orange-500/20', icon: ArrowLeft },
-  cancelled: { label: 'Annulé', className: 'bg-gray-500/10 text-gray-400 border-gray-500/20', icon: Ban },
+  cancelled: { label: 'Annulé', className: 'bg-muted text-muted-foreground border-border', icon: Ban },
 };
 
 interface StatusBadgeProps {

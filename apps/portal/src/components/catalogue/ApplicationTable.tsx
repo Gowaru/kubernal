@@ -23,13 +23,37 @@ import {
   flexRender,
 } from '@tanstack/react-table';
 import { formatDate } from '@/lib/utils';
+import type { Application, ApplicationStatus } from '@kubernal/shared-types';
+
+const statusConfig: Record<ApplicationStatus, { label: string; className: string; dot: string }> = {
+  active: {
+    label: 'Actif',
+    className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    dot: 'bg-emerald-400',
+  },
+  creating: {
+    label: 'Création',
+    className: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    dot: 'bg-amber-400',
+  },
+  failed: {
+    label: 'Échec',
+    className: 'bg-red-500/10 text-red-400 border-red-500/20',
+    dot: 'bg-red-400',
+  },
+  archived: {
+    label: 'Archivé',
+    className: 'bg-muted text-muted-foreground border-border',
+    dot: 'bg-muted-foreground',
+  },
+};
 
 export function ApplicationTable() {
   const navigate = useNavigate();
   const { data: applications, isLoading, error } = useApplications();
   const [search, setSearch] = useState('');
 
-  const columnHelper = createColumnHelper<any>();
+  const columnHelper = createColumnHelper<Application>();
 
   const columns = useMemo(() => [
     columnHelper.accessor('name', {
@@ -50,12 +74,18 @@ export function ApplicationTable() {
     columnHelper.accessor('status', {
       header: 'Statut',
       cell: (info) => {
-        const status = info.getValue() as string;
-        const variant = status === 'ACTIVE' ? 'default' : status === 'INACTIVE' ? 'secondary' : 'outline';
-        return <Badge variant={variant}>{status}</Badge>;
+        const status = info.getValue();
+        const config = statusConfig[status] ?? statusConfig.archived;
+        return (
+          <Badge variant="outline" className={`flex items-center gap-1.5 ${config.className}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} />
+            {config.label}
+          </Badge>
+        );
       },
     }),
-    columnHelper.accessor('teamId', {
+    columnHelper.accessor((row) => row.team?.name ?? row.teamId, {
+      id: 'teamName',
       header: 'Équipe',
       cell: (info) => info.getValue() ?? '-',
     }),
@@ -91,16 +121,19 @@ export function ApplicationTable() {
         />
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const responsive = header.column.id === 'description' ? 'hidden md:table-cell' : '';
+                  return (
+                    <TableHead key={header.id} className={responsive}>
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  );
+                })}
               </TableRow>
             ))}
           </TableHeader>
@@ -116,11 +149,14 @@ export function ApplicationTable() {
             ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const responsive = cell.column.id === 'description' ? 'hidden md:table-cell' : '';
+                    return (
+                      <TableCell key={cell.id} className={responsive}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))
             ) : (

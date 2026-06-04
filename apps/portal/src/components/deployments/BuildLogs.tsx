@@ -122,7 +122,7 @@ export function BuildLogs({ status }: BuildLogsProps) {
   return (
     <div
       ref={containerRef}
-      className="max-h-80 overflow-y-auto rounded-lg bg-zinc-950 p-4 font-mono text-xs leading-relaxed"
+      className="max-h-80 overflow-y-auto rounded-lg bg-[oklch(0.08_0.005_265)] p-4 font-mono text-xs leading-relaxed"
     >
       {status === 'pending' ? (
         <p className="text-muted-foreground italic">En attente du début du build...</p>
@@ -141,7 +141,7 @@ export function BuildLogs({ status }: BuildLogsProps) {
                 isSuccess && 'text-emerald-400',
                 isWarning && 'text-amber-400',
                 isCommand && 'text-blue-300',
-                !isError && !isSuccess && !isWarning && !isCommand && 'text-zinc-400',
+                !isError && !isSuccess && !isWarning && !isCommand && 'text-muted-foreground',
               )}
             >
               {line}

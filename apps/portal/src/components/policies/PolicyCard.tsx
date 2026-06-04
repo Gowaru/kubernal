@@ -12,10 +12,10 @@ const severityConfig: Record<PolicySeverity, { label: string; className: string 
 };
 
 const categoryConfig: Record<PolicyCategory, { label: string; icon: typeof Shield; className: string }> = {
-  security: { label: 'Sécurité', icon: Shield, className: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-  compliance: { label: 'Conformité', icon: FileCheck, className: 'bg-violet-500/10 text-violet-400 border-violet-500/20' },
-  cost: { label: 'Coût', icon: DollarSign, className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
-  operations: { label: 'Opérations', icon: Settings, className: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+  security: { label: 'Sécurité', icon: Shield, className: 'bg-category-security/10 text-category-security border-category-security/20' },
+  compliance: { label: 'Conformité', icon: FileCheck, className: 'bg-category-compliance/10 text-category-compliance border-category-compliance/20' },
+  cost: { label: 'Coût', icon: DollarSign, className: 'bg-category-cost/10 text-category-cost border-category-cost/20' },
+  operations: { label: 'Opérations', icon: Settings, className: 'bg-category-ops/10 text-category-ops border-category-ops/20' },
 };
 
 interface PolicyCardProps {
@@ -30,7 +30,7 @@ export function PolicyCard({ policy, onToggle, toggling }: PolicyCardProps) {
   const CategoryIcon = category.icon;
 
   return (
-    <Card className="group transition-all duration-200 hover:border-blue-500/30">
+    <Card className="group transition-all duration-200 hover:border-accent/30">
       <CardContent className="p-5">
         <div className="flex items-start justify-between mb-3">
           <Badge variant="outline" className={cn('text-xs', severity.className)}>
@@ -53,7 +53,7 @@ export function PolicyCard({ policy, onToggle, toggling }: PolicyCardProps) {
           </button>
         </div>
 
-        <h3 className="font-semibold tracking-tight group-hover:text-blue-400 transition-colors mb-1">
+        <h3 className="font-semibold tracking-tight group-hover:text-accent transition-colors mb-1">
           {policy.name}
         </h3>
         <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
