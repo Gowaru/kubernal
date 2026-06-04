@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,16 +18,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useApplications } from '@/hooks/useApplications';
+import { useCreateDeployment } from '@/hooks/useDeployments';
+import { useEnvironments } from '@/hooks/useEnvironments';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Rocket, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Application } from '@kubernal/shared-types';
-
-const environments = [
-  { value: 'dev', label: 'Development' },
-  { value: 'staging', label: 'Staging' },
-  { value: 'prod', label: 'Production' },
-];
 
 const postDeployOptions = [
   { id: 'tests', label: 'Exécuter les tests' },
@@ -56,14 +52,22 @@ export function DeploymentModal({
   onDeploy,
 }: DeploymentModalProps) {
   const { data: applications } = useApplications();
+  const { data: allEnvironments } = useEnvironments();
+  const createDeployment = useCreateDeployment();
+
   const [step, setStep] = useState<'form' | 'progress' | 'success'>('form');
   const [progress, setProgress] = useState(0);
 
   const [appId, setAppId] = useState(preselectedApp?.id ?? '');
   const [version, setVersion] = useState('');
-  const [environment, setEnvironment] = useState('');
+  const [environmentId, setEnvironmentId] = useState('');
+  const [environmentSlug, setEnvironmentSlug] = useState('');
   const [notes, setNotes] = useState('');
   const [options, setOptions] = useState<string[]>([]);
+
+  const appEnvironments = useMemo(() => {
+    return (allEnvironments ?? []).filter((env) => env.applicationId === appId);
+  }, [allEnvironments, appId]);
 
   useEffect(() => {
     if (preselectedApp) {
@@ -71,34 +75,75 @@ export function DeploymentModal({
     }
   }, [preselectedApp]);
 
+  useEffect(() => {
+    if (!appId) {
+      setEnvironmentId('');
+      setEnvironmentSlug('');
+    }
+  }, [appId]);
+
   const reset = useCallback(() => {
     setStep('form');
     setProgress(0);
     setVersion('');
-    setEnvironment('');
+    setEnvironmentId('');
+    setEnvironmentSlug('');
     setNotes('');
     setOptions([]);
     if (!preselectedApp) setAppId('');
   }, [preselectedApp]);
 
   const handleSubmit = () => {
+    if (!appId || !version || !environmentId) return;
+
     setStep('progress');
     setProgress(0);
 
-    const interval = setInterval(() => {
+    const progressInterval = setInterval(() => {
       setProgress((p) => {
-        const next = Math.min(p + Math.random() * 25, 100);
-        if (next >= 100) {
-          clearInterval(interval);
-          setTimeout(() => setStep('success'), 300);
-        }
+        const next = Math.min(p + Math.random() * 20, 90);
         return next;
       });
     }, 400);
 
-    if (onDeploy) {
-      onDeploy({ applicationId: appId, version, environment, notes, options });
-    }
+    createDeployment.mutate(
+      {
+        applicationId: appId,
+        environmentId,
+        version,
+        commitSha: `sha-${version}-${Date.now().toString(36)}`,
+      },
+      {
+        onSuccess: () => {
+          clearInterval(progressInterval);
+          setProgress(100);
+          setTimeout(() => setStep('success'), 300);
+
+          const envLabel =
+            appEnvironments.find((e) => e.id === environmentId)?.name ?? environmentSlug;
+          toast.success('Déploiement lancé avec succès', {
+            description: `${version} sur ${envLabel}`,
+          });
+
+          if (onDeploy) {
+            onDeploy({
+              applicationId: appId,
+              version,
+              environment: environmentSlug,
+              notes,
+              options,
+            });
+          }
+        },
+        onError: () => {
+          clearInterval(progressInterval);
+          setStep('form');
+          toast.error('Erreur lors du déploiement', {
+            description: 'Une erreur est survenue. Veuillez réessayer.',
+          });
+        },
+      },
+    );
   };
 
   const handleClose = () => {
@@ -107,15 +152,10 @@ export function DeploymentModal({
   };
 
   const handleSuccessDone = () => {
-    const environmentLabel =
-      environments.find((e) => e.value === environment)?.label ?? environment;
-    toast.success('Déploiement lancé avec succès', {
-      description: `${version} sur ${environmentLabel}`,
-    });
     handleClose();
   };
 
-  const isValid = appId && version && environment;
+  const isValid = appId && version && environmentId;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -158,14 +198,28 @@ export function DeploymentModal({
 
               <div className="space-y-2">
                 <Label htmlFor="env">Environnement</Label>
-                <Select value={environment} onValueChange={setEnvironment}>
+                <Select
+                  value={environmentId}
+                  onValueChange={(value) => {
+                    setEnvironmentId(value);
+                    const found = appEnvironments.find((e) => e.id === value);
+                    setEnvironmentSlug(found?.type ?? '');
+                  }}
+                  disabled={!appId || appEnvironments.length === 0}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un environnement" />
+                    <SelectValue placeholder={
+                      !appId
+                        ? 'Sélectionnez d\'abord une application'
+                        : appEnvironments.length === 0
+                          ? 'Aucun environnement disponible'
+                          : 'Sélectionner un environnement'
+                    } />
                   </SelectTrigger>
                   <SelectContent>
-                    {environments.map((env) => (
-                      <SelectItem key={env.value} value={env.value}>
-                        {env.label}
+                    {appEnvironments.map((env) => (
+                      <SelectItem key={env.id} value={env.id}>
+                        {env.name} ({env.type})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -267,7 +321,7 @@ export function DeploymentModal({
               <p className="text-sm text-muted-foreground text-center max-w-xs">
                 L'application a été déployée sur l'environnement{' '}
                 <strong className="text-foreground">
-                  {environments.find((e) => e.value === environment)?.label}
+                  {appEnvironments.find((e) => e.id === environmentId)?.name ?? environmentSlug}
                 </strong>{' '}
                 avec la version <strong className="text-foreground">{version}</strong>.
               </p>

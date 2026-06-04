@@ -115,7 +115,7 @@ export default function AppDetail() {
             <Rocket className="mr-2 h-4 w-4" />
             Déployer
           </Button>
-          <Button variant="outline" disabled>
+          <Button variant="outline" disabled title="Fonctionnalité à venir">
             <Archive className="mr-2 h-4 w-4" />
             Archiver
           </Button>

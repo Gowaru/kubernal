@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCreateApplication } from '@/hooks/useApplications';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useTeams } from '@/hooks/useTeams';
 import { useTemplates } from '@/hooks/useTemplates';
 import { Loader2, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -39,6 +40,7 @@ interface CreateApplicationModalProps {
 }
 
 export function CreateApplicationModal({ open, onOpenChange }: CreateApplicationModalProps) {
+  const { data: currentUser } = useCurrentUser();
   const { data: teams } = useTeams();
   const { data: templates } = useTemplates();
   const createApplication = useCreateApplication();
@@ -128,6 +130,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
         description: form.description || undefined,
         teamId: form.teamId,
         templateId: form.templateId,
+        ownerId: currentUser?.id ?? '',
       });
       clearInterval(interval);
       setProgress(100);

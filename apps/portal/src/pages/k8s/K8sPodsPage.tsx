@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Box, Search, Filter } from 'lucide-react';
 import { K8sContextBar } from '@/components/k8s/K8sContextBar';
 import { PodTooltip } from '@/components/k8s/PodTooltip';
@@ -46,7 +47,15 @@ const STATUS_PILLS: Record<K8sPodPhase, string> = {
 };
 
 export default function K8sPodsPage() {
-  const { data: pods = [], isLoading } = useAllK8sPods();
+  const { data: pods = [], isLoading, error } = useAllK8sPods();
+
+  useEffect(() => {
+    if (error) {
+      toast.error('Erreur lors du chargement des données', {
+        description: (error as Error)?.message || 'Veuillez réessayer',
+      });
+    }
+  }, [error]);
   const [search, setSearch] = useState('');
   const [namespaceFilter, setNamespaceFilter] = useState<string>('all');
   const [selectedPod, setSelectedPod] = useState<K8sPod | null>(null);

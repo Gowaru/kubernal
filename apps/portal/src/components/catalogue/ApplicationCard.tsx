@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatRelativeTime } from '@/lib/utils';
-import { Rocket, GitBranch, Clock } from 'lucide-react';
+import { Rocket, Clock } from 'lucide-react';
 import type { Application } from '@kubernal/shared-types';
 
 const statusConfig: Record<string, { label: string; className: string; dot: string }> = {
@@ -60,10 +60,6 @@ export function ApplicationCard({ application, onDeploy }: ApplicationCardProps)
         </div>
 
         <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <GitBranch className="h-3.5 w-3.5" />
-            v1.2.3
-          </span>
           <span className="flex items-center gap-1">
             <Clock className="h-3.5 w-3.5" />
             {formatRelativeTime(application.createdAt)}

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,9 +44,27 @@ const demoKeys = [
 
 export default function Settings() {
   const { isDark, toggle: toggleTheme } = useTheme();
-  const { data: currentUser, isLoading: userLoading } = useCurrentUser();
-  const { data: users } = useUsers();
-  const { data: teams } = useTeams();
+  const { data: currentUser, isLoading: userLoading, error: userError } = useCurrentUser();
+  const { data: users, error: usersError } = useUsers();
+  const { data: teams, error: teamsError } = useTeams();
+
+  useEffect(() => {
+    if (userError) {
+      toast.error('Erreur lors du chargement des données', {
+        description: (userError as Error)?.message || 'Veuillez réessayer',
+      });
+    }
+    if (usersError) {
+      toast.error('Erreur lors du chargement des données', {
+        description: (usersError as Error)?.message || 'Veuillez réessayer',
+      });
+    }
+    if (teamsError) {
+      toast.error('Erreur lors du chargement des données', {
+        description: (teamsError as Error)?.message || 'Veuillez réessayer',
+      });
+    }
+  }, [userError, usersError, teamsError]);
   const [notifications, setNotifications] = useState<string[]>(['deploy_failure', 'policy_violation']);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -267,7 +285,7 @@ export default function Settings() {
                 Supprime définitivement votre compte et toutes les données associées
               </p>
             </div>
-            <Button variant="outline" size="sm" disabled className="border-destructive/30 text-destructive">
+            <Button variant="outline" size="sm" disabled className="border-destructive/30 text-destructive" title="Fonctionnalité à venir">
               <Trash2 className="mr-2 h-4 w-4" />
               Supprimer
             </Button>

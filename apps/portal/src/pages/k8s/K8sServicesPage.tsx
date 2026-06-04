@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Network, Search, Filter } from 'lucide-react';
 import { K8sContextBar } from '@/components/k8s/K8sContextBar';
 import { useK8sServices } from '@/hooks/useK8sServices';
@@ -49,7 +50,15 @@ function formatPorts(ports: { name: string; port: number; targetPort: number; pr
 }
 
 export default function K8sServicesPage() {
-  const { data: services = [], isLoading } = useK8sServices();
+  const { data: services = [], isLoading, error } = useK8sServices();
+
+  useEffect(() => {
+    if (error) {
+      toast.error('Erreur lors du chargement des données', {
+        description: (error as Error)?.message || 'Veuillez réessayer',
+      });
+    }
+  }, [error]);
   const [search, setSearch] = useState('');
   const [namespaceFilter, setNamespaceFilter] = useState<string>('all');
 

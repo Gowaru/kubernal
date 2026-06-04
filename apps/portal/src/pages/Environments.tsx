@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,7 +14,15 @@ const envTypeConfig: Record<string, { label: string; icon: typeof Cloud; color: 
 };
 
 export default function Environments() {
-  const { data: envs, isLoading } = useEnvironments();
+  const { data: envs, isLoading, error } = useEnvironments();
+
+  useEffect(() => {
+    if (error) {
+      toast.error('Erreur lors du chargement des données', {
+        description: (error as Error)?.message || 'Veuillez réessayer',
+      });
+    }
+  }, [error]);
 
   if (isLoading) {
     return (
@@ -46,6 +56,13 @@ export default function Environments() {
         </p>
       </div>
 
+      {Object.keys(grouped).length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16">
+          <Server className="h-12 w-12 text-muted-foreground/40 mb-3" />
+          <h3 className="text-lg font-medium">Aucun environnement</h3>
+          <p className="text-sm text-muted-foreground mt-1">Les environnements sont créés automatiquement lors du déploiement.</p>
+        </div>
+      ) : (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {Object.entries(grouped).map(([type, environments]) => {
           const config = envTypeConfig[type] ?? { label: type, icon: Cloud, color: 'text-muted-foreground' };
@@ -89,6 +106,7 @@ export default function Environments() {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
-// TODO: replace mock with API call when backend endpoints are ready
+// Mock K8s data — fallback when no live cluster is available.
+// Mirrors apps/portal/src/mocks/k8s-data.ts data structures.
 
 import type {
   K8sClusterContext,
@@ -756,50 +757,3 @@ export const MOCK_EVENTS: K8sEvent[] = [
     source: 'horizontal-pod-autoscaler',
   },
 ];
-
-const LOG_LEVELS = ['INFO', 'WARN', 'ERROR', 'DEBUG'] as const;
-
-const LOG_MESSAGES: string[] = [
-  'HTTP GET /api/v1/payments 200 12ms',
-  'HTTP POST /api/v1/payments 201 45ms',
-  'HTTP GET /api/v1/users/42 200 8ms',
-  'HTTP GET /api/v1/notifications 200 15ms',
-  'HTTP PUT /api/v1/users/42 200 23ms',
-  'HTTP GET /healthz 200 1ms',
-  'database query executed in 3ms rows=24',
-  'database query executed in 12ms rows=1',
-  'cache HIT for key=user:42:profile',
-  'cache MISS for key=payment:txn:8910',
-  'cache HIT for key=config:feature-flags',
-  'connection pool stats: active=8 idle=12 max=20',
-  'redis PING ok latency=0.3ms',
-  'grpc call to user-service.GetProfile took 5ms',
-  'grpc call to notification-svc.Send took 18ms',
-  'outgoing HTTP request to /webhook/stripe took 120ms',
-  'JWT token validated for user_id=42 scope=read:payments',
-  'rate limiter: remaining=98 limit=100 window=60s',
-  'middleware: CORS origin https://app.kubernal.io allowed',
-  'migration completed: 42 records updated',
-  'background job completed: send-daily-report duration=2.1s',
-  'retry attempt 2/3 for external API call',
-  'request body too large: 5.2MB exceeds 4MB limit',
-  'panic recovered in /api/v1/payments handler',
-  'graceful shutdown initiated, draining connections',
-  'TLS handshake completed with client cipher=TLS_AES_128_GCM_SHA256',
-  'worker pool: submitted task queue_size=3 workers=8',
-  'prometheus metrics exported: 142 counters, 38 histograms',
-];
-
-export function generateMockLogLine(): string {
-  const level = LOG_LEVELS[Math.floor(Math.random() * LOG_LEVELS.length)];
-  const message = LOG_MESSAGES[Math.floor(Math.random() * LOG_MESSAGES.length)];
-  const d = new Date();
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  const ss = String(d.getSeconds()).padStart(2, '0');
-  return `[${hh}:${mm}:${ss}] ${level} ${message}`;
-}
-
-export function generateMockPodLogs(count: number): string[] {
-  return Array.from({ length: count }, () => generateMockLogLine());
-}

@@ -238,6 +238,7 @@ export interface K8sContainerResources {
 }
 
 export interface K8sHPAStatus {
+  name: string;
   minReplicas: number;
   maxReplicas: number;
   currentReplicas: number;

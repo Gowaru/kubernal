@@ -27,7 +27,7 @@ export function useApplication(id: string) {
 export function useCreateApplication() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (app: { name: string; description?: string; teamId: string; templateId: string }) => {
+    mutationFn: async (app: { name: string; description?: string; teamId: string; templateId: string; ownerId: string }) => {
       const { data } = await apiClient.post<{ data: Application }>('/applications', app);
       return data.data;
     },

@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useDeployment, useDeploymentViolations, useApproveDeployment } from '@/hooks/useDeployments';
 import { useApplications } from '@/hooks/useApplications';
+import { useUsers } from '@/hooks/useUsers';
 import { useK8sPods } from '@/hooks/useK8sPods';
 import { useArgoSync } from '@/hooks/useArgoSync';
 import { useCrossplaneClaims } from '@/hooks/useCrossplaneClaims';
@@ -57,6 +58,7 @@ export default function DeploymentDetail() {
   const { data: deployment, isLoading, error } = useDeployment(id!);
   const { data: violations } = useDeploymentViolations(id!);
   const { data: applications } = useApplications();
+  const { data: users } = useUsers();
   const { data: clusterInfo } = useClusterInfo();
 
   const appName = useMemo(() => {
@@ -69,10 +71,10 @@ export default function DeploymentDetail() {
   const envId = deployment?.environment?.type ?? 'prod';
   const namespace = deployment?.environment?.namespace ?? `prod-${appId}`;
 
-  const { data: pods } = useK8sPods(appId, envId);
+  const { data: pods } = useK8sPods(namespace);
   const { data: argoStatus } = useArgoSync(appId, envId);
-  const { data: claimsData } = useCrossplaneClaims(appId, envId);
-  const { data: hpaData } = useHPA(appId, envId);
+  const { data: claimsData } = useCrossplaneClaims(namespace);
+  const { data: hpaData } = useHPA(namespace);
   const { data: events } = useK8sEvents(namespace);
 
   const [selectedPod, setSelectedPod] = useState<K8sPod | null>(null);
@@ -99,13 +101,17 @@ export default function DeploymentDetail() {
     setApproveStep('progress');
     setApproveProgress(0);
 
+    const userId = users?.[0]?.id ?? '';
+    const userName = users?.[0]?.name ?? 'Vous';
+    const userEmail = users?.[0]?.email ?? '';
+
     approveDeployment.mutate(
-      { id, approvedById: 'system' },
+      { id, approvedById: userId },
       {
         onSuccess: () => {
           queryClient.setQueryData(['deployments', id], (old: Deployment | undefined) => {
             if (!old) return old;
-            return { ...old, status: 'deploying', approvedBy: { id: 'optimistic', name: 'Vous', email: '' } };
+            return { ...old, status: 'deploying', approvedBy: { id: userId, name: userName, email: userEmail } };
           });
         },
         onError: () => {
@@ -127,7 +133,7 @@ export default function DeploymentDetail() {
         return next;
       });
     }, 350);
-  }, [id, approveDeployment, queryClient]);
+  }, [id, approveDeployment, queryClient, users]);
 
   useEffect(() => {
     if (error) {
@@ -158,7 +164,11 @@ export default function DeploymentDetail() {
           Retour aux déploiements
         </Button>
         {isPending && (
-          <Button onClick={() => setShowApproveModal(true)}>
+          <Button
+            onClick={() => setShowApproveModal(true)}
+            disabled={!users?.length}
+            title={!users?.length ? 'Aucun utilisateur' : undefined}
+          >
             Approuver le déploiement
           </Button>
         )}
@@ -200,11 +210,6 @@ export default function DeploymentDetail() {
         </div>
         <K8sActionsBar
           argoStatus={defaultArgoStatus}
-          onRestart={() => toast.info('Redémarrage rolling lancé')}
-          onSync={() => toast.info('Sync Argo CD lancé')}
-          onGrafana={() => toast.info('Ouverture Grafana...')}
-          onPortForward={() => toast.info('Port-forward activé')}
-          onEditYaml={() => toast.info('Ouverture éditeur YAML...')}
         />
       </div>
 
@@ -265,7 +270,7 @@ export default function DeploymentDetail() {
                   <CardTitle className="text-base">Scale (HPA)</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <ScaleControl hpa={hpaData.hpa} onScale={(n) => toast.info(`Scale à ${n} replicas demandé`)} />
+                  <ScaleControl hpa={hpaData.hpa} />
                 </CardContent>
               </Card>
             </>

@@ -5,11 +5,6 @@ import type { ArgoAppStatus } from '@kubernal/shared-types';
 
 interface K8sActionsBarProps {
   argoStatus: ArgoAppStatus;
-  onRestart?: () => void;
-  onSync?: () => void;
-  onGrafana?: () => void;
-  onPortForward?: () => void;
-  onEditYaml?: () => void;
 }
 
 const ACTIONS = [
@@ -22,19 +17,7 @@ const ACTIONS = [
 
 export function K8sActionsBar({
   argoStatus,
-  onRestart,
-  onSync,
-  onGrafana,
-  onPortForward,
-  onEditYaml,
 }: K8sActionsBarProps) {
-  const handlers: Record<string, (() => void) | undefined> = {
-    restart: onRestart,
-    sync: onSync,
-    grafana: onGrafana,
-    portforward: onPortForward,
-    yaml: onEditYaml,
-  };
 
   const isOutOfSync = argoStatus.sync === 'OutOfSync';
 
@@ -51,11 +34,12 @@ export function K8sActionsBar({
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.05 }}
-            onClick={handlers[action.key]}
+            disabled
+            title="Démo : nécessite un cluster K8s branché"
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors',
-              isSync && isOutOfSync && 'border-k8s-pending/30 text-k8s-pending hover:bg-k8s-pending/10',
-              isRestart && isOutOfSync && 'border-k8s-pending/30 text-k8s-pending hover:bg-k8s-pending/10',
+              'inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors opacity-50 cursor-not-allowed',
+              isSync && isOutOfSync && 'border-k8s-pending/30 text-k8s-pending',
+              isRestart && isOutOfSync && 'border-k8s-pending/30 text-k8s-pending',
             )}
           >
             <Icon className="h-3.5 w-3.5" />

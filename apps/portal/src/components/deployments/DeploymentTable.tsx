@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, ExternalLink, Timer, GitBranch } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeployments, useApproveDeployment } from '@/hooks/useDeployments';
+import { useUsers } from '@/hooks/useUsers';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -60,6 +61,7 @@ function formatDuration(startedAt: string | Date, completedAt: string | Date | n
 export function DeploymentTable() {
   const navigate = useNavigate();
   const { data: deployments, isLoading, error } = useDeployments();
+  const { data: users } = useUsers();
   const approveDeployment = useApproveDeployment();
   const [search, setSearch] = useState('');
   const [envFilter, setEnvFilter] = useState('');
@@ -156,11 +158,12 @@ export function DeploymentTable() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => approveDeployment.mutate({ id: row.id, approvedById: 'system' }, {
+                onClick={() => approveDeployment.mutate({ id: row.id, approvedById: users?.[0]?.id ?? '' }, {
                   onSuccess: () => toast.success('Déploiement approuvé'),
                   onError: () => toast.error("Erreur lors de l'approbation"),
                 })}
-                disabled={approveDeployment.isPending}
+                disabled={approveDeployment.isPending || !users?.length}
+                title={!users?.length ? 'Aucun utilisateur' : undefined}
               >
                 Approuver
               </Button>
@@ -176,7 +179,7 @@ export function DeploymentTable() {
         );
       },
     }),
-  ], [navigate, approveDeployment]);
+  ], [navigate, approveDeployment, users]);
 
   const table = useReactTable({
     data: enrichedDeployments,

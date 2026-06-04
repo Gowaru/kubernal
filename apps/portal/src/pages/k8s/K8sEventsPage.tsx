@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { toast } from 'sonner';
 import { AlertTriangle, Search, Filter } from 'lucide-react';
 import { K8sContextBar } from '@/components/k8s/K8sContextBar';
 import { K8sEventFeed } from '@/components/k8s/K8sEventFeed';
@@ -35,7 +36,15 @@ function formatRelativeTime(iso: string): string {
 }
 
 export default function K8sEventsPage() {
-  const { data: events = [], isLoading } = useK8sEvents(MOCK_CLUSTER.namespace);
+  const { data: events = [], isLoading, error } = useK8sEvents(MOCK_CLUSTER.namespace);
+
+  useEffect(() => {
+    if (error) {
+      toast.error('Erreur lors du chargement des données', {
+        description: (error as Error)?.message || 'Veuillez réessayer',
+      });
+    }
+  }, [error]);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
 
@@ -162,10 +171,10 @@ export default function K8sEventsPage() {
                         <TableCell className="font-mono text-xs font-medium">
                           {event.reason}
                         </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground truncate max-w-45">
+                        <TableCell className="font-mono text-xs text-muted-foreground truncate max-w-[180px]">
                           {event.involvedObject}
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground truncate max-w-62.5">
+                        <TableCell className="text-xs text-muted-foreground truncate max-w-[250px]">
                           {event.message}
                         </TableCell>
                         <TableCell className="text-center">

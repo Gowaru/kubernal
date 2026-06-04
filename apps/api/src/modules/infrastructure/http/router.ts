@@ -7,6 +7,7 @@ import { environmentController } from '../../../modules/environment/environment.
 import { deploymentController } from '../../../modules/deployment/deployment.controller.js';
 import { pipelineController } from '../../../modules/pipeline/pipeline.controller.js';
 import { policyController } from '../../../modules/policy/policy.controller.js';
+import { kubernetesController } from '../../../modules/kubernetes/kubernetes.controller.js';
 
 import { validate } from '../../../shared/middleware/validate.js';
 import { createUserSchema, updateUserSchema } from '../../../modules/user/user.schema.js';
@@ -126,6 +127,15 @@ export function createRouter(): Router {
   router.post('/policies', validate(createPolicySchema), policyController.create);
   router.patch('/policies/:id', validate(updatePolicySchema), policyController.update);
   router.delete('/policies/:id', policyController.delete);
+
+  // ─── Kubernetes ─────────────────────────────────────────────────────────
+  router.get('/kubernetes/pods', kubernetesController.listPods);
+  router.get('/kubernetes/services', kubernetesController.listServices);
+  router.get('/kubernetes/events', kubernetesController.listEvents);
+  router.get('/kubernetes/cluster', kubernetesController.getClusterInfo);
+  router.get('/kubernetes/argo', kubernetesController.getArgoStatus);
+  router.get('/kubernetes/hpa', kubernetesController.listHPA);
+  router.get('/kubernetes/crossplane/claims', kubernetesController.listClaims);
 
   return router;
 }

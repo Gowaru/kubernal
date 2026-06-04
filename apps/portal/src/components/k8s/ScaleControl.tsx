@@ -5,18 +5,17 @@ import type { K8sHPAStatus } from '@kubernal/shared-types';
 
 interface ScaleControlProps {
   hpa: K8sHPAStatus;
-  onScale?: (replicas: number) => void;
 }
 
-export function ScaleControl({ hpa, onScale }: ScaleControlProps) {
+export function ScaleControl({ hpa }: ScaleControlProps) {
   const cpuOverTarget = hpa.cpuTarget !== null && hpa.cpuCurrent !== null && hpa.cpuCurrent > hpa.cpuTarget;
 
   return (
     <div className="flex items-center gap-3 px-3 py-2 bg-secondary/50 rounded-lg border border-border">
       <button
-        onClick={() => onScale?.(hpa.desiredReplicas - 1)}
-        disabled={hpa.desiredReplicas <= hpa.minReplicas}
-        className="inline-flex items-center justify-center rounded-md border border-border h-8 w-8 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        disabled
+        title="Démo : nécessite un cluster K8s branché"
+        className="inline-flex items-center justify-center rounded-md border border-border h-8 w-8 text-muted-foreground transition-colors opacity-50 cursor-not-allowed"
       >
         <Minus className="h-4 w-4" />
       </button>
@@ -42,9 +41,9 @@ export function ScaleControl({ hpa, onScale }: ScaleControlProps) {
       </div>
 
       <button
-        onClick={() => onScale?.(hpa.desiredReplicas + 1)}
-        disabled={hpa.desiredReplicas >= hpa.maxReplicas}
-        className="inline-flex items-center justify-center rounded-md border border-border h-8 w-8 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        disabled
+        title="Démo : nécessite un cluster K8s branché"
+        className="inline-flex items-center justify-center rounded-md border border-border h-8 w-8 text-muted-foreground transition-colors opacity-50 cursor-not-allowed"
       >
         <Plus className="h-4 w-4" />
       </button>

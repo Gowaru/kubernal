@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { AppWindow, Rocket, CheckCircle2, XCircle, Activity } from 'lucide-react';
+import { toast } from 'sonner';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { WelcomeCard } from '@/components/dashboard/WelcomeCard';
 import { DeploymentChart } from '@/components/dashboard/DeploymentChart';
@@ -28,18 +30,38 @@ function computeDeploymentTrend(deployments: { createdAt: Date | string }[] | un
 
 function computeUptime(deployments: { status: string }[] | undefined) {
   if (!deployments || deployments.length === 0) return 'N/A';
-  const healthy = deployments.filter((d) => d.status === 'healthy').length;
-  const failed = deployments.filter((d) => d.status === 'failed').length;
-  const total = healthy + failed;
+  const up = deployments.filter((d) =>
+    ['healthy', 'building', 'deploying', 'pending'].includes(d.status),
+  ).length;
+  const down = deployments.filter((d) =>
+    ['failed', 'rolled_back', 'cancelled'].includes(d.status),
+  ).length;
+  const total = up + down;
   if (total === 0) return 'N/A';
-  return `${((healthy / total) * 100).toFixed(2)}%`;
+  return `${((up / total) * 100).toFixed(2)}%`;
 }
 
 export default function Dashboard() {
-  const { data: apps, isLoading: appsLoading } = useApplications();
-  const { data: deployments, isLoading: deploymentsLoading } = useDeployments();
+  const { data: apps, isLoading: appsLoading, error: appsError } = useApplications();
+  const { data: deployments, isLoading: deploymentsLoading, error: deploymentsError } = useDeployments();
 
   const isLoading = appsLoading || deploymentsLoading;
+
+  useEffect(() => {
+    if (appsError) {
+      toast.error('Erreur lors du chargement des données', {
+        description: (appsError as Error)?.message || 'Veuillez réessayer',
+      });
+    }
+  }, [appsError]);
+
+  useEffect(() => {
+    if (deploymentsError) {
+      toast.error('Erreur lors du chargement des données', {
+        description: (deploymentsError as Error)?.message || 'Veuillez réessayer',
+      });
+    }
+  }, [deploymentsError]);
   const successCount = deployments?.filter((d) => d.status === 'healthy').length ?? 0;
   const failedCount = deployments?.filter((d) => d.status === 'failed').length ?? 0;
   const totalDeployments = deployments?.length ?? 0;

@@ -1,4 +1,4 @@
-import { KubeConfig, CoreV1Api, RbacAuthorizationV1Api } from '@kubernetes/client-node';
+import { KubeConfig, CoreV1Api, RbacAuthorizationV1Api, CustomObjectsApi } from '@kubernetes/client-node';
 import { logger } from './logger.js';
 
 const kc = new KubeConfig();
@@ -11,8 +11,10 @@ try {
   logger.info('K8s client: using default kubeconfig');
 }
 
+export const kubeConfig = kc;
 export const coreApi = kc.makeApiClient(CoreV1Api);
 export const rbacApi = kc.makeApiClient(RbacAuthorizationV1Api);
+export const customObjectsApi = kc.makeApiClient(CustomObjectsApi);
 
 export type ResourceSplit = { cpu: string; memory: string };
 

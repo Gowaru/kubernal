@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Rocket, Eye, RefreshCw } from 'lucide-react';
@@ -7,6 +9,7 @@ import { DeploymentModal } from '@/components/deployments/DeploymentModal';
 
 export function QuickActions() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showDeployModal, setShowDeployModal] = useState(false);
 
   return (
@@ -43,7 +46,7 @@ export function QuickActions() {
           <Button
             variant="outline"
             className="w-full justify-start gap-3 h-11"
-            onClick={() => window.location.reload()}
+            onClick={() => { queryClient.invalidateQueries(); toast.success('Données rafraîchies'); }}
           >
             <RefreshCw className="h-4 w-4 text-status-warning" />
             Rafraîchir
