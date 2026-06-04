@@ -29,3 +29,16 @@ export function formatRelativeTime(date: string | Date): string {
   if (diffDays < 7) return `il y a ${diffDays}j`;
   return formatDate(date);
 }
+
+export function getEnvSlug(deployment: {
+  environment?: { type?: string } | null;
+  environmentId?: string | null;
+  environmentName?: string | null;
+}): string | null {
+  if (deployment.environment?.type) return deployment.environment.type;
+  const name = deployment.environmentName ?? deployment.environmentId ?? '';
+  if (name.includes('-dev') || name.endsWith('-dev') || name === 'dev') return 'dev';
+  if (name.includes('staging') || name === 'staging') return 'staging';
+  if (name.includes('prod') || name === 'prod') return 'prod';
+  return null;
+}

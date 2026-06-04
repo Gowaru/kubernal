@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Cloud, GitBranch, Clock } from 'lucide-react';
-import { formatRelativeTime } from '@/lib/utils';
+import { formatRelativeTime, getEnvSlug } from '@/lib/utils';
 import { StatusBadge } from '@/components/deployments/StatusBadge';
 import type { Deployment } from '@kubernal/shared-types';
 
@@ -11,9 +11,9 @@ const envLabels: Record<string, string> = {
 };
 
 const envColors: Record<string, string> = {
-  dev: 'text-blue-400',
-  staging: 'text-amber-400',
-  prod: 'text-red-400',
+  dev: 'text-env-dev',
+  staging: 'text-env-staging',
+  prod: 'text-env-prod',
 };
 
 interface AppEnvCardProps {
@@ -22,13 +22,13 @@ interface AppEnvCardProps {
 }
 
 export function AppEnvCard({ envId, deployments }: AppEnvCardProps) {
-  const envDeployments = deployments.filter((d) => d.environmentId === envId);
+  const envDeployments = deployments.filter((d) => getEnvSlug(d) === envId);
   const lastDeploy = [...envDeployments].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   )[0];
 
   return (
-    <Card className="transition-all duration-200 hover:border-blue-500/30">
+    <Card className="transition-all duration-200 hover:border-accent/30">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">

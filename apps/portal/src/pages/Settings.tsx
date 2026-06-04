@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useTheme } from '@/hooks/use-theme';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useUsers } from '@/hooks/useUsers';
 import { useTeams } from '@/hooks/useTeams';
 import { cn } from '@/lib/utils';
 import {
@@ -43,6 +45,7 @@ const demoKeys = [
 export default function Settings() {
   const { isDark, toggle: toggleTheme } = useTheme();
   const { data: currentUser, isLoading: userLoading } = useCurrentUser();
+  const { data: users } = useUsers();
   const { data: teams } = useTeams();
   const [notifications, setNotifications] = useState<string[]>(['deploy_failure', 'policy_violation']);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
@@ -84,25 +87,41 @@ export default function Settings() {
           </CardTitle>
           <CardDescription>Informations de votre compte utilisateur</CardDescription>
         </CardHeader>
-  <CardContent className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nom</Label>
-            <Input id="name" value={userLoading ? 'Chargement...' : (currentUser?.name ?? '')} readOnly className="bg-muted/50" />
+    <CardContent className="space-y-4">
+        {userLoading ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-9 w-full rounded-md" />
+              </div>
+            ))}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" value={userLoading ? 'Chargement...' : (currentUser?.email ?? '')} readOnly className="bg-muted/50" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="role">Rôle</Label>
-            <Input id="role" value={userLoading ? 'Chargement...' : (currentUser?.role ?? '')} readOnly className="bg-muted/50" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="team">Équipe</Label>
-            <Input id="team" value={userLoading ? 'Chargement...' : (teams?.find(t => t.id === currentUser?.teamId)?.name ?? currentUser?.teamId ?? '')} readOnly className="bg-muted/50" />
-          </div>
-        </div>
+        ) : (
+          (() => {
+            const user = currentUser ?? users?.[0];
+            return (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nom</Label>
+                  <Input id="name" value={user?.name ?? ''} readOnly className="bg-muted/50" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" value={user?.email ?? ''} readOnly className="bg-muted/50" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Rôle</Label>
+                  <Input id="role" value={user?.role ?? ''} readOnly className="bg-muted/50" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="team">Équipe</Label>
+                  <Input id="team" value={teams?.find(t => t.id === user?.teamId)?.name ?? user?.teamId ?? ''} readOnly className="bg-muted/50" />
+                </div>
+              </div>
+            );
+          })()
+        )}
       </CardContent>
       </Card>
 
@@ -232,23 +251,23 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      <Card className="border-red-500/20">
+      <Card className="border-destructive/20">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base text-red-400">
+          <CardTitle className="flex items-center gap-2 text-base text-destructive">
             <AlertTriangle className="h-4 w-4" />
             Zone dangereuse
           </CardTitle>
           <CardDescription>Actions irréversibles — soyez prudent</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between rounded-lg border border-red-500/20 bg-red-500/5 p-4">
+          <div className="flex items-center justify-between rounded-lg border border-destructive/20 bg-destructive/5 p-4">
             <div>
-              <p className="text-sm font-medium text-red-400">Supprimer le compte</p>
+              <p className="text-sm font-medium text-destructive">Supprimer le compte</p>
               <p className="text-xs text-muted-foreground">
                 Supprime définitivement votre compte et toutes les données associées
               </p>
             </div>
-            <Button variant="outline" size="sm" disabled className="border-red-500/30 text-red-400">
+            <Button variant="outline" size="sm" disabled className="border-destructive/30 text-destructive">
               <Trash2 className="mr-2 h-4 w-4" />
               Supprimer
             </Button>
