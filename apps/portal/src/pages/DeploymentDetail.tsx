@@ -2,32 +2,39 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowLeft, Box, ExternalLink, Timer, GitBranch, User, Calendar, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, GitBranch, User, Calendar, Timer, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useDeployment, useDeploymentViolations, useApproveDeployment } from '@/hooks/useDeployments';
-import type { Deployment } from '@kubernal/shared-types';
 import { useApplications } from '@/hooks/useApplications';
-import { usePipelines } from '@/hooks/usePipelines';
+import { useK8sPods } from '@/hooks/useK8sPods';
+import { useArgoSync } from '@/hooks/useArgoSync';
+import { useCrossplaneClaims } from '@/hooks/useCrossplaneClaims';
+import { useHPA } from '@/hooks/useHPA';
+import { useK8sEvents } from '@/hooks/useK8sEvents';
+import { useClusterInfo } from '@/hooks/useClusterInfo';
+import { K8sContextBar } from '@/components/k8s/K8sContextBar';
+import { ArgoSyncBadge } from '@/components/k8s/ArgoSyncBadge';
+import { GitOpsPipeline } from '@/components/k8s/GitOpsPipeline';
+import { InfrastructureClaims } from '@/components/k8s/InfrastructureClaims';
+import { PodGrid } from '@/components/k8s/PodGrid';
+import { ResourceGauge } from '@/components/k8s/ResourceGauge';
+import { ScaleControl } from '@/components/k8s/ScaleControl';
+import { K8sActionsBar } from '@/components/k8s/K8sActionsBar';
+import { K8sEventFeed } from '@/components/k8s/K8sEventFeed';
+import { PodLogDrawer } from '@/components/k8s/PodLogDrawer';
 import { StatusBadge } from '@/components/deployments/StatusBadge';
-import { PipelineTimeline } from '@/components/deployments/PipelineTimeline';
-import { BuildLogs } from '@/components/deployments/BuildLogs';
 import { ViolationsList } from '@/components/deployments/ViolationsList';
 import { formatDate, formatRelativeTime } from '@/lib/utils';
+import type { Deployment, K8sPod } from '@kubernal/shared-types';
 
 const triggerLabels: Record<string, string> = {
   manual: 'Manuel',
   git_push: 'Git Push',
   scheduled: 'Planifié',
   rollback: 'Rollback',
-};
-
-const envLabels: Record<string, string> = {
-  dev: 'Development',
-  staging: 'Staging',
-  prod: 'Production',
 };
 
 function formatDuration(startedAt: string | Date, completedAt: string | Date | null): string {
@@ -46,15 +53,11 @@ export default function DeploymentDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
   const { data: deployment, isLoading, error } = useDeployment(id!);
   const { data: violations } = useDeploymentViolations(id!);
   const { data: applications } = useApplications();
-  const { data: pipelines } = usePipelines();
-  const pipeline = pipelines?.find((p) => p.deploymentId === id);
-  const approveDeployment = useApproveDeployment();
-  const [showApproveModal, setShowApproveModal] = useState(false);
-  const [approveStep, setApproveStep] = useState<'confirm' | 'progress' | 'success'>('confirm');
-  const [approveProgress, setApproveProgress] = useState(0);
+  const { data: clusterInfo } = useClusterInfo();
 
   const appName = useMemo(() => {
     if (!applications || !deployment) return '';
@@ -62,10 +65,33 @@ export default function DeploymentDetail() {
     return app?.name ?? deployment.applicationId.slice(0, 8);
   }, [applications, deployment]);
 
+  const appId = (appName || 'unknown').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const envId = deployment?.environment?.type ?? 'prod';
+  const namespace = deployment?.environment?.namespace ?? `prod-${appId}`;
+
+  const { data: pods } = useK8sPods(appId, envId);
+  const { data: argoStatus } = useArgoSync(appId, envId);
+  const { data: claimsData } = useCrossplaneClaims(appId, envId);
+  const { data: hpaData } = useHPA(appId, envId);
+  const { data: events } = useK8sEvents(namespace);
+
+  const [selectedPod, setSelectedPod] = useState<K8sPod | null>(null);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [approveStep, setApproveStep] = useState<'confirm' | 'progress' | 'success'>('confirm');
+  const [approveProgress, setApproveProgress] = useState(0);
+
+  const approveDeployment = useApproveDeployment();
+
   const isPending = deployment?.status === 'pending';
-  const envLabel = deployment?.environment?.type
-    ? (envLabels[deployment.environment.type] ?? deployment.environment.type)
-    : (deployment?.environmentId ?? '');
+
+  const defaultArgoStatus = argoStatus ?? {
+    sync: 'Unknown' as const,
+    health: 'Unknown' as const,
+    revision: deployment?.commitSha ?? 'unknown',
+    branch: 'main',
+    lastSyncAt: null,
+    message: null,
+  };
 
   const handleApprove = useCallback(() => {
     if (!id) return;
@@ -73,15 +99,20 @@ export default function DeploymentDetail() {
     setApproveStep('progress');
     setApproveProgress(0);
 
-  approveDeployment.mutate({ id, approvedById: 'system' }, {
-    onSuccess: () => {
-      queryClient.setQueryData(['deployments', id], (old: Deployment | undefined) => {
-          if (!old) return old;
-          return { ...old, status: 'running', approvedBy: { id: 'optimistic', name: 'Vous', email: '' } };
-        });
+    approveDeployment.mutate(
+      { id, approvedById: 'system' },
+      {
+        onSuccess: () => {
+          queryClient.setQueryData(['deployments', id], (old: Deployment | undefined) => {
+            if (!old) return old;
+            return { ...old, status: 'deploying', approvedBy: { id: 'optimistic', name: 'Vous', email: '' } };
+          });
+        },
+        onError: () => {
+          toast.error("Erreur lors de l'approbation");
+        },
       },
-      onError: () => { toast.error("Erreur lors de l'approbation"); },
-    });
+    );
 
     const interval = setInterval(() => {
       setApproveProgress((p) => {
@@ -133,140 +164,171 @@ export default function DeploymentDetail() {
         )}
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
+      {clusterInfo && (
+        <K8sContextBar
+          cluster={clusterInfo}
+          namespace={namespace}
+          branch={defaultArgoStatus.branch}
+          revision={defaultArgoStatus.revision}
+        />
+      )}
+
+      <div className="space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <h2 className="text-2xl font-bold tracking-tight">
-            Déploiement {deployment.version}
+            {appName}{' '}
+            <span className="text-muted-foreground font-mono text-lg">{deployment.version}</span>
           </h2>
           <StatusBadge status={deployment.status} />
+          <ArgoSyncBadge
+            sync={isPending ? 'Unknown' : defaultArgoStatus.sync}
+            health={isPending ? 'Unknown' : defaultArgoStatus.health}
+          />
         </div>
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">{appName}</span>
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <span className="flex items-center gap-1.5"><GitBranch className="h-3.5 w-3.5" />{triggerLabels[deployment.trigger] ?? deployment.trigger}</span>
           <span>·</span>
-          <span>{envLabel}</span>
+          <span className="font-mono">{deployment.commitSha?.slice(0, 7) ?? '-'}</span>
           <span>·</span>
           <span>{formatRelativeTime(deployment.createdAt)}</span>
-        </p>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Box className="h-4 w-4" />
-              Application
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            <p className="text-sm font-medium">{appName}</p>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <GitBranch className="h-3 w-3" />
-              {deployment.version}
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span>Déclencheur :</span>
-              {triggerLabels[deployment.trigger] ?? deployment.trigger}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <ExternalLink className="h-4 w-4" />
-              Environnement
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            <p className="text-sm font-medium">
-              {envLabel}
-            </p>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span>Commit :</span>
-              <span className="font-mono">{deployment.commitSha?.slice(0, 7) ?? '-'}</span>
-            </div>
-            {deployment.approvedBy && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <User className="h-3 w-3" />
-                Approuvé par : {deployment.approvedBy.name}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Timer className="h-4 w-4" />
-              Exécution
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Calendar className="h-3 w-3" />
-              Démarré : {formatDate(deployment.startedAt)}
-            </div>
-            {deployment.completedAt && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Calendar className="h-3 w-3" />
-                Terminé : {formatDate(deployment.completedAt)}
-              </div>
-            )}
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Timer className="h-3 w-3" />
-              Durée : {formatDuration(deployment.startedAt, deployment.completedAt)}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Pipeline</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <PipelineTimeline status={deployment.status} pipeline={pipeline} />
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Logs de build</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 px-4 pb-4">
-              <BuildLogs status={deployment.status} />
-            </CardContent>
-          </Card>
-
-          {deployment.artifacts.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Artefacts</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {deployment.artifacts.map((artifact, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
-                  >
-                    <span className="text-sm font-mono truncate">{artifact.name}</span>
-                    <span className="text-xs text-muted-foreground shrink-0">{artifact.size}</span>
-                    <Button variant="ghost" size="sm" className="h-7 shrink-0">
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+          {deployment.approvedBy && (
+            <>
+              <span>·</span>
+              <span className="flex items-center gap-1.5"><User className="h-3.5 w-3.5" />Approuvé par {deployment.approvedBy.name}</span>
+            </>
           )}
         </div>
+        <K8sActionsBar
+          argoStatus={defaultArgoStatus}
+          onRestart={() => toast.info('Redémarrage rolling lancé')}
+          onSync={() => toast.info('Sync Argo CD lancé')}
+          onGrafana={() => toast.info('Ouverture Grafana...')}
+          onPortForward={() => toast.info('Port-forward activé')}
+          onEditYaml={() => toast.info('Ouverture éditeur YAML...')}
+        />
       </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Pipeline GitOps</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <GitOpsPipeline deploymentStatus={deployment.status} argoStatus={defaultArgoStatus} />
+        </CardContent>
+      </Card>
+
+      {claimsData && claimsData.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Claims Crossplane</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <InfrastructureClaims claims={claimsData} />
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid gap-5 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              Pods{' '}
+              {hpaData && pods && pods.length > 0 && (
+                <span className="text-sm font-mono text-muted-foreground">
+                  ({pods.length} replicas)
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {pods && pods.length > 0 ? (
+              <PodGrid pods={pods} selectedPodId={selectedPod?.id} onPodSelect={setSelectedPod} />
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-8">Aucun pod trouvé</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="space-y-5">
+          {hpaData && (
+            <>
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Resources</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <ResourceGauge resources={hpaData.resources} />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Scale (HPA)</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <ScaleControl hpa={hpaData.hpa} onScale={(n) => toast.info(`Scale à ${n} replicas demandé`)} />
+                </CardContent>
+              </Card>
+            </>
+          )}
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Timer className="h-4 w-4" />Exécution
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Calendar className="h-3 w-3" />Démarré : {formatDate(deployment.startedAt)}
+              </div>
+              {deployment.completedAt && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Calendar className="h-3 w-3" />Terminé : {formatDate(deployment.completedAt)}
+                </div>
+              )}
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Timer className="h-3 w-3" />Durée : {formatDuration(deployment.startedAt, deployment.completedAt)}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {events && events.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Événements récents</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <K8sEventFeed events={events} />
+          </CardContent>
+        </Card>
+      )}
 
       {violations && violations.length > 0 && (
         <ViolationsList violations={violations} />
       )}
+
+      {deployment.artifacts.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Artefacts</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {deployment.artifacts.map((artifact, i) => (
+              <div key={i} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+                <span className="text-sm font-mono truncate">{artifact.name}</span>
+                <span className="text-xs text-muted-foreground shrink-0">{artifact.size}</span>
+                <Button variant="ghost" size="sm" className="h-7 shrink-0">
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      <PodLogDrawer pod={selectedPod} onClose={() => setSelectedPod(null)} />
 
       <Dialog open={showApproveModal} onOpenChange={(open) => { if (!open) setShowApproveModal(false); }}>
         <DialogContent className="sm:max-w-md">
@@ -275,8 +337,7 @@ export default function DeploymentDetail() {
               <DialogHeader>
                 <DialogTitle>Approuver le déploiement</DialogTitle>
                 <DialogDescription>
-                  Voulez-vous approuver le déploiement {deployment.version} sur{' '}
-                  {envLabel}&nbsp;?
+                  Voulez-vous approuver le déploiement {deployment.version} ?
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
@@ -289,17 +350,14 @@ export default function DeploymentDetail() {
               </DialogFooter>
             </>
           )}
-
           {approveStep === 'progress' && (
             <>
               <DialogHeader>
                 <DialogTitle>Approbation en cours</DialogTitle>
-                <DialogDescription>
-                  Validation des politiques de sécurité...
-                </DialogDescription>
+                <DialogDescription>Validation des politiques de sécurité...</DialogDescription>
               </DialogHeader>
               <div className="flex flex-col items-center justify-center py-8 space-y-4">
-                <Loader2 className="h-12 w-12 animate-spin text-blue-400" />
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 <div className="w-full max-w-xs space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Progression</span>
@@ -307,7 +365,7 @@ export default function DeploymentDetail() {
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
                     <div
-                      className="h-full rounded-full bg-blue-500 transition-all duration-300 ease-out"
+                      className="h-full rounded-full bg-primary transition-all duration-300 ease-out"
                       style={{ width: `${approveProgress}%` }}
                     />
                   </div>
@@ -321,23 +379,16 @@ export default function DeploymentDetail() {
               </div>
             </>
           )}
-
           {approveStep === 'success' && (
             <>
               <DialogHeader>
                 <DialogTitle>Déploiement approuvé !</DialogTitle>
-                <DialogDescription>
-                  Le déploiement a été approuvé et est en cours d'exécution.
-                </DialogDescription>
+                <DialogDescription>Le déploiement a été approuvé et est en cours d'exécution.</DialogDescription>
               </DialogHeader>
               <div className="flex flex-col items-center justify-center py-8 space-y-4">
                 <CheckCircle2 className="h-16 w-16 text-emerald-400" />
                 <p className="text-sm text-muted-foreground text-center max-w-xs">
-                  Le déploiement <strong className="text-foreground">{deployment.version}</strong> sur{' '}
-                  <strong className="text-foreground">
-              {envLabel}
-                  </strong>{' '}
-                  a été approuvé avec succès.
+                  Le déploiement <strong className="text-foreground">{deployment.version}</strong> a été approuvé avec succès.
                 </p>
               </div>
               <DialogFooter>

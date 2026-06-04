@@ -1,20 +1,35 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useEnvironments } from '@/hooks/useEnvironments';
 import { Cloud, Server, CheckCircle2, AlertTriangle, ShieldAlert } from 'lucide-react';
 import type { Environment } from '@kubernal/shared-types';
 
 const envTypeConfig: Record<string, { label: string; icon: typeof Cloud; color: string }> = {
-  dev: { label: 'Development', icon: Server, color: 'text-blue-400' },
-  staging: { label: 'Staging', icon: AlertTriangle, color: 'text-amber-400' },
-  prod: { label: 'Production', icon: ShieldAlert, color: 'text-red-400' },
+  dev: { label: 'Development', icon: Server, color: 'text-env-dev' },
+  staging: { label: 'Staging', icon: AlertTriangle, color: 'text-env-staging' },
+  prod: { label: 'Production', icon: ShieldAlert, color: 'text-env-prod' },
 };
 
 export default function Environments() {
   const { data: envs, isLoading } = useEnvironments();
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-64 text-muted-foreground">Chargement...</div>;
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Environnements</h2>
+          <p className="text-muted-foreground">
+            Configuration et statut des environnements de déploiement.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-48 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   const grouped = (envs ?? []).reduce<Record<string, Environment[]>>((acc, env) => {
@@ -33,10 +48,10 @@ export default function Environments() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {Object.entries(grouped).map(([type, environments]) => {
-          const config = envTypeConfig[type] ?? { label: type, icon: Cloud, color: 'text-gray-400' };
+          const config = envTypeConfig[type] ?? { label: type, icon: Cloud, color: 'text-muted-foreground' };
           const Icon = config.icon;
           return (
-            <Card key={type} className="group transition-all duration-200 hover:border-blue-500/30">
+            <Card key={type} className="group transition-all duration-200 hover:border-accent/30">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
-import { Search, AlertCircle, Info, AlertTriangle, Activity, Cpu, MemoryStick, Timer, RefreshCw } from 'lucide-react';
+import { Search, AlertCircle, Info, AlertTriangle, Activity, Cpu, MemoryStick, Timer, RefreshCw, FileText } from 'lucide-react';
 
 interface LogEntry {
   id: string;
@@ -131,7 +131,7 @@ export default function Observability() {
   const [metrics, setMetrics] = useState<MetricsState>(() => {
     const initial = generateSnapshot();
     const history = Array.from({ length: 20 }, () => generateSnapshot(initial));
-    return { current: initial, history, uptimeEvents: 0, uptimeTotal: 1 };
+    return { current: initial, history, uptimeEvents: 0, uptimeTotal: 0 };
   });
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -176,8 +176,8 @@ export default function Observability() {
     };
   }, [paused]);
 
-  const uptime = metrics.uptimeTotal > 0
-    ? ((metrics.uptimeEvents / metrics.uptimeTotal) * 100).toFixed(2)
+  const uptime = metrics.uptimeEvents > 0
+    ? ((metrics.uptimeTotal / metrics.uptimeEvents) * 100).toFixed(2)
     : '100.00';
 
   const filtered = logs.filter((log) => {
@@ -198,7 +198,7 @@ export default function Observability() {
     {
       label: 'Requêtes / min',
       value: metrics.current.requestsPerMin.toLocaleString('fr-FR'),
-      color: 'text-blue-400',
+      color: 'text-accent',
       icon: Activity,
       dataKey: 'requestsPerMin' as const,
       unit: '',
@@ -230,7 +230,7 @@ export default function Observability() {
     {
       label: 'Déploiements actifs',
       value: String(metrics.current.activeDeployments),
-      color: 'text-violet-400',
+      color: 'text-category-compliance',
       icon: RefreshCw,
       dataKey: 'activeDeployments' as const,
       unit: '',
@@ -271,13 +271,13 @@ export default function Observability() {
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <div className={`h-2 w-2 rounded-full ${paused ? 'bg-gray-500' : 'bg-emerald-400'}`} />
+            <div className={`h-2 w-2 rounded-full ${paused ? 'bg-muted-foreground' : 'bg-emerald-400'}`} />
             <span className="text-xs text-muted-foreground">
               {paused ? 'En pause' : 'En direct'}
             </span>
             <button
               onClick={() => setPaused(!paused)}
-              className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              className="text-xs text-primary hover:text-primary/80 transition-colors"
             >
               {paused ? 'Reprendre' : 'Pause'}
             </button>
@@ -301,7 +301,7 @@ export default function Observability() {
                 </div>
               </CardHeader>
               <CardContent className="pb-3">
-                <div className="h-16">
+                <div className="h-16 w-full min-w-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={[...metrics.history, metrics.current]}>
                       <defs>
@@ -330,9 +330,9 @@ export default function Observability() {
 
       <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-2">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Activity className="h-4 w-4 text-emerald-400" />
+          <Activity className="h-4 w-4 text-status-success" />
           <span>Uptime (session)</span>
-          <span className="font-mono font-medium text-emerald-400">{uptime}%</span>
+          <span className="font-mono font-medium text-status-success">{uptime}%</span>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span>Erreurs : <span className="font-mono text-red-400">{metrics.history.filter(m => m.errorRate > 8).length}</span></span>
@@ -370,26 +370,34 @@ export default function Observability() {
 
       <Card>
         <CardContent className="p-0">
-          <div className="divide-y divide-border">
-            {filtered.map((log) => {
-              const Icon = levelIcons[log.level];
-              return (
-                <div
-                  key={log.id}
-                  className="flex items-start gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 transition-colors font-mono"
-                >
-                  <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${levelColors[log.level]}`} />
-                  <span className="shrink-0 text-muted-foreground">
-                    {new Date(log.timestamp).toLocaleTimeString('fr-FR')}
-                  </span>
-                  <span className="shrink-0 text-muted-foreground">
-                    [{log.source}]
-                  </span>
-                  <span className="text-foreground/90">{log.message}</span>
-                </div>
-              );
-            })}
-          </div>
+          {filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-border rounded-lg">
+              <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-1">Aucun log</h3>
+              <p className="text-muted-foreground text-sm">Aucun log ne correspond à vos filtres</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {filtered.map((log) => {
+                const Icon = levelIcons[log.level];
+                return (
+                  <div
+                    key={log.id}
+                    className="flex items-start gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 transition-colors font-mono"
+                  >
+                    <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${levelColors[log.level]}`} />
+                    <span className="shrink-0 text-muted-foreground">
+                      {new Date(log.timestamp).toLocaleTimeString('fr-FR')}
+                    </span>
+                    <span className="shrink-0 text-muted-foreground">
+                      [{log.source}]
+                    </span>
+                    <span className="text-foreground/90">{log.message}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
