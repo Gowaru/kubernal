@@ -2,6 +2,7 @@ import type { V1Deployment, V1Service } from '@kubernetes/client-node';
 import { appsApi, coreApi, ensureNamespace, kubeConfig } from '../../shared/k8s-client.js';
 import { db } from '../../shared/database.js';
 import { logger } from '../../shared/logger.js';
+import { k8sResourceName } from '../../shared/k8s-utils.js';
 
 const PLACEHOLDER_IMAGE = 'node:20-alpine';
 
@@ -15,11 +16,6 @@ interface DeploymentWithRelations {
   startedAt: Date;
   application: { id: string; name: string };
   environment: { id: string; name: string; type: string; namespace: string };
-}
-
-function k8sResourceName(dep: DeploymentWithRelations): string {
-  const safe = dep.application.name.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-  return `${safe}-${dep.environment.type}`.slice(0, 63);
 }
 
 function buildDeploymentManifest(dep: DeploymentWithRelations): V1Deployment {

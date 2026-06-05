@@ -21,13 +21,22 @@ import { useCreateApplication } from '@/hooks/useApplications';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useTeams } from '@/hooks/useTeams';
 import { useTemplates } from '@/hooks/useTemplates';
-import { Loader2, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, CheckCircle2, ChevronLeft, ChevronRight, Github, GitBranch } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { detectProvider, isValidRepoUrl, REPO_URL_REGEX } from '@/lib/repo-utils';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Le nom est requis'),
   description: z.string().optional(),
+  repositoryUrl: z
+    .string()
+    .trim()
+    .optional()
+    .refine(
+      (v) => !v || REPO_URL_REGEX.test(v),
+      'URL invalide (GitHub, GitLab ou Bitbucket)',
+    ),
   teamId: z.string().min(1, "L'équipe est requise"),
   templateId: z.string().min(1, 'Le template est requis'),
 });
@@ -49,6 +58,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
   const [form, setForm] = useState<FormData>({
     name: '',
     description: '',
+    repositoryUrl: '',
     teamId: '',
     templateId: '',
   });
@@ -61,7 +71,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
 
   const reset = useCallback(() => {
     setStep('step1');
-    setForm({ name: '', description: '', teamId: '', templateId: '' });
+    setForm({ name: '', description: '', repositoryUrl: '', teamId: '', templateId: '' });
     setErrors({});
   }, []);
 
@@ -115,6 +125,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
       await createApplication.mutateAsync({
         name: form.name,
         description: form.description || undefined,
+        repositoryUrl: form.repositoryUrl || undefined,
         teamId: form.teamId,
         templateId: form.templateId,
         ownerId: currentUser?.id ?? '',
@@ -174,6 +185,39 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                 {errors.description && (
                   <p className="text-xs text-red-400">{errors.description}</p>
                 )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="repositoryUrl" className="flex items-center gap-2">
+                  <GitBranch className="h-3.5 w-3.5" />
+                  Dépôt Git
+                  <span className="text-xs text-muted-foreground font-normal">(optionnel)</span>
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="repositoryUrl"
+                    placeholder="https://github.com/owner/repo.git"
+                    value={form.repositoryUrl}
+                    onChange={(e) => setField('repositoryUrl', e.target.value)}
+                    className="pr-10"
+                  />
+                  {form.repositoryUrl && detectProvider(form.repositoryUrl) === 'github' && (
+                    <Github className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  )}
+                </div>
+                {form.repositoryUrl && isValidRepoUrl(form.repositoryUrl) && (
+                  <p className="text-xs text-emerald-400">
+                    {detectProvider(form.repositoryUrl) === 'github' && 'GitHub détecté'}
+                    {detectProvider(form.repositoryUrl) === 'gitlab' && 'GitLab détecté'}
+                    {detectProvider(form.repositoryUrl) === 'bitbucket' && 'Bitbucket détecté'}
+                  </p>
+                )}
+                {errors.repositoryUrl && (
+                  <p className="text-xs text-red-400">{errors.repositoryUrl}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Lien direct vers les commits et les diffs. Si vide, le dépôt du template sera utilisé.
+                </p>
               </div>
             </div>
 
@@ -243,6 +287,9 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                   <p>Nom : <span className="text-foreground">{form.name}</span></p>
                   {form.description && (
                     <p>Description : <span className="text-foreground">{form.description}</span></p>
+                  )}
+                  {form.repositoryUrl && (
+                    <p>Dépôt : <span className="text-foreground font-mono text-xs">{form.repositoryUrl}</span></p>
                   )}
                   <p>Équipe : <span className="text-foreground">{selectedTeam?.name ?? form.teamId}</span></p>
                   <p>Template : <span className="text-foreground">{selectedTemplate?.name ?? form.templateId}</span></p>

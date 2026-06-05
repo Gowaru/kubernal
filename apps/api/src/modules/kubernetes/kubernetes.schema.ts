@@ -74,3 +74,11 @@ export const execInPodSchema = z.object({
   command: z.array(z.string()).optional().default(['/bin/sh']),
   container: z.string().optional(),
 });
+
+export const deploymentAccessParamsSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export const deploymentAccessQuerySchema = z.object({
+  cluster: z.string().optional().default('kubernal-prod'),
+});

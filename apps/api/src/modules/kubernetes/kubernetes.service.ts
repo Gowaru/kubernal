@@ -402,6 +402,114 @@ export const kubernetesService = {
       suggestion: `kubectl exec -it -n ${namespace} ${name}${container ? ` -c ${container}` : ''} -- ${command.join(' ')}`,
     };
   },
+
+  async getAccessInfo(
+    namespace: string,
+    deploymentName: string,
+    _cluster = 'kubernal-prod',
+  ): Promise<{
+    namespace: string;
+    deployment: string;
+    type: 'nodeport' | 'clusterip' | 'none';
+    urls: Array<{ port: number; nodePort?: number; url: string; kind: 'nodeport' | 'portforward' | 'internal' }>;
+    serviceName: string | null;
+    serviceType: string | null;
+    ports: Array<{ name: string; port: number; nodePort: number | null; protocol: string }>;
+    suggestion: string | null;
+  }> {
+    return tryK8s(
+      async () => {
+        const servicesRes = await coreApi.listNamespacedService({ namespace }).catch(() => ({
+          items: [],
+        }));
+        const services =
+          (servicesRes as {
+            items?: Array<{
+              metadata?: { name?: string };
+              spec?: {
+                type?: string;
+                ports?: Array<{ name?: string; port?: number; nodePort?: number; protocol?: string }>;
+              };
+            }>;
+          }).items ?? [];
+        const matchingService =
+          services.find((s) => s.metadata?.name === deploymentName) ?? services[0] ?? null;
+
+        const urls: Array<{
+          port: number;
+          nodePort?: number;
+          url: string;
+          kind: 'nodeport' | 'portforward' | 'internal';
+        }> = [];
+        let type: 'nodeport' | 'clusterip' | 'none' = 'none';
+        let suggestion: string | null = null;
+        let serviceName: string | null = null;
+        let serviceType: string | null = null;
+        let ports: Array<{ name: string; port: number; nodePort: number | null; protocol: string }> = [];
+
+        if (matchingService) {
+          serviceName = matchingService.metadata?.name ?? null;
+          serviceType = matchingService.spec?.type ?? 'ClusterIP';
+          const rawPorts = matchingService.spec?.ports ?? [];
+          ports = rawPorts.map((p) => ({
+            name: p.name ?? '',
+            port: p.port ?? 0,
+            nodePort: p.nodePort ?? null,
+            protocol: p.protocol ?? 'TCP',
+          }));
+
+          if (serviceType === 'NodePort') {
+            type = 'nodeport';
+            for (const p of ports) {
+              if (p.nodePort === null) continue;
+              urls.push({
+                port: p.port,
+                nodePort: p.nodePort,
+                url: `http://localhost:${p.nodePort}`,
+                kind: 'nodeport',
+              });
+            }
+          } else {
+            type = 'clusterip';
+            for (const p of ports) {
+              urls.push({
+                port: p.port,
+                url: `http://${serviceName}.${namespace}.svc.cluster.local:${p.port}`,
+                kind: 'internal',
+              });
+            }
+            if (ports[0]) {
+              suggestion = `kubectl port-forward -n ${namespace} svc/${serviceName} 8080:${ports[0].port}`;
+            }
+          }
+        } else {
+          suggestion = `kubectl port-forward -n ${namespace} deployment/${deploymentName} 8080:8080`;
+        }
+
+        return {
+          namespace,
+          deployment: deploymentName,
+          type,
+          urls,
+          serviceName,
+          serviceType,
+          ports,
+          suggestion,
+        };
+      },
+      {
+        namespace,
+        deployment: deploymentName,
+        type: 'none' as const,
+        urls: [],
+        serviceName: null,
+        serviceType: null,
+        ports: [],
+        suggestion: `kubectl port-forward -n ${namespace} deployment/${deploymentName} 8080:8080`,
+      },
+      'getAccessInfo',
+    );
+  },
 };
 
 function ageSince(date: Date): string {

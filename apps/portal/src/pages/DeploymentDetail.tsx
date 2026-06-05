@@ -30,6 +30,8 @@ import { PodLogDrawer } from '@/components/k8s/PodLogDrawer';
 import { StatusBadge } from '@/components/deployments/StatusBadge';
 import { ViolationsList } from '@/components/deployments/ViolationsList';
 import { PromoteModal } from '@/components/deployments/PromoteModal';
+import { DeploymentCommitLink } from '@/components/deployments/DeploymentCommitLink';
+import { DeploymentAccessCard } from '@/components/deployments/DeploymentAccessCard';
 import { formatDate, formatRelativeTime } from '@/lib/utils';
 import { k8sResourceName } from '@/lib/k8s-utils';
 import type { Deployment, K8sPod } from '@kubernal/shared-types';
@@ -69,6 +71,12 @@ export default function DeploymentDetail(): JSX.Element {
     if (!applications || !deployment) return '';
     const app = applications.find((a) => a.id === deployment.applicationId);
     return app?.name ?? deployment.applicationId.slice(0, 8);
+  }, [applications, deployment]);
+
+  const repositoryUrl = useMemo(() => {
+    if (!applications || !deployment) return null;
+    const app = applications.find((a) => a.id === deployment.applicationId);
+    return app?.repositoryUrl ?? null;
   }, [applications, deployment]);
 
   const appId = (appName || 'unknown').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -227,7 +235,13 @@ export default function DeploymentDetail(): JSX.Element {
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5"><GitBranch className="h-3.5 w-3.5" />{triggerLabels[deployment.trigger] ?? deployment.trigger}</span>
           <span>·</span>
-          <span className="font-mono">{deployment.commitSha?.slice(0, 7) ?? '-'}</span>
+          <span className="font-mono">
+            <DeploymentCommitLink
+              repositoryUrl={repositoryUrl}
+              commitSha={deployment.commitSha ?? ''}
+              short
+            />
+          </span>
           <span>·</span>
           <span>{formatRelativeTime(deployment.createdAt)}</span>
           {deployment.approvedBy && (
@@ -244,6 +258,8 @@ export default function DeploymentDetail(): JSX.Element {
           clusterReady={clusterReady}
         />
       </div>
+
+      <DeploymentAccessCard deploymentId={id!} />
 
       <Card>
         <CardHeader className="pb-3">

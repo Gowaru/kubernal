@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileJson, User, GitBranch } from 'lucide-react';
+import { Users, FileJson, User, GitBranch, ExternalLink } from 'lucide-react';
 import type { JSX } from 'react';
 import type { Team, GoldenPathTemplate } from '@kubernal/shared-types';
+import { getRepoUrl } from '@/lib/repo-utils';
 
 interface AppInfoCardProps {
   team: Team | undefined;
@@ -57,11 +58,23 @@ export function AppInfoCard({ team, template, ownerName, repositoryUrl }: AppInf
         {repositoryUrl && (
           <div className="flex items-start gap-3">
             <GitBranch className="mt-0.5 h-4 w-4 text-muted-foreground" />
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">Dépôt</p>
-              <p className="text-sm text-muted-foreground font-mono truncate max-w-[200px]">
-                {repositoryUrl}
-              </p>
+              {getRepoUrl(repositoryUrl) ? (
+                <a
+                  href={getRepoUrl(repositoryUrl) ?? '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex max-w-full items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span className="font-mono truncate">{repositoryUrl}</span>
+                  <ExternalLink className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </a>
+              ) : (
+                <p className="text-sm text-muted-foreground font-mono truncate max-w-[200px]">
+                  {repositoryUrl}
+                </p>
+              )}
             </div>
           </div>
         )}

@@ -1,5 +1,7 @@
 import type { Request, Response } from 'express';
 import { kubernetesService } from './kubernetes.service.js';
+import { deploymentService } from '../deployment/deployment.service.js';
+import { k8sResourceName } from '../../shared/k8s-utils.js';
 import {
   listPodsSchema,
   listServicesSchema,
@@ -14,6 +16,8 @@ import {
   deleteDeploymentParamsSchema,
   deleteDeploymentQuerySchema,
   execInPodParamsSchema,
+  deploymentAccessParamsSchema,
+  deploymentAccessQuerySchema,
 } from './kubernetes.schema.js';
 
 export const kubernetesController = {
@@ -98,5 +102,21 @@ export const kubernetesController = {
       container: body.container,
     });
     res.json({ data: result });
+  },
+
+  async getDeploymentAccess(req: Request, res: Response) {
+    const params = deploymentAccessParamsSchema.parse(req.params);
+    const query = deploymentAccessQuerySchema.parse(req.query);
+    const deployment = await deploymentService.getById(params.id);
+    const resourceName = k8sResourceName({
+      application: deployment.application,
+      environment: deployment.environment,
+    });
+    const access = await kubernetesService.getAccessInfo(
+      deployment.environment.namespace,
+      resourceName,
+      query.cluster,
+    );
+    res.json({ data: access });
   },
 };

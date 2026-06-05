@@ -5,6 +5,7 @@ import type { Application } from '@kubernal/shared-types';
 type CreateApplicationInput = {
   name: string;
   description?: string;
+  repositoryUrl?: string;
   teamId: string;
   templateId: string;
   ownerId: string;

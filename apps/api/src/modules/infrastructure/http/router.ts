@@ -121,6 +121,7 @@ export function createRouter(): Router {
     validate(recordViolationsSchema),
     deploymentController.recordViolations,
   );
+  router.get('/deployments/:id/access', kubernetesController.getDeploymentAccess);
 
   // ─── Pipelines ──────────────────────────────────────────────────────────
   router.get('/pipelines', pipelineController.list);
