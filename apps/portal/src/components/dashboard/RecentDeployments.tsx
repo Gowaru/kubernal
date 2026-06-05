@@ -5,45 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useDeployments } from '@/hooks/useDeployments';
 import { useApplications } from '@/hooks/useApplications';
 import { formatRelativeTime } from '@/lib/utils';
-import type { DeploymentStatus } from '@kubernal/shared-types';
-
-const statusConfig: Record<DeploymentStatus, { label: string; className: string }> = {
-  pending: {
-    label: 'En attente',
-    className:
-      'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-  },
-  building: {
-    label: 'En construction',
-    className:
-      'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  },
-  deploying: {
-    label: 'Déploiement',
-    className:
-      'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  },
-  healthy: {
-    label: 'Succès',
-    className:
-      'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  },
-  failed: {
-    label: 'Échec',
-    className:
-      'bg-red-500/10 text-red-400 border-red-500/20',
-  },
-  rolled_back: {
-    label: 'Rollback',
-    className:
-      'bg-orange-500/10 text-orange-400 border-orange-500/20',
-  },
-  cancelled: {
-    label: 'Annulé',
-    className:
-      'bg-muted text-muted-foreground border-border',
-  },
-};
+import { getDeploymentStatus } from '@/lib/status-config';
 
 function DeploymentSkeleton() {
   return (
@@ -85,7 +47,7 @@ export function RecentDeployments() {
         ) : (
           <div className="divide-y divide-border">
             {recent.map((dep) => {
-              const status = statusConfig[dep.status];
+              const status = getDeploymentStatus(dep.status);
               return (
                 <Link
                   key={dep.id}
