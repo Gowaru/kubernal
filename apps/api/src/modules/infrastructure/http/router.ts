@@ -32,6 +32,11 @@ import {
   promoteDeploymentSchema,
 } from '../../../modules/deployment/deployment.schema.js';
 import {
+  scaleDeploymentSchema,
+  restartDeploymentSchema,
+  execInPodSchema,
+} from '../../../modules/kubernetes/kubernetes.schema.js';
+import {
   createPipelineSchema,
   updatePipelineStatusSchema,
 } from '../../../modules/pipeline/pipeline.schema.js';
@@ -142,6 +147,23 @@ export function createRouter(): Router {
   router.get('/kubernetes/argo', kubernetesController.getArgoStatus);
   router.get('/kubernetes/hpa', kubernetesController.listHPA);
   router.get('/kubernetes/crossplane/claims', kubernetesController.listClaims);
+  router.get('/kubernetes/pods/:namespace/:name/logs', kubernetesController.getPodLogs);
+  router.patch(
+    '/kubernetes/deployments/:namespace/:name/scale',
+    validate(scaleDeploymentSchema),
+    kubernetesController.scaleDeployment,
+  );
+  router.post(
+    '/kubernetes/deployments/:namespace/:name/restart',
+    validate(restartDeploymentSchema),
+    kubernetesController.restartDeployment,
+  );
+  router.delete('/kubernetes/deployments/:namespace/:name', kubernetesController.deleteDeployment);
+  router.post(
+    '/kubernetes/pods/:namespace/:name/exec',
+    validate(execInPodSchema),
+    kubernetesController.execInPod,
+  );
 
   return router;
 }

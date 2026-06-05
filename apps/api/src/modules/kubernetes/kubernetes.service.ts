@@ -1,5 +1,6 @@
 import {
   coreApi,
+  appsApi,
   kubeConfig,
   customObjectsApi,
 } from '../../shared/k8s-client.js';
@@ -267,6 +268,140 @@ export const kubernetesService = {
       allClaims.filter((c: CrossplaneClaim) => c.namespace === namespace),
       'listClaims',
     );
+  },
+
+  async getPodLogs(
+    namespace: string,
+    name: string,
+    options: { tailLines?: number; container?: string } = {},
+  ): Promise<{ data: string; lines: string[]; namespace: string; name: string; container: string | null }> {
+    const tailLines = options.tailLines ?? 100;
+    const container = options.container ?? null;
+    const result = await tryK8s(
+      async () => {
+        const data = await coreApi.readNamespacedPodLog({
+          namespace,
+          name,
+          ...(container ? { container } : {}),
+          tailLines,
+        });
+        const text = typeof data === 'string' ? data : String(data ?? '');
+        const lines = text.split('\n').filter((l) => l.length > 0);
+        return { data: text, lines, namespace, name, container };
+      },
+      { data: '', lines: [] as string[], namespace, name, container },
+      'getPodLogs',
+    );
+    return result;
+  },
+
+  async scaleDeployment(
+    namespace: string,
+    name: string,
+    replicas: number,
+  ): Promise<{ kind: string; name: string; namespace: string; replicas: number }> {
+    return tryK8s(
+      async () => {
+        const res = await appsApi.patchNamespacedDeployment({
+          namespace,
+          name,
+          body: [{ op: 'replace', path: '/spec/replicas', value: replicas }],
+        });
+        return {
+          kind: 'Deployment',
+          name: res.metadata?.name ?? name,
+          namespace: res.metadata?.namespace ?? namespace,
+          replicas: res.spec?.replicas ?? replicas,
+        };
+      },
+      { kind: 'Deployment', name, namespace, replicas },
+      'scaleDeployment',
+    );
+  },
+
+  async restartDeployment(
+    namespace: string,
+    name: string,
+  ): Promise<{ kind: string; name: string; namespace: string; triggeredAt: string }> {
+    const triggeredAt = new Date().toISOString();
+    return tryK8s(
+      async () => {
+        await appsApi.patchNamespacedDeployment({
+          namespace,
+          name,
+          fieldManager: 'kubernal-restart',
+          body: [
+            {
+              op: 'replace',
+              path: '/spec/template/metadata/annotations',
+              value: { 'kubectl.kubernetes.io/restartedAt': triggeredAt },
+            },
+          ],
+        });
+        return { kind: 'DeploymentRolloutTriggered', name, namespace, triggeredAt };
+      },
+      { kind: 'DeploymentRolloutTriggered', name, namespace, triggeredAt },
+      'restartDeployment',
+    );
+  },
+
+  async deleteDeployment(
+    namespace: string,
+    name: string,
+    options: { deleteService?: boolean } = {},
+  ): Promise<{ deleted: true; name: string; namespace: string; serviceDeleted: boolean }> {
+    const deleteService = options.deleteService ?? true;
+    return tryK8s(
+      async () => {
+        await appsApi.deleteNamespacedDeployment({ namespace, name });
+        let serviceDeleted = false;
+        if (deleteService) {
+          try {
+            await coreApi.deleteNamespacedService({ namespace, name });
+            serviceDeleted = true;
+          } catch (err) {
+            logger.warn({ namespace, name, error: String(err) }, 'deleteNamespacedService best-effort failed');
+            serviceDeleted = false;
+          }
+        }
+        return { deleted: true as const, name, namespace, serviceDeleted };
+      },
+      { deleted: true as const, name, namespace, serviceDeleted: false },
+      'deleteDeployment',
+    );
+  },
+
+  async execInPod(
+    namespace: string,
+    name: string,
+    options: { command?: string[]; container?: string } = {},
+  ): Promise<{
+    kind: string;
+    name: string;
+    namespace: string;
+    container: string | null;
+    command: string[];
+    requiresWebSocket: true;
+    suggestion: string;
+  }> {
+    const command = options.command ?? ['/bin/sh'];
+    const container = options.container ?? null;
+    await tryK8s(
+      async () => {
+        await coreApi.readNamespacedPod({ name, namespace });
+      },
+      null,
+      'execInPod',
+    );
+    return {
+      kind: 'PodExecRequested',
+      name,
+      namespace,
+      container,
+      command,
+      requiresWebSocket: true,
+      suggestion: `kubectl exec -it -n ${namespace} ${name}${container ? ` -c ${container}` : ''} -- ${command.join(' ')}`,
+    };
   },
 };
 

@@ -28,3 +28,49 @@ export const listHPASchema = z.object({
 export const listClaimsSchema = z.object({
   namespace: z.string().optional().default('default'),
 });
+
+export const getPodLogsParamsSchema = z.object({
+  namespace: z.string().min(1),
+  name: z.string().min(1),
+});
+
+export const getPodLogsQuerySchema = z.object({
+  tailLines: z.coerce.number().int().min(1).max(10000).optional().default(100),
+  container: z.string().optional(),
+  cluster: z.string().optional().default('kubernal-prod'),
+});
+
+export const scaleDeploymentParamsSchema = z.object({
+  namespace: z.string().min(1),
+  name: z.string().min(1),
+});
+
+export const scaleDeploymentSchema = z.object({
+  replicas: z.number().int().min(0).max(100),
+});
+
+export const restartDeploymentParamsSchema = z.object({
+  namespace: z.string().min(1),
+  name: z.string().min(1),
+});
+
+export const restartDeploymentSchema = z.object({}).optional();
+
+export const deleteDeploymentParamsSchema = z.object({
+  namespace: z.string().min(1),
+  name: z.string().min(1),
+});
+
+export const deleteDeploymentQuerySchema = z.object({
+  deleteService: z.coerce.boolean().optional().default(true),
+});
+
+export const execInPodParamsSchema = z.object({
+  namespace: z.string().min(1),
+  name: z.string().min(1),
+});
+
+export const execInPodSchema = z.object({
+  command: z.array(z.string()).optional().default(['/bin/sh']),
+  container: z.string().optional(),
+});
