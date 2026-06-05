@@ -82,3 +82,8 @@ export const deploymentAccessParamsSchema = z.object({
 export const deploymentAccessQuerySchema = z.object({
   cluster: z.string().optional().default('kubernal-prod'),
 });
+
+export const compareDeploymentsQuerySchema = z.object({
+  from: z.string().uuid(),
+  to: z.string().uuid(),
+});

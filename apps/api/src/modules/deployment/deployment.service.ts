@@ -1,6 +1,7 @@
 import { InvalidTransitionError, NotFoundError } from '../../shared/errors.js';
 import { db } from '../../shared/database.js';
 import { deploymentRepository } from './deployment.repository.js';
+import { summarizeDiff, type DeploymentDiff } from '../../shared/git-diff.js';
 
 const DEPLOYMENT_STATUS_FLOW: Record<string, string[]> = {
   pending: ['building', 'cancelled', 'failed'],
@@ -91,5 +92,48 @@ export const deploymentService = {
     const deployment = await deploymentRepository.findById(id);
     if (!deployment) throw new NotFoundError('Deployment', id);
     return deploymentRepository.savePolicyViolations(id, violations);
+  },
+
+  async compare(fromId: string, toId: string): Promise<DeploymentDiff> {
+    const [from, to] = await Promise.all([
+      this.getById(fromId),
+      this.getById(toId),
+    ]);
+    if (from.applicationId !== to.applicationId) {
+      throw new InvalidTransitionError(
+        'cross-application compare',
+        'same application only',
+      );
+    }
+    return summarizeDiff(
+      {
+        id: from.id,
+        version: from.version,
+        commitSha: from.commitSha,
+        status: from.status,
+        trigger: from.trigger,
+        approvedById: from.approvedById ?? null,
+        startedAt: from.startedAt,
+        finishedAt: from.completedAt,
+        createdAt: from.createdAt,
+        environmentId: from.environmentId,
+        environmentType: from.environment.type,
+        violations: Array.isArray(from.policyViolations) ? from.policyViolations : undefined,
+      },
+      {
+        id: to.id,
+        version: to.version,
+        commitSha: to.commitSha,
+        status: to.status,
+        trigger: to.trigger,
+        approvedById: to.approvedById ?? null,
+        startedAt: to.startedAt,
+        finishedAt: to.completedAt,
+        createdAt: to.createdAt,
+        environmentId: to.environmentId,
+        environmentType: to.environment.type,
+        violations: Array.isArray(to.policyViolations) ? to.policyViolations : undefined,
+      },
+    );
   },
 };

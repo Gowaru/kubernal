@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { deploymentService } from './deployment.service.js';
 import { triggerReconcile } from './deployment.worker.js';
+import { compareDeploymentsQuerySchema } from '../kubernetes/kubernetes.schema.js';
 
 export const deploymentController = {
   async list(_req: Request, res: Response) {
@@ -51,5 +52,11 @@ export const deploymentController = {
     const id = req.params.id as string;
     const deployment = await deploymentService.recordViolations(id, violations);
     res.json({ data: deployment });
+  },
+
+  async compare(req: Request, res: Response) {
+    const { from, to } = compareDeploymentsQuerySchema.parse(req.query);
+    const diff = await deploymentService.compare(from, to);
+    res.json({ data: diff });
   },
 };

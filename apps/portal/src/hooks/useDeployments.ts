@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { Deployment, PolicyViolation } from '@kubernal/shared-types';
+import type { DeploymentDiff } from '@/lib/git-diff';
 
 export function useDeployments(): UseQueryResult<Deployment[], Error> {
   return useQuery<Deployment[]>({
@@ -94,5 +95,35 @@ export function useDeploymentViolations(id: string): UseQueryResult<PolicyViolat
       return (data.data.policyViolations ?? []) as PolicyViolation[];
     },
     enabled: !!id,
+  });
+}
+
+export function useDeploymentComparison(
+  fromId: string | null | undefined,
+  toId: string | null | undefined,
+): UseQueryResult<DeploymentDiff, Error> {
+  return useQuery<DeploymentDiff>({
+    queryKey: ['deployment-compare', fromId, toId],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ data: DeploymentDiff }>('/deployments/compare', {
+        params: { from: fromId, to: toId },
+      });
+      return data.data;
+    },
+    enabled: !!fromId && !!toId && fromId !== toId,
+  });
+}
+
+export function useDeploymentsByApplication(
+  applicationId: string | undefined,
+): UseQueryResult<Deployment[], Error> {
+  return useQuery<Deployment[]>({
+    queryKey: ['deployments-by-app', applicationId],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ data: Deployment[]; total: number }>('/deployments');
+      return (data.data ?? []).filter((d) => d.applicationId === applicationId);
+    },
+    enabled: !!applicationId,
+    staleTime: 10_000,
   });
 }
