@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type JSX } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -45,7 +45,7 @@ interface TemplateCardProps {
   template: GoldenPathTemplate;
 }
 
-export function TemplateCard({ template }: TemplateCardProps) {
+export function TemplateCard({ template }: TemplateCardProps): JSX.Element {
   const category = categoryConfig[template.category] ?? categoryConfig.library;
   const CategoryIcon = category.icon;
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -254,7 +254,7 @@ interface DetailFieldProps {
   className?: string;
 }
 
-function DetailField({ icon: Icon, label, value, mono, className }: DetailFieldProps) {
+function DetailField({ icon: Icon, label, value, mono, className }: DetailFieldProps): JSX.Element {
   return (
     <div className={`flex items-start gap-3 ${className ?? ''}`}>
       <Icon className="mt-0.5 h-4 w-4 text-muted-foreground shrink-0" />

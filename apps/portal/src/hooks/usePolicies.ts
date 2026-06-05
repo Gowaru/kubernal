@@ -1,8 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { SecurityPolicy } from '@kubernal/shared-types';
 
-export function usePolicies() {
+export function usePolicies(): UseQueryResult<SecurityPolicy[], Error> {
   return useQuery<SecurityPolicy[]>({
     queryKey: ['policies'],
     queryFn: async () => {
@@ -13,7 +13,7 @@ export function usePolicies() {
   });
 }
 
-export function useTogglePolicy() {
+export function useTogglePolicy(): UseMutationResult<SecurityPolicy, Error, { id: string; enabled: boolean }> {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {

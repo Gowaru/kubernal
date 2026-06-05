@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { K8sPod } from '@kubernal/shared-types';
 
-export function useAllK8sPods() {
+export function useAllK8sPods(): UseQueryResult<K8sPod[], Error> {
   return useQuery<K8sPod[]>({
     queryKey: ['k8s-all-pods'],
     queryFn: async () => {

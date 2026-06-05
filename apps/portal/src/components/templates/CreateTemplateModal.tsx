@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type JSX } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -45,7 +45,7 @@ interface CreateTemplateModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalProps) {
+export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalProps): JSX.Element {
   const createTemplate = useCreateTemplate();
 
   const [step, setStep] = useState<'step1' | 'step2' | 'progress' | 'success'>('step1');
@@ -59,7 +59,7 @@ export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalP
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
-  const setField = <K extends keyof FormData>(key: K, value: FormData[K]) => {
+  const setField = <K extends keyof FormData>(key: K, value: FormData[K]): void => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
   };
@@ -71,12 +71,12 @@ export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalP
     setErrors({});
   }, []);
 
-  const handleClose = () => {
+  const handleClose = (): void => {
     reset();
     onOpenChange(false);
   };
 
-  const validateStep1 = () => {
+  const validateStep1 = (): boolean => {
     const result = formSchema.pick({ name: true, category: true, description: true }).safeParse(form);
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof FormData, string>> = {};
@@ -89,7 +89,7 @@ export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalP
     return true;
   };
 
-  const validateStep2 = () => {
+  const validateStep2 = (): boolean => {
     const result = formSchema.pick({ repository: true, version: true }).safeParse(form);
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof FormData, string>> = {};
@@ -102,7 +102,7 @@ export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalP
     return true;
   };
 
-  const handleNext = () => {
+  const handleNext = (): void => {
     if (step === 'step1' && validateStep1()) {
       setStep('step2');
     } else if (step === 'step2' && validateStep2()) {
@@ -110,11 +110,11 @@ export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalP
     }
   };
 
-  const handleBack = () => {
+  const handleBack = (): void => {
     if (step === 'step2') setStep('step1');
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (): Promise<void> => {
     setStep('progress');
     setProgress(0);
 
@@ -146,7 +146,7 @@ export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalP
     }
   };
 
-  const handleSuccessDone = () => {
+  const handleSuccessDone = (): void => {
     toast.success('Template créé avec succès', {
       description: form.name,
     });

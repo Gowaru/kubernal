@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { CrossplaneClaim } from '@kubernal/shared-types';
 
-export function useCrossplaneClaims(namespace: string) {
+export function useCrossplaneClaims(namespace: string): UseQueryResult<CrossplaneClaim[], Error> {
   return useQuery<CrossplaneClaim[]>({
     queryKey: ['k8s-claims', namespace],
     queryFn: async () => {

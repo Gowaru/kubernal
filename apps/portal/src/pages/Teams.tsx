@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type JSX } from 'react';
 import { toast } from 'sonner';
 import { useTeams } from '@/hooks/useTeams';
 import { CreateTeamModal } from '@/components/teams/CreateTeamModal';
@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Users, Plus, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
-export default function Teams() {
+export default function Teams(): JSX.Element {
   const { data: teams, isLoading, error } = useTeams();
   const [search, setSearch] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type JSX } from 'react';
 import { AppWindow, Rocket, CheckCircle2, XCircle, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import { StatsCard } from '@/components/dashboard/StatsCard';
@@ -10,7 +10,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useApplications } from '@/hooks/useApplications';
 import { useDeployments } from '@/hooks/useDeployments';
 
-function computeDeploymentTrend(deployments: { createdAt: Date | string }[] | undefined) {
+function computeDeploymentTrend(
+  deployments: { createdAt: Date | string }[] | undefined,
+): { value: number; positive: boolean } | undefined {
   if (!deployments || deployments.length === 0) return undefined;
   const now = new Date();
   const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
@@ -28,7 +30,7 @@ function computeDeploymentTrend(deployments: { createdAt: Date | string }[] | un
   return { value: Math.abs(change), positive: change > 0 };
 }
 
-function computeUptime(deployments: { status: string }[] | undefined) {
+function computeUptime(deployments: { status: string }[] | undefined): string {
   if (!deployments || deployments.length === 0) return 'N/A';
   const up = deployments.filter((d) =>
     ['healthy', 'building', 'deploying', 'pending'].includes(d.status),
@@ -41,7 +43,7 @@ function computeUptime(deployments: { status: string }[] | undefined) {
   return `${((up / total) * 100).toFixed(2)}%`;
 }
 
-export default function Dashboard() {
+export default function Dashboard(): JSX.Element {
   const { data: apps, isLoading: appsLoading, error: appsError } = useApplications();
   const { data: deployments, isLoading: deploymentsLoading, error: deploymentsError } = useDeployments();
 

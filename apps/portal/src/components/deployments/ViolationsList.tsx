@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { JSX } from 'react';
 import type { PolicyViolation } from '@kubernal/shared-types';
 
 const severityConfig: Record<string, { label: string; className: string }> = {
@@ -27,7 +28,7 @@ interface ViolationsListProps {
   violations: PolicyViolation[];
 }
 
-export function ViolationsList({ violations }: ViolationsListProps) {
+export function ViolationsList({ violations }: ViolationsListProps): JSX.Element | null {
   if (violations.length === 0) return null;
 
   return (

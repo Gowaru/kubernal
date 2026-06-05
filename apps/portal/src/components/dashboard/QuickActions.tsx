@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, Rocket, Eye, RefreshCw } from 'lucide-react';
 import { DeploymentModal } from '@/components/deployments/DeploymentModal';
 
-export function QuickActions() {
+export function QuickActions(): JSX.Element {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showDeployModal, setShowDeployModal] = useState(false);

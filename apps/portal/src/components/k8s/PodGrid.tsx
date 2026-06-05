@@ -1,3 +1,4 @@
+import { type JSX } from 'react';
 import { motion } from 'framer-motion';
 import type { K8sPod, K8sPodPhase } from '@kubernal/shared-types';
 import { cn } from '@/lib/utils';
@@ -81,7 +82,7 @@ function formatTooltip(pod: K8sPod): string {
   ].join('\n');
 }
 
-export function PodGrid({ pods, selectedPodId, onPodSelect }: PodGridProps) {
+export function PodGrid({ pods, selectedPodId, onPodSelect }: PodGridProps): JSX.Element {
   const counts = pods.reduce<Record<K8sPodPhase, number>>(
     (acc, pod) => {
       acc[pod.status] = (acc[pod.status] ?? 0) + 1;

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type JSX } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   BarChart,
@@ -24,7 +24,7 @@ interface DeploymentChartProps {
   deployments: Deployment[];
 }
 
-export function DeploymentChart({ deployments }: DeploymentChartProps) {
+export function DeploymentChart({ deployments }: DeploymentChartProps): JSX.Element {
   const data = useMemo<ChartData[]>(() => {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);

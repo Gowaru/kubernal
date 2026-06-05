@@ -1,3 +1,4 @@
+import { type JSX } from 'react';
 import { Database, Server, Cloud, Network, Boxes } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -40,7 +41,7 @@ interface InfrastructureClaimsProps {
   claims: CrossplaneClaim[];
 }
 
-export function InfrastructureClaims({ claims }: InfrastructureClaimsProps) {
+export function InfrastructureClaims({ claims }: InfrastructureClaimsProps): JSX.Element {
   if (claims.length === 0) {
     return (
       <p className="text-xs text-muted-foreground text-center py-4">Aucune claim infrastructure</p>

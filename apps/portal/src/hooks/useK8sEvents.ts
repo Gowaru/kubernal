@@ -1,8 +1,12 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { K8sEvent } from '@kubernal/shared-types';
 
-export function useK8sEvents(namespace: string, cluster?: string, limit?: number) {
+export function useK8sEvents(
+  namespace: string,
+  cluster?: string,
+  limit?: number,
+): UseQueryResult<K8sEvent[], Error> {
   return useQuery<K8sEvent[]>({
     queryKey: ['k8s-events', namespace, cluster, limit],
     queryFn: async () => {

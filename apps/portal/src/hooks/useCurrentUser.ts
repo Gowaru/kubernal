@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { User } from '@kubernal/shared-types';
 
-export function useCurrentUser() {
+export function useCurrentUser(): UseQueryResult<User, Error> {
   return useQuery<User>({
     queryKey: ['currentUser'],
     queryFn: async () => {

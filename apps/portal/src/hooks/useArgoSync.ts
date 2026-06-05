@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { ArgoAppStatus } from '@kubernal/shared-types';
 
-export function useArgoSync(appId: string, envId: string) {
+export function useArgoSync(appId: string, envId: string): UseQueryResult<ArgoAppStatus, Error> {
   return useQuery<ArgoAppStatus>({
     queryKey: ['k8s-argo-sync', appId, envId],
     queryFn: async () => {

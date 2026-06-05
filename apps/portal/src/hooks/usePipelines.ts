@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { Pipeline } from '@kubernal/shared-types';
 
-export function usePipelines() {
+export function usePipelines(): UseQueryResult<Pipeline[], Error> {
   return useQuery<Pipeline[]>({
     queryKey: ['pipelines'],
     queryFn: async () => {
@@ -13,7 +13,7 @@ export function usePipelines() {
   });
 }
 
-export function usePipeline(id: string) {
+export function usePipeline(id: string): UseQueryResult<Pipeline, Error> {
   return useQuery<Pipeline>({
     queryKey: ['pipelines', id],
     queryFn: async () => {

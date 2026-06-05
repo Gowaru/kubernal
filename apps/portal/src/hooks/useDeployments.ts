@@ -1,8 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { Deployment, PolicyViolation } from '@kubernal/shared-types';
 
-export function useDeployments() {
+export function useDeployments(): UseQueryResult<Deployment[], Error> {
   return useQuery<Deployment[]>({
     queryKey: ['deployments'],
     queryFn: async () => {
@@ -15,7 +15,7 @@ export function useDeployments() {
   });
 }
 
-export function useDeployment(id: string) {
+export function useDeployment(id: string): UseQueryResult<Deployment, Error> {
   return useQuery<Deployment>({
     queryKey: ['deployments', id],
     queryFn: async () => {
@@ -26,15 +26,17 @@ export function useDeployment(id: string) {
   });
 }
 
-export function useCreateDeployment() {
+type CreateDeploymentInput = {
+  applicationId: string;
+  environmentId: string;
+  version: string;
+  commitSha: string;
+};
+
+export function useCreateDeployment(): UseMutationResult<Deployment, Error, CreateDeploymentInput> {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (deployment: {
-      applicationId: string;
-      environmentId: string;
-      version: string;
-      commitSha: string;
-    }) => {
+    mutationFn: async (deployment: CreateDeploymentInput) => {
       const { data } = await apiClient.post<{ data: Deployment }>('/deployments', deployment);
       return data.data;
     },
@@ -44,7 +46,7 @@ export function useCreateDeployment() {
   });
 }
 
-export function useTransitionDeployment() {
+export function useTransitionDeployment(): UseMutationResult<Deployment, Error, { id: string; status: string }> {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -57,7 +59,7 @@ export function useTransitionDeployment() {
   });
 }
 
-export function useApproveDeployment() {
+export function useApproveDeployment(): UseMutationResult<Deployment, Error, { id: string; approvedById: string }> {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, approvedById }: { id: string; approvedById: string }) => {
@@ -71,7 +73,7 @@ export function useApproveDeployment() {
   });
 }
 
-export function usePromoteDeployment() {
+export function usePromoteDeployment(): UseMutationResult<Deployment, Error, { id: string; targetEnv: 'staging' | 'prod' }> {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, targetEnv }: { id: string; targetEnv: 'staging' | 'prod' }) => {
@@ -84,7 +86,7 @@ export function usePromoteDeployment() {
   });
 }
 
-export function useDeploymentViolations(id: string) {
+export function useDeploymentViolations(id: string): UseQueryResult<PolicyViolation[], Error> {
   return useQuery<PolicyViolation[]>({
     queryKey: ['deployments', id, 'violations'],
     queryFn: async () => {

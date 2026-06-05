@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, Search, Bell, Server, Box, CornerDownLeft } from 'lucide-react';
 import { useSidebar } from './SidebarStore';
@@ -21,7 +21,7 @@ const NAMESPACES = [
 ];
 const MAX_RESULTS = 8;
 
-export function Header() {
+export function Header(): JSX.Element {
   const {
     setMobileOpen,
     user,
@@ -65,7 +65,7 @@ export function Header() {
   }, [query]);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
+    const handler = (e: KeyboardEvent): void => {
       if (!(e.metaKey || e.ctrlKey)) return;
       if (e.key.toLowerCase() === 'k') {
         const target = e.target as HTMLElement | null;
@@ -80,15 +80,15 @@ export function Header() {
       }
     };
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    return (): void => window.removeEventListener('keydown', handler);
   }, []);
 
-  const selectResult = (appId: string) => {
+  const selectResult = (appId: string): void => {
     setSearchOpen(false);
     navigate(`/catalogue/${appId}`);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setActiveIndex((i) => Math.min(i + 1, Math.max(0, results.length - 1)));

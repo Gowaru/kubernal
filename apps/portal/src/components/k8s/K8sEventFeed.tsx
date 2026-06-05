@@ -1,3 +1,4 @@
+import { type JSX } from 'react';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { K8sEvent } from '@kubernal/shared-types';
@@ -15,7 +16,7 @@ interface K8sEventFeedProps {
   maxItems?: number;
 }
 
-export function K8sEventFeed({ events, maxItems = 5 }: K8sEventFeedProps) {
+export function K8sEventFeed({ events, maxItems = 5 }: K8sEventFeedProps): JSX.Element {
   const sorted = [...events]
     .sort((a, b) => new Date(b.lastTimestamp).getTime() - new Date(a.lastTimestamp).getTime())
     .slice(0, maxItems);

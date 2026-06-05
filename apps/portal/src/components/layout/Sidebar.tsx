@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type JSX } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -46,7 +46,7 @@ const SHORTCUT_MAP: Record<string, string> = {
   '0': '/templates',
 };
 
-export function Sidebar() {
+export function Sidebar(): JSX.Element {
   const { collapsed, mobileOpen, toggle, setMobileOpen, pendingApprovals, user, setPendingApprovals } = useSidebar();
   const { data: deployments } = useDeployments();
   const { data: k8sEvents = [] } = useK8sEvents(MOCK_CLUSTER.namespace);
@@ -59,7 +59,7 @@ export function Sidebar() {
   }, [deployments, setPendingApprovals]);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
+    const handler = (e: KeyboardEvent): void => {
       if (!(e.metaKey || e.ctrlKey)) return;
       const target = e.target as HTMLElement | null;
       if (target) {
@@ -84,7 +84,7 @@ export function Sidebar() {
       }
     };
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    return (): void => window.removeEventListener('keydown', handler);
   }, [navigate]);
 
   const warningEventCount = k8sEvents.filter((e) => e.type === 'Warning').length;

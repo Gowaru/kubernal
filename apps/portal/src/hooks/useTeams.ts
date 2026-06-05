@@ -1,8 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { Team } from '@kubernal/shared-types';
 
-export function useTeams() {
+export function useTeams(): UseQueryResult<Team[], Error> {
   return useQuery<Team[]>({
     queryKey: ['teams'],
     queryFn: async () => {
@@ -13,7 +13,7 @@ export function useTeams() {
   });
 }
 
-export function useTeam(id: string) {
+export function useTeam(id: string): UseQueryResult<Team, Error> {
   return useQuery<Team>({
     queryKey: ['teams', id],
     queryFn: async () => {
@@ -24,10 +24,18 @@ export function useTeam(id: string) {
   });
 }
 
-export function useCreateTeam() {
+type CreateTeamInput = {
+  name: string;
+  description?: string;
+  namespacePrefix: string;
+  quotaCpu?: string;
+  quotaMemory?: string;
+};
+
+export function useCreateTeam(): UseMutationResult<Team, Error, CreateTeamInput> {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (team: { name: string; description?: string; namespacePrefix: string; quotaCpu?: string; quotaMemory?: string }) => {
+    mutationFn: async (team: CreateTeamInput) => {
       const { data } = await apiClient.post<{ data: Team }>('/teams', team);
       return data.data;
     },

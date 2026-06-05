@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { Environment } from '@kubernal/shared-types';
 
-export function useEnvironments() {
+export function useEnvironments(): UseQueryResult<Environment[], Error> {
   return useQuery<Environment[]>({
     queryKey: ['environments'],
     queryFn: async () => {
@@ -13,7 +13,7 @@ export function useEnvironments() {
   });
 }
 
-export function useEnvironment(id: string) {
+export function useEnvironment(id: string): UseQueryResult<Environment, Error> {
   return useQuery<Environment>({
     queryKey: ['environments', id],
     queryFn: async () => {

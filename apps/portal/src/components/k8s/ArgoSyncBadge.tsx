@@ -1,3 +1,4 @@
+import { type JSX } from 'react';
 import { CheckCircle2, AlertTriangle, XCircle, Loader2, Pause, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ArgoSyncStatus, ArgoHealthStatus } from '@kubernal/shared-types';
@@ -67,7 +68,7 @@ interface ArgoSyncBadgeProps {
   health: ArgoHealthStatus;
 }
 
-export function ArgoSyncBadge({ sync, health }: ArgoSyncBadgeProps) {
+export function ArgoSyncBadge({ sync, health }: ArgoSyncBadgeProps): JSX.Element {
   const style = getBadgeStyle(sync, health);
   const Icon = style.icon;
 

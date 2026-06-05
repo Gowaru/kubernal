@@ -1,5 +1,5 @@
 import * as SheetPrimitive from '@radix-ui/react-dialog';
-import { type ComponentPropsWithoutRef, type ElementRef, type HTMLAttributes, forwardRef } from 'react';
+import { type ComponentPropsWithoutRef, type ElementRef, type HTMLAttributes, type JSX, forwardRef } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
@@ -64,12 +64,12 @@ const SheetContent = forwardRef<
 ));
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
-const SheetHeader = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) => (
+const SheetHeader = ({ className, ...props }: HTMLAttributes<HTMLDivElement>): JSX.Element => (
   <div className={cn('flex flex-col space-y-2 text-center sm:text-left', className)} {...props} />
 );
 SheetHeader.displayName = 'SheetHeader';
 
-const SheetFooter = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) => (
+const SheetFooter = ({ className, ...props }: HTMLAttributes<HTMLDivElement>): JSX.Element => (
   <div className={cn('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2', className)} {...props} />
 );
 SheetFooter.displayName = 'SheetFooter';

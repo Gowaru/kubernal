@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { formatRelativeTime } from '@/lib/utils';
 import { getApplicationStatus } from '@/lib/status-config';
 import { Rocket, Clock } from 'lucide-react';
+import type { JSX } from 'react';
 import type { Application } from '@kubernal/shared-types';
 
 interface ApplicationCardProps {
@@ -12,7 +13,7 @@ interface ApplicationCardProps {
   onDeploy: (app: Application) => void;
 }
 
-export function ApplicationCard({ application, onDeploy }: ApplicationCardProps) {
+export function ApplicationCard({ application, onDeploy }: ApplicationCardProps): JSX.Element {
   const navigate = useNavigate();
   const status = getApplicationStatus(application.status);
 

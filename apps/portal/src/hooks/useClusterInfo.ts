@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { K8sClusterContext } from '@kubernal/shared-types';
 
-export function useClusterInfo() {
+export function useClusterInfo(): UseQueryResult<K8sClusterContext, Error> {
   return useQuery<K8sClusterContext>({
     queryKey: ['k8s-cluster'],
     queryFn: async () => {

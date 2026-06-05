@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { User } from '@kubernal/shared-types';
 
-export function useUsers() {
+export function useUsers(): UseQueryResult<User[], Error> {
   return useQuery<User[]>({
     queryKey: ['users'],
     queryFn: async () => {
@@ -13,7 +13,7 @@ export function useUsers() {
   });
 }
 
-export function useUser(id: string) {
+export function useUser(id: string): UseQueryResult<User, Error> {
   return useQuery<User>({
     queryKey: ['users', id],
     queryFn: async () => {

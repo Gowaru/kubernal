@@ -1,3 +1,4 @@
+import { type JSX } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +8,7 @@ import { useApplications } from '@/hooks/useApplications';
 import { formatRelativeTime } from '@/lib/utils';
 import { getDeploymentStatus } from '@/lib/status-config';
 
-function DeploymentSkeleton() {
+function DeploymentSkeleton(): JSX.Element {
   return (
     <div className="flex items-center justify-between py-3">
       <div className="space-y-2">
@@ -19,7 +20,7 @@ function DeploymentSkeleton() {
   );
 }
 
-export function RecentDeployments() {
+export function RecentDeployments(): JSX.Element {
   const { data: deployments, isLoading } = useDeployments();
   const { data: apps } = useApplications();
 

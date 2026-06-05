@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type JSX } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -43,7 +43,7 @@ export function PromoteModal({
   sourceEnv,
   targetEnv,
   onPromoted,
-}: PromoteModalProps) {
+}: PromoteModalProps): JSX.Element {
   const promote = usePromoteDeployment();
   const [step, setStep] = useState<'confirm' | 'progress' | 'success'>('confirm');
 

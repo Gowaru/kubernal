@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type JSX } from 'react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,7 @@ const envTypeConfig: Record<string, { label: string; icon: typeof Cloud; color: 
   prod: { label: 'Production', icon: ShieldAlert, color: 'text-env-prod' },
 };
 
-export default function Environments() {
+export default function Environments(): JSX.Element {
   const { data: envs, isLoading, error } = useEnvironments();
 
   useEffect(() => {

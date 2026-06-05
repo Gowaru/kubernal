@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, type JSX } from 'react';
 import { Shield, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,7 @@ const categoryFilters: { label: string; value: PolicyCategory | '' }[] = [
   { label: 'Opérations', value: 'operations' },
 ];
 
-export default function Policies() {
+export default function Policies(): JSX.Element {
   const { data: policies, isLoading, error } = usePolicies();
   const togglePolicy = useTogglePolicy();
   const [search, setSearch] = useState('');

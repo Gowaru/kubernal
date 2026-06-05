@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { type LucideIcon } from 'lucide-react';
+import type { JSX } from 'react';
 
 interface StatsCardProps {
   title: string;
@@ -10,7 +11,7 @@ interface StatsCardProps {
   trend?: { value: number; positive: boolean };
 }
 
-export function StatsCard({ title, value, description, icon: Icon, trend }: StatsCardProps) {
+export function StatsCard({ title, value, description, icon: Icon, trend }: StatsCardProps): JSX.Element {
   return (
     <Card>
       <CardContent className="p-6">

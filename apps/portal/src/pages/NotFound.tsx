@@ -1,8 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { Compass, ArrowLeft, LayoutGrid, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import type { JSX } from 'react';
 
-export default function NotFound() {
+export default function NotFound(): JSX.Element {
   const navigate = useNavigate();
 
   return (

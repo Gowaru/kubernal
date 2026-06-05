@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef, useEffect, type JSX } from 'react';
 import { cn } from '@/lib/utils';
 import type { DeploymentStatus } from '@kubernal/shared-types';
 
@@ -109,7 +109,7 @@ interface BuildLogsProps {
   status: DeploymentStatus;
 }
 
-export function BuildLogs({ status }: BuildLogsProps) {
+export function BuildLogs({ status }: BuildLogsProps): JSX.Element {
   const logs = useMemo(() => LOG_DATA[status] ?? LOG_DATA.building, [status]);
   const containerRef = useRef<HTMLDivElement>(null);
 

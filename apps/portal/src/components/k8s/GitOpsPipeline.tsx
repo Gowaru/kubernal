@@ -1,3 +1,4 @@
+import { type JSX } from 'react';
 import { GitBranch, Package, RefreshCw, Rocket, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -79,7 +80,7 @@ interface GitOpsPipelineProps {
   argoStatus: ArgoAppStatus;
 }
 
-export function GitOpsPipeline({ deploymentStatus, argoStatus }: GitOpsPipelineProps) {
+export function GitOpsPipeline({ deploymentStatus, argoStatus }: GitOpsPipelineProps): JSX.Element {
   const steps = computeSteps(deploymentStatus, argoStatus);
 
   return (

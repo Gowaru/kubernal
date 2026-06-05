@@ -1,7 +1,8 @@
+import { type JSX } from 'react';
 import { Toaster as SonnerToaster } from 'sonner';
 import { useTheme } from '@/hooks/use-theme';
 
-export function Toaster() {
+export function Toaster(): JSX.Element {
   const { isDark } = useTheme();
 
   return (

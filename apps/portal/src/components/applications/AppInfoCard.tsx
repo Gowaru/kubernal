@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, FileJson, User, GitBranch } from 'lucide-react';
+import type { JSX } from 'react';
 import type { Team, GoldenPathTemplate } from '@kubernal/shared-types';
 
 interface AppInfoCardProps {
@@ -9,7 +10,7 @@ interface AppInfoCardProps {
   repositoryUrl: string | null | undefined;
 }
 
-export function AppInfoCard({ team, template, ownerName, repositoryUrl }: AppInfoCardProps) {
+export function AppInfoCard({ team, template, ownerName, repositoryUrl }: AppInfoCardProps): JSX.Element {
   return (
     <Card>
       <CardHeader>

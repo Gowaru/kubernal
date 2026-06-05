@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type JSX } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal, Eye, EyeOff, Trash2, X } from 'lucide-react';
+import { Terminal, Eye, EyeOff, Trash2, X, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useK8sPodLogs } from '@/hooks/useK8sActions';
 import { generateMockLogLine, generateMockPodLogs } from '@/mocks/k8s-data';
 import type { K8sPod } from '@kubernal/shared-types';
 
@@ -30,12 +32,19 @@ interface PodLogDrawerProps {
   onClose: () => void;
 }
 
-export function PodLogDrawer({ pod, onClose }: PodLogDrawerProps) {
+export function PodLogDrawer({ pod, onClose }: PodLogDrawerProps): JSX.Element {
   const [logs, setLogs] = useState<string[]>([]);
   const [follow, setFollow] = useState(true);
   const [userScrolledUp, setUserScrolledUp] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const mockIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastLogsRef = useRef<string>('');
+
+  const { data: logsResult, isError, isLoading } = useK8sPodLogs(
+    pod?.name ?? '',
+    pod?.namespace ?? '',
+    { tailLines: 200, enabled: !!pod },
+  );
 
   const isNearBottom = useCallback(() => {
     const el = scrollRef.current;
@@ -52,23 +61,38 @@ export function PodLogDrawer({ pod, onClose }: PodLogDrawerProps) {
     setLogs(generateMockPodLogs(20));
     setUserScrolledUp(false);
     setFollow(true);
+    lastLogsRef.current = '';
   }, [pod?.id]);
 
   useEffect(() => {
+    if (logsResult && logsResult.data !== lastLogsRef.current) {
+      lastLogsRef.current = logsResult.data;
+      const lines = logsResult.lines.length > 0 ? logsResult.lines : generateMockPodLogs(20);
+      setLogs(lines.slice(-500));
+    }
+  }, [logsResult]);
+
+  useEffect(() => {
     if (!pod || !follow) {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (mockIntervalRef.current) {
+        clearInterval(mockIntervalRef.current);
+        mockIntervalRef.current = null;
+      }
       return;
     }
 
-    intervalRef.current = setInterval(() => {
-      setLogs(prev => {
+    mockIntervalRef.current = setInterval(() => {
+      setLogs((prev) => {
         const next = [...prev, generateMockLogLine()];
         return next.length > 500 ? next.slice(-500) : next;
       });
     }, 500);
 
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+    return (): void => {
+      if (mockIntervalRef.current) {
+        clearInterval(mockIntervalRef.current);
+        mockIntervalRef.current = null;
+      }
     };
   }, [pod, follow]);
 
@@ -79,12 +103,18 @@ export function PodLogDrawer({ pod, onClose }: PodLogDrawerProps) {
   }, [logs, follow, userScrolledUp]);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    if (isError && pod) {
+      toast.warning(`Logs distants indisponibles, fallback sur mocks pour ${pod.name}`);
+    }
+  }, [isError, pod]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onClose();
     };
     if (pod) {
       document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
+      return (): void => document.removeEventListener('keydown', handleKeyDown);
     }
   }, [pod, onClose]);
 
@@ -109,10 +139,11 @@ export function PodLogDrawer({ pod, onClose }: PodLogDrawerProps) {
               <Terminal className="h-4 w-4 text-muted-foreground" />
               <span className="font-mono text-sm">{pod.name}</span>
               <span className={cn('h-2 w-2 rounded-full', STATUS_DOT[pod.status] ?? 'bg-k8s-unknown')} />
+              {isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
             </div>
             <div className="flex items-center gap-1">
               <button
-                onClick={() => setFollow(f => !f)}
+                onClick={() => setFollow((f) => !f)}
                 className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
               >
                 {follow ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}

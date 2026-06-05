@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, type JSX } from 'react';
 import { toast } from 'sonner';
 import { Network, Search, Filter } from 'lucide-react';
 import { K8sContextBar } from '@/components/k8s/K8sContextBar';
@@ -40,7 +40,9 @@ function formatAge(iso: string): string {
   return `${Math.floor(diff / 86400)}j`;
 }
 
-function formatPorts(ports: { name: string; port: number; targetPort: number; protocol: string; nodePort?: number }[]): string {
+function formatPorts(
+  ports: { name: string; port: number; targetPort: number; protocol: string; nodePort?: number }[],
+): string {
   return ports
     .map((p) => {
       const base = `${p.port}:${p.targetPort}/${p.protocol}`;
@@ -49,7 +51,7 @@ function formatPorts(ports: { name: string; port: number; targetPort: number; pr
     .join(', ');
 }
 
-export default function K8sServicesPage() {
+export default function K8sServicesPage(): JSX.Element {
   const { data: services = [], isLoading, error } = useK8sServices();
 
   useEffect(() => {

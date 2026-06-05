@@ -1,3 +1,4 @@
+import { type JSX } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users, Cpu, HardDrive, FolderKanban, Calendar } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
@@ -8,7 +9,7 @@ interface TeamCardProps {
   appCount?: number;
 }
 
-export function TeamCard({ team, appCount = 0 }: TeamCardProps) {
+export function TeamCard({ team, appCount = 0 }: TeamCardProps): JSX.Element {
   return (
     <Card className="group transition-all duration-200 hover:border-accent/30 hover:shadow-md hover:shadow-accent/5">
       <CardContent className="p-5">

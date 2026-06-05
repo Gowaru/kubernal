@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, type JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Search } from 'lucide-react';
@@ -26,7 +26,7 @@ import { formatDate } from '@/lib/utils';
 import { getApplicationStatus } from '@/lib/status-config';
 import type { Application } from '@kubernal/shared-types';
 
-export function ApplicationTable() {
+export function ApplicationTable(): JSX.Element {
   const navigate = useNavigate();
   const { data: applications, isLoading, error } = useApplications();
   const [search, setSearch] = useState('');

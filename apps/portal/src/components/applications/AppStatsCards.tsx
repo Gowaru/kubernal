@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type JSX } from 'react';
 import { GitBranch, CheckCircle2, Tag, TrendingUp } from 'lucide-react';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { getEnvSlug } from '@/lib/utils';
@@ -8,7 +8,7 @@ interface AppStatsCardsProps {
   deployments: Deployment[];
 }
 
-export function AppStatsCards({ deployments }: AppStatsCardsProps) {
+export function AppStatsCards({ deployments }: AppStatsCardsProps): JSX.Element {
   const totalDeployments = deployments.length;
 
   const uniqueEnvs = useMemo(() => {

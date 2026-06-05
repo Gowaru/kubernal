@@ -11,14 +11,14 @@ const initialDark = stored !== null ? stored === 'dark' : true;
 
 export const useTheme = create<ThemeState>((set) => ({
   isDark: initialDark,
-  toggle: () =>
+  toggle: (): void =>
     set((state) => {
       const next = !state.isDark;
       document.documentElement.classList.toggle('dark', next);
       localStorage.setItem('kubernal-theme', next ? 'dark' : 'light');
       return { isDark: next };
     }),
-  setDark: (dark) => {
+  setDark: (dark): void => {
     document.documentElement.classList.toggle('dark', dark);
     localStorage.setItem('kubernal-theme', dark ? 'dark' : 'light');
     set({ isDark: dark });

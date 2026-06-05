@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { CheckCircle2, Loader2, XCircle, Ban, Circle, Undo2 } from 'lucide-react';
+import type { JSX } from 'react';
 import type { DeploymentStatus, Pipeline, PipelineStage as PipelineStageType } from '@kubernal/shared-types';
 
 export type StageStatus = 'success' | 'running' | 'failed' | 'pending' | 'skipped' | 'rolled_back' | 'cancelled';
@@ -94,7 +95,7 @@ interface PipelineTimelineProps {
   pipeline?: Pipeline;
 }
 
-export function PipelineTimeline({ status, pipeline }: PipelineTimelineProps) {
+export function PipelineTimeline({ status, pipeline }: PipelineTimelineProps): JSX.Element {
   const stages = pipeline ? mapPipelineStages(pipeline.stages) : (STAGES[status] ?? STAGES.pending);
 
   return (

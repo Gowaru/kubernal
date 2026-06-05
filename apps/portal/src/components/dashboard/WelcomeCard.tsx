@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Rocket } from 'lucide-react';
+import type { JSX } from 'react';
 
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
   weekday: 'long',
@@ -8,7 +9,7 @@ const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
   year: 'numeric',
 });
 
-export function WelcomeCard() {
+export function WelcomeCard(): JSX.Element {
   const today = dateFormatter.format(new Date());
 
   return (

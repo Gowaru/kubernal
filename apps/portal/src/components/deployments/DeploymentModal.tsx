@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, type JSX } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -50,7 +50,7 @@ export function DeploymentModal({
   onOpenChange,
   preselectedApp,
   onDeploy,
-}: DeploymentModalProps) {
+}: DeploymentModalProps): JSX.Element {
   const { data: applications } = useApplications();
   const { data: allEnvironments } = useEnvironments();
   const createDeployment = useCreateDeployment();
@@ -93,7 +93,7 @@ export function DeploymentModal({
     if (!preselectedApp) setAppId('');
   }, [preselectedApp]);
 
-  const handleSubmit = () => {
+  const handleSubmit = (): void => {
     if (!appId || !version || !environmentId) return;
 
     setStep('progress');
@@ -146,12 +146,12 @@ export function DeploymentModal({
     );
   };
 
-  const handleClose = () => {
+  const handleClose = (): void => {
     reset();
     onOpenChange(false);
   };
 
-  const handleSuccessDone = () => {
+  const handleSuccessDone = (): void => {
     handleClose();
   };
 

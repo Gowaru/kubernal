@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, type JSX } from 'react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,7 +43,7 @@ const initialKeys: ApiKey[] = [
   { id: '3', name: 'CI/CD', key: 'kpl_4b1d6c8e2a9f5b3d7c1e4a8f2b6d9c3e', created: '2026-03-10', lastUsed: '2026-05-27', expires: '2027-03-10' },
 ];
 
-export default function Settings() {
+export default function Settings(): JSX.Element {
   const { isDark, toggle: toggleTheme } = useTheme();
   const { data: currentUser, isLoading: userLoading, error: userError } = useCurrentUser();
   const { data: users, error: usersError } = useUsers();
@@ -123,7 +123,7 @@ export default function Settings() {
             ))}
           </div>
         ) : (
-          (() => {
+          ((): JSX.Element => {
             const user = currentUser ?? users?.[0];
             return (
               <div className="grid gap-4 sm:grid-cols-2">

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type JSX } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -30,7 +30,7 @@ interface CreateTeamModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps) {
+export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): JSX.Element {
   const createTeam = useCreateTeam();
 
   const [step, setStep] = useState<'step1' | 'step2' | 'progress' | 'success'>('step1');
@@ -44,7 +44,7 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps) {
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
-  const setField = <K extends keyof FormData>(key: K, value: FormData[K]) => {
+  const setField = <K extends keyof FormData>(key: K, value: FormData[K]): void => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
   };
@@ -56,12 +56,12 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps) {
     setErrors({});
   }, []);
 
-  const handleClose = () => {
+  const handleClose = (): void => {
     reset();
     onOpenChange(false);
   };
 
-  const validateStep1 = () => {
+  const validateStep1 = (): boolean => {
     const result = formSchema.pick({ name: true, description: true, namespacePrefix: true }).safeParse(form);
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof FormData, string>> = {};
@@ -74,7 +74,7 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps) {
     return true;
   };
 
-  const validateStep2 = () => {
+  const validateStep2 = (): boolean => {
     const result = formSchema.pick({ quotaCpu: true, quotaMemory: true }).safeParse(form);
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof FormData, string>> = {};
@@ -87,7 +87,7 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps) {
     return true;
   };
 
-  const handleNext = () => {
+  const handleNext = (): void => {
     if (step === 'step1' && validateStep1()) {
       setStep('step2');
     } else if (step === 'step2' && validateStep2()) {
@@ -95,11 +95,11 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps) {
     }
   };
 
-  const handleBack = () => {
+  const handleBack = (): void => {
     if (step === 'step2') setStep('step1');
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (): Promise<void> => {
     setStep('progress');
     setProgress(0);
 
@@ -131,7 +131,7 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps) {
     }
   };
 
-  const handleSuccessDone = () => {
+  const handleSuccessDone = (): void => {
     toast.success('Équipe créée avec succès', {
       description: form.name,
     });

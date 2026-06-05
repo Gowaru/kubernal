@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, type JSX } from 'react';
 import { toast } from 'sonner';
 import { AlertTriangle, Search, Filter } from 'lucide-react';
 import { K8sContextBar } from '@/components/k8s/K8sContextBar';
@@ -35,7 +35,7 @@ function formatRelativeTime(iso: string): string {
   return `${Math.floor(diff / 86400)}j`;
 }
 
-export default function K8sEventsPage() {
+export default function K8sEventsPage(): JSX.Element {
   const { data: events = [], isLoading, error } = useK8sEvents(MOCK_CLUSTER.namespace);
 
   useEffect(() => {

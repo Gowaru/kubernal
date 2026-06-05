@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, type JSX } from 'react';
 import { ApplicationTable } from '@/components/catalogue/ApplicationTable';
 import { ApplicationGrid } from '@/components/catalogue/ApplicationGrid';
 import { CreateApplicationModal } from '@/components/applications/CreateApplicationModal';
 import { Button } from '@/components/ui/button';
 import { Plus, LayoutGrid, Table2 } from 'lucide-react';
 
-export default function Catalogue() {
+export default function Catalogue(): JSX.Element {
   const [view, setView] = useState<'grid' | 'table'>('grid');
   const [showCreateModal, setShowCreateModal] = useState(false);
 

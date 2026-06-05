@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type JSX } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
@@ -122,7 +122,7 @@ function generateSnapshot(prev?: MetricSnapshot): MetricSnapshot {
 const timeRangeOptions = ['5 min', '15 min', '30 min', '1 heure'] as const;
 type TimeRange = (typeof timeRangeOptions)[number];
 
-export default function Observability() {
+export default function Observability(): JSX.Element {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [search, setSearch] = useState('');
   const [levelFilter, setLevelFilter] = useState<string | null>(null);
@@ -171,7 +171,7 @@ export default function Observability() {
       });
     }, 3000);
 
-    return () => {
+    return (): void => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [paused]);
@@ -237,7 +237,7 @@ export default function Observability() {
     },
   ];
 
-  const chartColor = (dataKey: string) => {
+  const chartColor = (dataKey: string): string => {
     if (dataKey === 'errorRate') return '#ef4444';
     if (dataKey === 'cpu' || dataKey === 'memory') return '#8b5cf6';
     if (dataKey === 'latency') return '#f59e0b';

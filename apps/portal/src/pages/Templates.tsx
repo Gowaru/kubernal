@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type JSX } from 'react';
 import { toast } from 'sonner';
 import { useTemplates } from '@/hooks/useTemplates';
 import { CreateTemplateModal } from '@/components/templates/CreateTemplateModal';
@@ -18,7 +18,7 @@ const categoryFilters: { label: string; value: TemplateCategory | '' }[] = [
   { label: 'Function', value: 'function' },
 ];
 
-export default function Templates() {
+export default function Templates(): JSX.Element {
   const { data: templates, isLoading, error } = useTemplates();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<TemplateCategory | ''>('');

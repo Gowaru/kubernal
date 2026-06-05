@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type JSX } from 'react';
 import { motion } from 'framer-motion';
 import type { K8sContainerResources } from '@kubernal/shared-types';
 import { cn } from '@/lib/utils';
@@ -43,7 +43,7 @@ interface GaugeRingProps {
   usage: string | null;
 }
 
-function GaugeRing({ percentage, label, request, limit, usage }: GaugeRingProps) {
+function GaugeRing({ percentage, label, request, limit, usage }: GaugeRingProps): JSX.Element {
   const offset = CIRCUMFERENCE * (1 - percentage / 100);
   const colorClass = usageColor(percentage);
 
@@ -97,7 +97,7 @@ function GaugeRing({ percentage, label, request, limit, usage }: GaugeRingProps)
   );
 }
 
-export function ResourceGauge({ resources }: ResourceGaugeProps) {
+export function ResourceGauge({ resources }: ResourceGaugeProps): JSX.Element | null {
   const main = resources.find((r) => !r.containerName.includes('istio') && !r.containerName.includes('proxy')) ?? resources[0];
 
   const cpuPct = useMemo(() => {

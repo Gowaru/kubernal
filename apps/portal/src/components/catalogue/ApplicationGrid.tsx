@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type JSX } from 'react';
 import { toast } from 'sonner';
 import { Search } from 'lucide-react';
 import { useApplications } from '@/hooks/useApplications';
@@ -8,7 +8,7 @@ import { ApplicationCard } from './ApplicationCard';
 import { DeploymentModal } from '@/components/deployments/DeploymentModal';
 import type { Application } from '@kubernal/shared-types';
 
-export function ApplicationGrid() {
+export function ApplicationGrid(): JSX.Element {
   const { data: applications, isLoading, error } = useApplications();
   const [search, setSearch] = useState('');
   const [deployTarget, setDeployTarget] = useState<Application | null>(null);

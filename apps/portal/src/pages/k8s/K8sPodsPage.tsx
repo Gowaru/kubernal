@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, type JSX } from 'react';
 import { toast } from 'sonner';
 import { Box, Search, Filter } from 'lucide-react';
 import { K8sContextBar } from '@/components/k8s/K8sContextBar';
@@ -46,7 +46,7 @@ const STATUS_PILLS: Record<K8sPodPhase, string> = {
   Unknown: 'bg-k8s-unknown/20 text-k8s-unknown border-k8s-unknown/30',
 };
 
-export default function K8sPodsPage() {
+export default function K8sPodsPage(): JSX.Element {
   const { data: pods = [], isLoading, error } = useAllK8sPods();
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type JSX } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -72,7 +72,7 @@ function formatExpires(expiry: string): string {
   );
 }
 
-export function GenerateApiKeyModal({ open, onOpenChange, onKeyGenerated }: GenerateApiKeyModalProps) {
+export function GenerateApiKeyModal({ open, onOpenChange, onKeyGenerated }: GenerateApiKeyModalProps): JSX.Element {
   const [step, setStep] = useState<'form' | 'generated'>('form');
   const [name, setName] = useState('');
   const [expiry, setExpiry] = useState('90');
@@ -89,12 +89,12 @@ export function GenerateApiKeyModal({ open, onOpenChange, onKeyGenerated }: Gene
     setCopied(false);
   }, []);
 
-  const handleClose = () => {
+  const handleClose = (): void => {
     reset();
     onOpenChange(false);
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = (): void => {
     if (!name.trim()) {
       toast.error('Le nom de la clé est requis');
       return;
@@ -106,7 +106,7 @@ export function GenerateApiKeyModal({ open, onOpenChange, onKeyGenerated }: Gene
     onKeyGenerated(apiKey);
   };
 
-  const handleCopy = () => {
+  const handleCopy = (): void => {
     try {
       navigator.clipboard.writeText(generatedKey);
       setCopied(true);

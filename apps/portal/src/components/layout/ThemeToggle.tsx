@@ -1,8 +1,9 @@
+import { type JSX } from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/hooks/use-theme';
 import { Button } from '@/components/ui/button';
 
-export function ThemeToggle() {
+export function ThemeToggle(): JSX.Element {
   const { isDark, toggle } = useTheme();
 
   return (

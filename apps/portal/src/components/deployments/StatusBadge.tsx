@@ -1,12 +1,13 @@
 import { cn } from '@/lib/utils';
 import { getDeploymentStatus } from '@/lib/status-config';
+import type { JSX } from 'react';
 
 interface StatusBadgeProps {
   status: string;
   showIcon?: boolean;
 }
 
-export function StatusBadge({ status, showIcon = true }: StatusBadgeProps) {
+export function StatusBadge({ status, showIcon = true }: StatusBadgeProps): JSX.Element {
   const key = status.toLowerCase();
   const config = getDeploymentStatus(key);
   const Icon = config.icon;

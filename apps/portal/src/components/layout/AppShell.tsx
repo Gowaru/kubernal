@@ -1,8 +1,8 @@
-import { type ReactNode } from 'react';
+import { type JSX, type ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 
-export default function AppShell({ children }: { children: ReactNode }) {
+export default function AppShell({ children }: { children: ReactNode }): JSX.Element {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />

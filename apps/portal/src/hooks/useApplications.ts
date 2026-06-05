@@ -1,8 +1,16 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { Application } from '@kubernal/shared-types';
 
-export function useApplications() {
+type CreateApplicationInput = {
+  name: string;
+  description?: string;
+  teamId: string;
+  templateId: string;
+  ownerId: string;
+};
+
+export function useApplications(): UseQueryResult<Application[], Error> {
   return useQuery<Application[]>({
     queryKey: ['applications'],
     queryFn: async () => {
@@ -13,7 +21,7 @@ export function useApplications() {
   });
 }
 
-export function useApplication(id: string) {
+export function useApplication(id: string): UseQueryResult<Application, Error> {
   return useQuery<Application>({
     queryKey: ['applications', id],
     queryFn: async () => {
@@ -24,10 +32,10 @@ export function useApplication(id: string) {
   });
 }
 
-export function useCreateApplication() {
+export function useCreateApplication(): UseMutationResult<Application, Error, CreateApplicationInput> {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (app: { name: string; description?: string; teamId: string; templateId: string; ownerId: string }) => {
+    mutationFn: async (app: CreateApplicationInput) => {
       const { data } = await apiClient.post<{ data: Application }>('/applications', app);
       return data.data;
     },
@@ -37,7 +45,7 @@ export function useCreateApplication() {
   });
 }
 
-export function useDeleteApplication() {
+export function useDeleteApplication(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {

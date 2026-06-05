@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, type JSX } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -31,6 +31,7 @@ import { StatusBadge } from '@/components/deployments/StatusBadge';
 import { ViolationsList } from '@/components/deployments/ViolationsList';
 import { PromoteModal } from '@/components/deployments/PromoteModal';
 import { formatDate, formatRelativeTime } from '@/lib/utils';
+import { k8sResourceName } from '@/lib/k8s-utils';
 import type { Deployment, K8sPod } from '@kubernal/shared-types';
 
 const triggerLabels: Record<string, string> = {
@@ -52,7 +53,7 @@ function formatDuration(startedAt: string | Date, completedAt: string | Date | n
   return `${mins}m ${secs}s`;
 }
 
-export default function DeploymentDetail() {
+export default function DeploymentDetail(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -73,6 +74,8 @@ export default function DeploymentDetail() {
   const appId = (appName || 'unknown').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
   const envId = deployment?.environment?.type ?? 'prod';
   const namespace = deployment?.environment?.namespace ?? `prod-${appId}`;
+  const k8sName = k8sResourceName(appId, envId);
+  const clusterReady = !!clusterInfo && clusterInfo.name !== 'unknown' && clusterInfo.nodeCount > 0;
 
   const { data: pods } = useK8sPods(namespace, undefined, `app=${appId},env=${envId},version=${deployment?.version ?? ''}`);
   const { data: argoStatus } = useArgoSync(appId, envId);
@@ -236,6 +239,9 @@ export default function DeploymentDetail() {
         </div>
         <K8sActionsBar
           argoStatus={defaultArgoStatus}
+          namespace={namespace}
+          deploymentName={k8sName}
+          clusterReady={clusterReady}
         />
       </div>
 
@@ -296,7 +302,7 @@ export default function DeploymentDetail() {
                   <CardTitle className="text-base">Scale (HPA)</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <ScaleControl hpa={hpaData.hpa} />
+                  <ScaleControl hpa={hpaData.hpa} namespace={namespace} deploymentName={k8sName} clusterReady={clusterReady} />
                 </CardContent>
               </Card>
             </>

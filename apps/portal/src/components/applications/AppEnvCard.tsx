@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Cloud, GitBranch, Clock } from 'lucide-react';
 import { formatRelativeTime, getEnvSlug } from '@/lib/utils';
 import { StatusBadge } from '@/components/deployments/StatusBadge';
+import type { JSX } from 'react';
 import type { Deployment } from '@kubernal/shared-types';
 
 const envLabels: Record<string, string> = {
@@ -21,7 +22,7 @@ interface AppEnvCardProps {
   deployments: Deployment[];
 }
 
-export function AppEnvCard({ envId, deployments }: AppEnvCardProps) {
+export function AppEnvCard({ envId, deployments }: AppEnvCardProps): JSX.Element {
   const envDeployments = deployments.filter((d) => getEnvSlug(d) === envId);
   const lastDeploy = [...envDeployments].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),

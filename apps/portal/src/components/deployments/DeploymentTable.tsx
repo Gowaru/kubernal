@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, type JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ExternalLink, Timer, GitBranch } from 'lucide-react';
 import { toast } from 'sonner';
@@ -58,7 +58,7 @@ function formatDuration(startedAt: string | Date, completedAt: string | Date | n
   return `${mins}m ${secs}s`;
 }
 
-export function DeploymentTable() {
+export function DeploymentTable(): JSX.Element {
   const navigate = useNavigate();
   const { data: deployments, isLoading, error } = useDeployments();
   const { data: users } = useUsers();

@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type JSX } from 'react';
 import { DeploymentTable } from '@/components/deployments/DeploymentTable';
 import { DeploymentModal } from '@/components/deployments/DeploymentModal';
 import { Button } from '@/components/ui/button';
 import { Rocket } from 'lucide-react';
 
-export default function Deployments() {
+export default function Deployments(): JSX.Element {
   const [showDeployModal, setShowDeployModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 

@@ -1,3 +1,4 @@
+import { type JSX } from 'react';
 import { Server, Box, GitBranch } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { K8sClusterContext } from '@kubernal/shared-types';
@@ -9,7 +10,7 @@ interface K8sContextBarProps {
   revision: string;
 }
 
-export function K8sContextBar({ cluster, namespace, branch, revision }: K8sContextBarProps) {
+export function K8sContextBar({ cluster, namespace, branch, revision }: K8sContextBarProps): JSX.Element {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}

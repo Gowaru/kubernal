@@ -1,3 +1,4 @@
+import { type JSX } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -24,7 +25,7 @@ interface PolicyCardProps {
   toggling: boolean;
 }
 
-export function PolicyCard({ policy, onToggle, toggling }: PolicyCardProps) {
+export function PolicyCard({ policy, onToggle, toggling }: PolicyCardProps): JSX.Element {
   const severity = severityConfig[policy.severity];
   const category = categoryConfig[policy.category];
   const CategoryIcon = category.icon;

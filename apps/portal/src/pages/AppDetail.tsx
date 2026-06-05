@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, type JSX } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Rocket, Archive, Timer } from 'lucide-react';
@@ -24,30 +24,8 @@ import { AppEnvCard } from '@/components/applications/AppEnvCard';
 import { StatusBadge } from '@/components/deployments/StatusBadge';
 import { DeploymentModal } from '@/components/deployments/DeploymentModal';
 import { formatRelativeTime, getEnvSlug } from '@/lib/utils';
+import { getApplicationStatus } from '@/lib/status-config';
 import type { Deployment } from '@kubernal/shared-types';
-
-const STATUS_CONFIG: Record<string, { label: string; className: string; dot: string }> = {
-  active: {
-    label: 'Actif',
-    className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    dot: 'bg-emerald-400',
-  },
-  creating: {
-    label: 'Création',
-    className: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    dot: 'bg-amber-400',
-  },
-  failed: {
-    label: 'Échec',
-    className: 'bg-red-500/10 text-red-400 border-red-500/20',
-    dot: 'bg-red-400',
-  },
-  archived: {
-    label: 'Archivé',
-    className: 'bg-muted text-muted-foreground border-border',
-    dot: 'bg-muted-foreground',
-  },
-};
 
 const ENVIRONMENT_IDS = ['dev', 'staging', 'prod'];
 
@@ -63,7 +41,7 @@ function formatDuration(startedAt: string | Date, completedAt: string | Date | n
   return `${mins}m ${secs}s`;
 }
 
-export default function AppDetail() {
+export default function AppDetail(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: application, isLoading, error } = useApplication(id!);
@@ -101,7 +79,7 @@ export default function AppDetail() {
     );
   }
 
-  const appStatus = STATUS_CONFIG[application.status] ?? STATUS_CONFIG.archived;
+  const appStatus = getApplicationStatus(application.status);
 
   return (
     <div className="space-y-6">

@@ -1,3 +1,4 @@
+import { type JSX } from 'react';
 import type { K8sPod, K8sPodPhase } from '@kubernal/shared-types';
 import { cn } from '@/lib/utils';
 import {
@@ -43,7 +44,7 @@ function containerStateLabel(state: string): string {
   }
 }
 
-export function PodTooltip({ pod, children }: PodTooltipProps) {
+export function PodTooltip({ pod, children }: PodTooltipProps): JSX.Element {
   return (
     <TooltipProvider delayDuration={300}>
       <Tooltip>

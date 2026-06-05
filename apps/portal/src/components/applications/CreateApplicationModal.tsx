@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type JSX } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -39,7 +39,7 @@ interface CreateApplicationModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateApplicationModal({ open, onOpenChange }: CreateApplicationModalProps) {
+export function CreateApplicationModal({ open, onOpenChange }: CreateApplicationModalProps): JSX.Element {
   const { data: currentUser } = useCurrentUser();
   const { data: teams } = useTeams();
   const { data: templates } = useTemplates();
@@ -54,7 +54,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
-  const setField = <K extends keyof FormData>(key: K, value: FormData[K]) => {
+  const setField = <K extends keyof FormData>(key: K, value: FormData[K]): void => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
   };
@@ -65,12 +65,12 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
     setErrors({});
   }, []);
 
-  const handleClose = () => {
+  const handleClose = (): void => {
     reset();
     onOpenChange(false);
   };
 
-  const validateStep1 = () => {
+  const validateStep1 = (): boolean => {
     const result = formSchema.pick({ name: true, description: true }).safeParse(form);
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof FormData, string>> = {};
@@ -83,7 +83,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
     return true;
   };
 
-  const validateStep2 = () => {
+  const validateStep2 = (): boolean => {
     const result = formSchema.pick({ teamId: true, templateId: true }).safeParse(form);
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof FormData, string>> = {};
@@ -96,7 +96,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
     return true;
   };
 
-  const handleNext = () => {
+  const handleNext = (): void => {
     if (step === 'step1' && validateStep1()) {
       setStep('step2');
     } else if (step === 'step2' && validateStep2()) {
@@ -104,11 +104,11 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
     }
   };
 
-  const handleBack = () => {
+  const handleBack = (): void => {
     if (step === 'step2') setStep('step1');
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (): Promise<void> => {
     setStep('progress');
 
     try {
@@ -126,7 +126,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
     }
   };
 
-  const handleSuccessDone = () => {
+  const handleSuccessDone = (): void => {
     toast.success('Application créée avec succès', {
       description: form.name,
     });
