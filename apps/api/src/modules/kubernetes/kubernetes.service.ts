@@ -37,7 +37,7 @@ async function tryK8s<T>(
 }
 
 export const kubernetesService = {
-  async listPods(namespace: string): Promise<K8sPod[]> {
+  async listPods(namespace: string, labelSelector?: string): Promise<K8sPod[]> {
     return tryK8s(
       async () => {
         const mapItem = (item: { metadata?: { name?: string; namespace?: string; uid?: string; creationTimestamp?: Date | null; labels?: Record<string, string> }; spec?: { nodeName?: string; containers?: Array<{ name?: string; image?: string }> }; status?: { phase?: string; podIP?: string; startTime?: Date; containerStatuses?: Array<{ name?: string; ready?: boolean; restartCount?: number; state?: { running?: unknown; waiting?: { reason?: string }; terminated?: { reason?: string } } }> } }): K8sPod => {
@@ -89,7 +89,7 @@ export const kubernetesService = {
           const res = await coreApi.listPodForAllNamespaces();
           return (res.items ?? []).map(mapItem);
         }
-        const res = await coreApi.listNamespacedPod({ namespace });
+        const res = await coreApi.listNamespacedPod({ namespace, ...(labelSelector ? { labelSelector } : {}) });
         return (res.items ?? []).map(mapItem);
       },
       !namespace || namespace === 'default'

@@ -71,6 +71,19 @@ export function useApproveDeployment() {
   });
 }
 
+export function usePromoteDeployment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, targetEnv }: { id: string; targetEnv: 'staging' | 'prod' }) => {
+      const { data } = await apiClient.post<{ data: Deployment }>(`/deployments/${id}/promote`, { targetEnv });
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deployments'] });
+    },
+  });
+}
+
 export function useDeploymentViolations(id: string) {
   return useQuery<PolicyViolation[]>({
     queryKey: ['deployments', id, 'violations'],

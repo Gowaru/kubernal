@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { deploymentService } from './deployment.service.js';
+import { triggerReconcile } from './deployment.worker.js';
 
 export const deploymentController = {
   async list(_req: Request, res: Response) {
@@ -15,6 +16,7 @@ export const deploymentController = {
 
   async create(req: Request, res: Response) {
     const deployment = await deploymentService.create(req.body);
+    void triggerReconcile(deployment.id);
     res.status(201).json({ data: deployment });
   },
 
@@ -22,6 +24,7 @@ export const deploymentController = {
     const { status } = req.body;
     const id = req.params.id as string;
     const deployment = await deploymentService.transitionStatus(id, status);
+    void triggerReconcile(id);
     res.json({ data: deployment });
   },
 
@@ -29,7 +32,18 @@ export const deploymentController = {
     const { approvedById } = req.body;
     const id = req.params.id as string;
     const deployment = await deploymentService.approve(id, approvedById);
+    void triggerReconcile(id);
     res.json({ data: deployment });
+  },
+
+  async promote(req: Request, res: Response) {
+    const { targetEnv } = req.body as { targetEnv: 'staging' | 'prod' };
+    const id = req.params.id as string;
+    const deployment = await deploymentService.promote(id, targetEnv);
+    if (deployment.status === 'building') {
+      void triggerReconcile(deployment.id);
+    }
+    res.status(201).json({ data: deployment });
   },
 
   async recordViolations(req: Request, res: Response) {

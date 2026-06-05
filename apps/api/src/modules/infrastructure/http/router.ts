@@ -29,6 +29,7 @@ import {
   transitionStatusSchema,
   approveDeploymentSchema,
   recordViolationsSchema,
+  promoteDeploymentSchema,
 } from '../../../modules/deployment/deployment.schema.js';
 import {
   createPipelineSchema,
@@ -104,6 +105,11 @@ export function createRouter(): Router {
     '/deployments/:id/approve',
     validate(approveDeploymentSchema),
     deploymentController.approve,
+  );
+  router.post(
+    '/deployments/:id/promote',
+    validate(promoteDeploymentSchema),
+    deploymentController.promote,
   );
   router.post(
     '/deployments/:id/violations',

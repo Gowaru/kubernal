@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowLeft, ExternalLink, GitBranch, User, Calendar, Timer, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowUp, ExternalLink, GitBranch, User, Calendar, Timer, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useDeployment, useDeploymentViolations, useApproveDeployment } from '@/hooks/useDeployments';
 import { useApplications } from '@/hooks/useApplications';
 import { useUsers } from '@/hooks/useUsers';
+import { useEnvironments } from '@/hooks/useEnvironments';
 import { useK8sPods } from '@/hooks/useK8sPods';
 import { useArgoSync } from '@/hooks/useArgoSync';
 import { useCrossplaneClaims } from '@/hooks/useCrossplaneClaims';
@@ -28,6 +29,7 @@ import { K8sEventFeed } from '@/components/k8s/K8sEventFeed';
 import { PodLogDrawer } from '@/components/k8s/PodLogDrawer';
 import { StatusBadge } from '@/components/deployments/StatusBadge';
 import { ViolationsList } from '@/components/deployments/ViolationsList';
+import { PromoteModal } from '@/components/deployments/PromoteModal';
 import { formatDate, formatRelativeTime } from '@/lib/utils';
 import type { Deployment, K8sPod } from '@kubernal/shared-types';
 
@@ -59,6 +61,7 @@ export default function DeploymentDetail() {
   const { data: violations } = useDeploymentViolations(id!);
   const { data: applications } = useApplications();
   const { data: users } = useUsers();
+  const { data: environments } = useEnvironments();
   const { data: clusterInfo } = useClusterInfo();
 
   const appName = useMemo(() => {
@@ -71,7 +74,7 @@ export default function DeploymentDetail() {
   const envId = deployment?.environment?.type ?? 'prod';
   const namespace = deployment?.environment?.namespace ?? `prod-${appId}`;
 
-  const { data: pods } = useK8sPods(namespace);
+  const { data: pods } = useK8sPods(namespace, undefined, `app=${appId},env=${envId},version=${deployment?.version ?? ''}`);
   const { data: argoStatus } = useArgoSync(appId, envId);
   const { data: claimsData } = useCrossplaneClaims(namespace);
   const { data: hpaData } = useHPA(namespace);
@@ -81,10 +84,22 @@ export default function DeploymentDetail() {
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [approveStep, setApproveStep] = useState<'confirm' | 'progress' | 'success'>('confirm');
   const [approveProgress, setApproveProgress] = useState(0);
+  const [showPromoteModal, setShowPromoteModal] = useState(false);
 
   const approveDeployment = useApproveDeployment();
 
   const isPending = deployment?.status === 'pending';
+  const isHealthy = deployment?.status === 'healthy';
+
+  const nextEnv = useMemo(() => {
+    if (!deployment || !environments || !deployment.environment) return null;
+    const flow: Record<string, 'staging' | 'prod'> = { dev: 'staging', staging: 'prod' };
+    const nextType = flow[deployment.environment.type];
+    if (!nextType) return null;
+    return environments.find(
+      (e) => e.applicationId === deployment.applicationId && e.type === nextType,
+    ) ?? null;
+  }, [deployment, environments]);
 
   const defaultArgoStatus = argoStatus ?? {
     sync: 'Unknown' as const,
@@ -163,15 +178,26 @@ export default function DeploymentDetail() {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Retour aux déploiements
         </Button>
-        {isPending && (
-          <Button
-            onClick={() => setShowApproveModal(true)}
-            disabled={!users?.length}
-            title={!users?.length ? 'Aucun utilisateur' : undefined}
-          >
-            Approuver le déploiement
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {isHealthy && nextEnv && (
+            <Button
+              variant="outline"
+              onClick={() => setShowPromoteModal(true)}
+            >
+              <ArrowUp className="mr-2 h-4 w-4" />
+              Promouvoir vers {nextEnv.type === 'staging' ? 'Staging' : 'Production'}
+            </Button>
+          )}
+          {isPending && (
+            <Button
+              onClick={() => setShowApproveModal(true)}
+              disabled={!users?.length}
+              title={!users?.length ? 'Aucun utilisateur' : undefined}
+            >
+              Approuver le déploiement
+            </Button>
+          )}
+        </div>
       </div>
 
       {clusterInfo && (
@@ -405,6 +431,18 @@ export default function DeploymentDetail() {
           )}
         </DialogContent>
       </Dialog>
+
+      {deployment && nextEnv && (
+        <PromoteModal
+          open={showPromoteModal}
+          onOpenChange={setShowPromoteModal}
+          deploymentId={deployment.id}
+          version={deployment.version}
+          sourceEnv={deployment.environment!}
+          targetEnv={nextEnv}
+          onPromoted={(newId) => navigate(`/deployments/${newId}`)}
+        />
+      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { listPodsSchema, listServicesSchema, listEventsSchema, getArgoStatusSche
 export const kubernetesController = {
   async listPods(req: Request, res: Response) {
     const q = listPodsSchema.parse(req.query);
-    const pods = await kubernetesService.listPods(q.namespace);
+    const pods = await kubernetesService.listPods(q.namespace, q.labelSelector);
     res.json({ data: pods, total: pods.length, cluster: q.cluster });
   },
 

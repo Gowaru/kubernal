@@ -28,3 +28,7 @@ export const recordViolationsSchema = z.object({
     }),
   ),
 });
+
+export const promoteDeploymentSchema = z.object({
+  targetEnv: z.enum(['staging', 'prod']),
+});

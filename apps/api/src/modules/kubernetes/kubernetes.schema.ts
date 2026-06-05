@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const listPodsSchema = z.object({
   namespace: z.string().optional().default('default'),
   cluster: z.string().optional().default('kubernal-prod'),
+  labelSelector: z.string().optional(),
 });
 
 export const listServicesSchema = z.object({
