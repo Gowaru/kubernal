@@ -15,6 +15,17 @@ export function createApp() {
     process.env.CORS_ORIGIN ?? 'http://localhost:5173,http://localhost:7007'
   ).split(',');
   app.use(cors({ origin: corsOrigins }));
+
+  app.use('/api/v1/webhooks/:appId/:provider', (req, _res, next) => {
+    express.raw({ type: '*/*', limit: '5mb' })(req, _res, (err) => {
+      if (err) return next(err);
+      const raw = (req as unknown as { body?: Buffer | string }).body;
+      (req as unknown as { rawBody?: string }).rawBody =
+        typeof raw === 'string' ? raw : raw?.toString('utf8') ?? '';
+      next();
+    });
+  });
+
   app.use(express.json({ limit: '1mb' }));
 
   app.use((req, res, next) => {

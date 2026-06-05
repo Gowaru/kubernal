@@ -67,10 +67,11 @@ model Application {
   team          Team     @relation(fields: [teamId], references: [id])
   ownerId       String
   owner         User     @relation("Owner", fields: [ownerId], references: [id])
-  repositoryUrl String?
-  status        String   @default("creating") // creating | active | failed | archived
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  repositoryUrl  String?
+  webhookSecret  String?
+  status         String   @default("creating") // creating | active | failed | archived
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   environments  Environment[]
   deployments   Deployment[]

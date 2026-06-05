@@ -8,6 +8,7 @@ import { deploymentController } from '../../../modules/deployment/deployment.con
 import { pipelineController } from '../../../modules/pipeline/pipeline.controller.js';
 import { policyController } from '../../../modules/policy/policy.controller.js';
 import { kubernetesController } from '../../../modules/kubernetes/kubernetes.controller.js';
+import { webhookController } from '../../../modules/webhook/webhook.controller.js';
 
 import { validate } from '../../../shared/middleware/validate.js';
 import { createUserSchema, updateUserSchema } from '../../../modules/user/user.schema.js';
@@ -166,6 +167,11 @@ export function createRouter(): Router {
     validate(execInPodSchema),
     kubernetesController.execInPod,
   );
+
+  // ─── Webhooks (incoming from GitHub/GitLab/Bitbucket) ─────────────────
+  router.get('/applications/:appId/webhook', webhookController.getConfig);
+  router.post('/applications/:appId/webhook/regenerate', webhookController.regenerateSecret);
+  router.post('/webhooks/:appId/:provider', webhookController.ingest);
 
   return router;
 }

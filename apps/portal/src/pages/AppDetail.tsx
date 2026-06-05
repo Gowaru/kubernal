@@ -26,6 +26,7 @@ import { StatusBadge } from '@/components/deployments/StatusBadge';
 import { DeploymentModal } from '@/components/deployments/DeploymentModal';
 import { DeploymentHistoryTimeline } from '@/components/deployments/DeploymentHistoryTimeline';
 import { DeploymentCommitLink } from '@/components/deployments/DeploymentCommitLink';
+import { WebhookConfigCard } from '@/components/webhooks/WebhookConfigCard';
 import { formatRelativeTime, getEnvSlug } from '@/lib/utils';
 import { getApplicationStatus } from '@/lib/status-config';
 import type { Deployment } from '@kubernal/shared-types';
@@ -129,6 +130,7 @@ export default function AppDetail(): JSX.Element {
           template={template}
           ownerName={application.owner?.name}
           repositoryUrl={application.repositoryUrl}
+          applicationId={application.id}
         />
 
         <div className="lg:col-span-2">
@@ -254,6 +256,15 @@ export default function AppDetail(): JSX.Element {
           )}
         </CardContent>
       </Card>
+
+      {application.repositoryUrl && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <WebhookConfigCard
+            applicationId={application.id}
+            repositoryUrl={application.repositoryUrl}
+          />
+        </div>
+      )}
 
       <DeploymentModal
         open={showDeployModal}

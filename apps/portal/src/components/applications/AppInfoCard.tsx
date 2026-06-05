@@ -3,15 +3,26 @@ import { Users, FileJson, User, GitBranch, ExternalLink } from 'lucide-react';
 import type { JSX } from 'react';
 import type { Team, GoldenPathTemplate } from '@kubernal/shared-types';
 import { getRepoUrl } from '@/lib/repo-utils';
+import { GitHubBadge } from '@/components/webhooks/GitHubBadge';
+import { useWebhookConfig } from '@/hooks/useWebhookConfig';
 
 interface AppInfoCardProps {
   team: Team | undefined;
   template: GoldenPathTemplate | undefined;
   ownerName: string | undefined;
   repositoryUrl: string | null | undefined;
+  applicationId: string;
 }
 
-export function AppInfoCard({ team, template, ownerName, repositoryUrl }: AppInfoCardProps): JSX.Element {
+export function AppInfoCard({
+  team,
+  template,
+  ownerName,
+  repositoryUrl,
+  applicationId,
+}: AppInfoCardProps): JSX.Element {
+  const { data: webhookConfig, isLoading: webhookLoading } = useWebhookConfig(applicationId);
+
   return (
     <Card>
       <CardHeader>
@@ -58,7 +69,7 @@ export function AppInfoCard({ team, template, ownerName, repositoryUrl }: AppInf
         {repositoryUrl && (
           <div className="flex items-start gap-3">
             <GitBranch className="mt-0.5 h-4 w-4 text-muted-foreground" />
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 space-y-1">
               <p className="text-sm font-medium">Dépôt</p>
               {getRepoUrl(repositoryUrl) ? (
                 <a
@@ -75,6 +86,9 @@ export function AppInfoCard({ team, template, ownerName, repositoryUrl }: AppInf
                   {repositoryUrl}
                 </p>
               )}
+              <div>
+                <GitHubBadge config={webhookConfig} isLoading={webhookLoading} />
+              </div>
             </div>
           </div>
         )}
