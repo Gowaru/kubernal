@@ -1,5 +1,12 @@
 import { NotFoundError } from '../../shared/errors.js';
+import { db } from '../../shared/database.js';
 import { applicationRepository } from './application.repository.js';
+
+const DEFAULT_ENV_TYPES = [
+  { type: 'dev', requiresApproval: false },
+  { type: 'staging', requiresApproval: true },
+  { type: 'prod', requiresApproval: true },
+] as const;
 
 export const applicationService = {
   async list() {
@@ -20,7 +27,41 @@ export const applicationService = {
     ownerId: string;
     repositoryUrl?: string;
   }) {
-    return applicationRepository.create({ ...data, status: 'creating' });
+    const template = await db.goldenPathTemplate.findUnique({
+      where: { id: data.templateId },
+      select: { repository: true },
+    });
+    const team = await db.team.findUnique({
+      where: { id: data.teamId },
+      select: { namespacePrefix: true },
+    });
+
+    return db.$transaction(async (tx) => {
+      const app = await tx.application.create({
+        data: {
+          ...data,
+          status: 'active',
+          repositoryUrl: data.repositoryUrl ?? template?.repository ?? null,
+        },
+        include: { team: true, template: true, owner: true },
+      });
+
+      await tx.environment.createMany({
+        data: DEFAULT_ENV_TYPES.map((env) => ({
+          applicationId: app.id,
+          name: `${data.name}-${env.type}`,
+          type: env.type,
+          namespace: `${team?.namespacePrefix ?? 'default'}-${data.name}-${env.type}`.slice(0, 63),
+          clusterName: 'kubernal',
+          requiresApproval: env.requiresApproval,
+        })),
+      });
+
+      return tx.application.findUniqueOrThrow({
+        where: { id: app.id },
+        include: { team: true, template: true, owner: true, environments: true },
+      });
+    });
   },
 
   async update(

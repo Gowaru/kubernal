@@ -210,9 +210,9 @@ export function DeploymentModal({
                   <SelectTrigger>
                     <SelectValue placeholder={
                       !appId
-                        ? 'Sélectionnez d\'abord une application'
+                        ? "Sélectionnez d'abord une application"
                         : appEnvironments.length === 0
-                          ? 'Aucun environnement disponible'
+                          ? "Aucun environnement — créez l'application d'abord"
                           : 'Sélectionner un environnement'
                     } />
                   </SelectTrigger>

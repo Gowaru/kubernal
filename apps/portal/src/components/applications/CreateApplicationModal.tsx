@@ -46,7 +46,6 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
   const createApplication = useCreateApplication();
 
   const [step, setStep] = useState<'step1' | 'step2' | 'progress' | 'success'>('step1');
-  const [progress, setProgress] = useState(0);
   const [form, setForm] = useState<FormData>({
     name: '',
     description: '',
@@ -62,7 +61,6 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
 
   const reset = useCallback(() => {
     setStep('step1');
-    setProgress(0);
     setForm({ name: '', description: '', teamId: '', templateId: '' });
     setErrors({});
   }, []);
@@ -112,17 +110,6 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
 
   const handleSubmit = async () => {
     setStep('progress');
-    setProgress(0);
-
-    const interval = setInterval(() => {
-      setProgress((p) => {
-        const next = Math.min(p + Math.random() * 30, 100);
-        if (next >= 100) {
-          clearInterval(interval);
-        }
-        return next;
-      });
-    }, 300);
 
     try {
       await createApplication.mutateAsync({
@@ -132,11 +119,8 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
         templateId: form.templateId,
         ownerId: currentUser?.id ?? '',
       });
-      clearInterval(interval);
-      setProgress(100);
-      setTimeout(() => setStep('success'), 300);
+      setStep('success');
     } catch {
-      clearInterval(interval);
       toast.error("Erreur lors de la création de l'application");
       setStep('step1');
     }
@@ -292,23 +276,8 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
 
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <div className="w-full max-w-sm space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Progression</span>
-                  <span className="font-medium">{Math.round(progress)}%</span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all duration-300 ease-out"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {progress < 40 && "Préparation de l'application..."}
-                {progress >= 40 && progress < 70 && "Configuration de l'équipe et du template..."}
-                {progress >= 70 && progress < 90 && 'Initialisation du dépôt...'}
-                {progress >= 90 && 'Finalisation...'}
+              <p className="text-sm text-muted-foreground">
+                Création de l'application et provisionnement des environnements...
               </p>
             </div>
           </>
