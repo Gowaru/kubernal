@@ -165,7 +165,6 @@ export const kubernetesService = {
         const cluster = kubeConfig.getCurrentCluster();
         if (!cluster) throw new Error('No current cluster in kubeconfig');
         const user = kubeConfig.getCurrentUser();
-        const ca = (cluster.caFile ? '' : '') + (cluster.caData ? Buffer.from(cluster.caData, 'base64').toString() : '');
         const [nodesRes, versionRes] = await Promise.all([
           coreApi.listNode().catch(() => ({ items: [] })),
           fetch(`${cluster.server}/version`, {

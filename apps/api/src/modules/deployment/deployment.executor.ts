@@ -145,7 +145,6 @@ export const deploymentExecutor = {
 
     const desired = k8sDep.spec?.replicas ?? 0;
     const ready = k8sDep.status?.readyReplicas ?? 0;
-    const available = k8sDep.status?.availableReplicas ?? 0;
     const unavailable = k8sDep.status?.unavailableReplicas ?? 0;
 
     if (dep.status === 'building') {
