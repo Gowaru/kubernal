@@ -1,14 +1,19 @@
+import { existsSync } from 'node:fs';
 import { KubeConfig, CoreV1Api, RbacAuthorizationV1Api, CustomObjectsApi } from '@kubernetes/client-node';
 import { logger } from './logger.js';
 
 const kc = new KubeConfig();
+const hasInClusterSA = existsSync('/var/run/secrets/kubernetes.io/serviceaccount/token');
 
-try {
+if (hasInClusterSA) {
   kc.loadFromCluster();
   logger.info('K8s client: using in-cluster config');
-} catch {
+} else {
   kc.loadFromDefault();
-  logger.info('K8s client: using default kubeconfig');
+  logger.info(
+    { clusters: kc.getClusters().map((c) => c.name) },
+    'K8s client: using default kubeconfig',
+  );
 }
 
 export const kubeConfig = kc;

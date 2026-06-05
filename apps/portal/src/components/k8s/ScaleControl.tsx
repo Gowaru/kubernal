@@ -4,10 +4,17 @@ import { cn } from '@/lib/utils';
 import type { K8sHPAStatus } from '@kubernal/shared-types';
 
 interface ScaleControlProps {
-  hpa: K8sHPAStatus;
+  hpa: K8sHPAStatus | undefined;
 }
 
 export function ScaleControl({ hpa }: ScaleControlProps) {
+  if (!hpa) {
+    return (
+      <div className="flex items-center gap-3 px-3 py-2 bg-secondary/50 rounded-lg border border-border">
+        <span className="text-xs text-muted-foreground">Aucun HPA configuré pour ce namespace</span>
+      </div>
+    );
+  }
   const cpuOverTarget = hpa.cpuTarget !== null && hpa.cpuCurrent !== null && hpa.cpuCurrent > hpa.cpuTarget;
 
   return (

@@ -40,8 +40,7 @@ export const kubernetesService = {
   async listPods(namespace: string): Promise<K8sPod[]> {
     return tryK8s(
       async () => {
-        const res = await coreApi.listNamespacedPod({ namespace });
-        return (res.items ?? []).map((item): K8sPod => {
+        const mapItem = (item: { metadata?: { name?: string; namespace?: string; uid?: string; creationTimestamp?: Date | null; labels?: Record<string, string> }; spec?: { nodeName?: string; containers?: Array<{ name?: string; image?: string }> }; status?: { phase?: string; podIP?: string; startTime?: Date; containerStatuses?: Array<{ name?: string; ready?: boolean; restartCount?: number; state?: { running?: unknown; waiting?: { reason?: string }; terminated?: { reason?: string } } }> } }): K8sPod => {
           const podName = item.metadata?.name ?? '';
           const podNs = item.metadata?.namespace ?? namespace;
           const containers = (item.spec?.containers ?? []).map((c) => {
@@ -84,9 +83,18 @@ export const kubernetesService = {
             containers,
             labels: item.metadata?.labels ?? {},
           };
-        });
+        };
+
+        if (!namespace || namespace === 'default') {
+          const res = await coreApi.listPodForAllNamespaces();
+          return (res.items ?? []).map(mapItem);
+        }
+        const res = await coreApi.listNamespacedPod({ namespace });
+        return (res.items ?? []).map(mapItem);
       },
-      MOCK_PODS.filter((p) => p.namespace === namespace),
+      !namespace || namespace === 'default'
+        ? MOCK_PODS
+        : MOCK_PODS.filter((p) => p.namespace === namespace),
       'listPods',
     );
   },
@@ -94,8 +102,7 @@ export const kubernetesService = {
   async listServices(namespace: string): Promise<K8sService[]> {
     return tryK8s(
       async () => {
-        const res = await coreApi.listNamespacedService({ namespace });
-        return (res.items ?? []).map((svc): K8sService => ({
+        const mapItem = (svc: { metadata?: { name?: string; namespace?: string; creationTimestamp?: Date | null }; spec?: { type?: string; clusterIP?: string; ports?: Array<{ name?: string; port?: number; targetPort?: number | string; protocol?: string; nodePort?: number }>; selector?: Record<string, string> } }): K8sService => ({
           name: svc.metadata?.name ?? '',
           namespace: svc.metadata?.namespace ?? namespace,
           type: (svc.spec?.type ?? 'ClusterIP') as K8sService['type'],
@@ -110,9 +117,18 @@ export const kubernetesService = {
           selector: svc.spec?.selector ?? {},
           status: 'Active' as const,
           createdAt: svc.metadata?.creationTimestamp?.toISOString() ?? '',
-        }));
+        });
+
+        if (!namespace || namespace === 'default') {
+          const res = await coreApi.listServiceForAllNamespaces();
+          return (res.items ?? []).map(mapItem);
+        }
+        const res = await coreApi.listNamespacedService({ namespace });
+        return (res.items ?? []).map(mapItem);
       },
-      MOCK_K8S_SERVICES.filter((s) => s.namespace === namespace),
+      !namespace || namespace === 'default'
+        ? MOCK_K8S_SERVICES
+        : MOCK_K8S_SERVICES.filter((s) => s.namespace === namespace),
       'listServices',
     );
   },
@@ -120,8 +136,7 @@ export const kubernetesService = {
   async listEvents(namespace: string, limit: number): Promise<K8sEvent[]> {
     return tryK8s(
       async () => {
-        const res = await coreApi.listNamespacedEvent({ namespace });
-        const events = (res.items ?? []).map((evt): K8sEvent => ({
+        const mapItem = (evt: { metadata?: { name?: string; namespace?: string; uid?: string; creationTimestamp?: Date | null }; involvedObject?: { kind?: string; name?: string }; reason?: string; message?: string; type?: string; count?: number; lastTimestamp?: Date; source?: { component?: string } }): K8sEvent => ({
           id: evt.metadata?.uid ?? `${evt.metadata?.namespace}/${evt.metadata?.name}`,
           involvedObject: `${evt.involvedObject?.kind?.toLowerCase() ?? 'unknown'}/${evt.involvedObject?.name ?? ''}`,
           reason: evt.reason ?? '',
@@ -130,14 +145,15 @@ export const kubernetesService = {
           count: evt.count ?? 1,
           lastTimestamp: evt.lastTimestamp?.toISOString() ?? evt.metadata?.creationTimestamp?.toISOString() ?? new Date().toISOString(),
           source: evt.source?.component ?? '',
-        }));
-        return events.slice(0, limit);
+        });
+        if (!namespace || namespace === 'default') {
+          const res = await coreApi.listEventForAllNamespaces();
+          return (res.items ?? []).map(mapItem).slice(0, limit);
+        }
+        const res = await coreApi.listNamespacedEvent({ namespace });
+        return (res.items ?? []).map(mapItem).slice(0, limit);
       },
-      MOCK_EVENTS.filter((e) => {
-        const objParts = e.involvedObject.split('/');
-        const objNamespace = objParts.length > 1 ? (objParts[1]?.split(/[-.]/).slice(1).join('-') ?? '') : '';
-        return e.involvedObject.includes(namespace) || objNamespace.includes(namespace);
-      }).slice(0, limit),
+      MOCK_EVENTS.slice(0, limit),
       'listEvents',
     );
   },
@@ -147,12 +163,24 @@ export const kubernetesService = {
       async () => {
         const cluster = kubeConfig.getCurrentCluster();
         if (!cluster) throw new Error('No current cluster in kubeconfig');
+        const user = kubeConfig.getCurrentUser();
+        const ca = (cluster.caFile ? '' : '') + (cluster.caData ? Buffer.from(cluster.caData, 'base64').toString() : '');
+        const [nodesRes, versionRes] = await Promise.all([
+          coreApi.listNode().catch(() => ({ items: [] })),
+          fetch(`${cluster.server}/version`, {
+            headers: { Authorization: `Bearer ${user?.token ?? ''}` },
+          })
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null),
+        ]);
         return {
           name: cluster.name ?? 'unknown',
           namespace: 'default',
           apiServerUrl: cluster.server ?? '',
-          version: 'unknown',
-          nodeCount: 0,
+          version:
+            (versionRes as { gitVersion?: string } | null)?.gitVersion ??
+            (cluster.name ? `cluster:${cluster.name}` : 'unknown'),
+          nodeCount: (nodesRes.items ?? []).length,
         };
       },
       MOCK_CLUSTER,
@@ -161,7 +189,33 @@ export const kubernetesService = {
   },
 
   async getArgoStatus(application: string): Promise<ArgoAppStatus | null> {
-    return MOCK_ARGO_STATUSES[application] ?? null;
+    return tryK8s(
+      async () => {
+        const res = (await customObjectsApi.getNamespacedCustomObject({
+          group: 'argoproj.io',
+          version: 'v1alpha1',
+          namespace: 'argocd',
+          plural: 'applications',
+          name: application,
+        }).catch(() => null)) as { status?: Record<string, unknown>; spec?: Record<string, unknown>; metadata?: { annotations?: Record<string, string> } } | null;
+        if (!res) return null;
+        const syncStatus = (res.status as { sync?: { status?: string } } | undefined)?.sync?.status ?? 'Unknown';
+        const healthStatus = (res.status as { health?: { status?: string } } | undefined)?.health?.status ?? 'Unknown';
+        const source = (res.spec as { source?: { repoURL?: string; targetRevision?: string; path?: string } } | undefined)?.source;
+        const conditions = (res.status as { conditions?: Array<{ type?: string; message?: string }> } | undefined)?.conditions ?? [];
+        const degradedCondition = conditions.find((c) => c.type === 'Degraded');
+        return {
+          sync: (syncStatus === 'Synced' ? 'synced' : 'out-of-sync') as ArgoAppStatus['sync'],
+          health: (healthStatus === 'Healthy' ? 'healthy' : 'degraded') as ArgoAppStatus['health'],
+          revision: source?.targetRevision ?? 'HEAD',
+          branch: (source?.targetRevision ?? 'HEAD') as string,
+          lastSyncAt: new Date().toISOString(),
+          message: degradedCondition?.message ?? null,
+        };
+      },
+      MOCK_ARGO_STATUSES[application] ?? null,
+      'getArgoStatus',
+    );
   },
 
   async listHPA(namespace: string): Promise<K8sHPAStatus[]> {

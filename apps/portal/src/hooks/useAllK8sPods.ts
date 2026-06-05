@@ -6,7 +6,7 @@ export function useAllK8sPods() {
   return useQuery<K8sPod[]>({
     queryKey: ['k8s-all-pods'],
     queryFn: async () => {
-      const { data } = await apiClient.get<{ data: K8sPod[] }>('/kubernetes/pods');
+      const { data } = await apiClient.get<{ data: K8sPod[] }>('/kubernetes/pods', { params: { namespace: '' } });
       return data.data;
     },
     staleTime: 5_000,
