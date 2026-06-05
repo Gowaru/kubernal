@@ -52,3 +52,7 @@ kustomize
 # TLS certificates (regenerated on demand)
 infra/k8s/tls/*.key
 infra/k8s/tls/*.crt
+
+skills-lock.json
+opencode.json
+AGENTS.md
