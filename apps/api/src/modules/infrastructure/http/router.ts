@@ -40,6 +40,7 @@ import {
 import {
   createPipelineSchema,
   updatePipelineStatusSchema,
+  createPipelineFromTemplateSchema,
 } from '../../../modules/pipeline/pipeline.schema.js';
 import { createPolicySchema, updatePolicySchema } from '../../../modules/policy/policy.schema.js';
 
@@ -127,7 +128,14 @@ export function createRouter(): Router {
 
   // ─── Pipelines ──────────────────────────────────────────────────────────
   router.get('/pipelines', pipelineController.list);
+  router.post(
+    '/pipelines/execute',
+    validate(createPipelineFromTemplateSchema),
+    pipelineController.executeFromTemplate,
+  );
+  router.get('/pipelines/actions', pipelineController.listAvailableActions);
   router.get('/pipelines/:id', pipelineController.getById);
+  router.get('/pipelines/:id/steps', pipelineController.getSteps);
   router.post('/pipelines', validate(createPipelineSchema), pipelineController.create);
   router.post(
     '/pipelines/:id/status',

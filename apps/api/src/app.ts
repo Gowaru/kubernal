@@ -6,6 +6,7 @@ import { mountSwaggerUi } from './shared/swagger-ui.js';
 import { errorHandler } from './shared/middleware/error-handler.js';
 import { notFoundHandler } from './shared/middleware/not-found.js';
 import { trackRequest, getMetrics } from './shared/metrics.js';
+import { startPipelineWorker } from './modules/pipeline/worker.js';
 
 export function createApp() {
   const app = express();
@@ -56,6 +57,12 @@ export function createApp() {
 
   app.use(notFoundHandler);
   app.use(errorHandler);
+
+  if (process.env.PIPELINE_WORKER_ENABLED !== 'false') {
+    const worker = startPipelineWorker({ intervalMs: 5000 });
+    console.log('[bootstrap] pipeline worker started (5s interval)');
+    (globalThis as { __pipelineWorker?: { stop: () => void } }).__pipelineWorker = worker;
+  }
 
   return app;
 }
