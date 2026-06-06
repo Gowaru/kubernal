@@ -63,7 +63,7 @@ We assume **defense in depth**: even if one secret leaks, the others stay locked
 
 - **Source**: <https://github.com/settings/developers> → OAuth Apps → Kubernal Backstage
 - **Storage**:
-  - Backstage cluster: `infra/k8s/backstage/secret.yaml` (gitignored, local) — applies to cluster
+  - Cluster manifest (gitignored, local) — applies via `kubectl apply -f` to the namespace
   - Local: `apps/api/.env` for any helper scripts
 - **Rotation cadence**: every 180 days **or** on contributor offboarding
 - **Test after rotation**: log in to Backstage via GitHub OAuth flow
@@ -108,7 +108,7 @@ If a secret is committed, pushed, or shared externally:
 4. **Purge from history** with `git filter-repo` (NOT `git filter-branch`):
    ```bash
    pip install git-filter-repo
-   git filter-repo --path infra/k8s/backstage/secret.yaml --invert-paths
+   git filter-repo --path <path-to-leaked-file> --invert-paths
    git push origin --force --all
    git push origin --force --tags
    ```

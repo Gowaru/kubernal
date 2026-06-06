@@ -15,8 +15,3 @@ resources:
   - api/service-account.yaml
   - api/cluster-role.yaml
   - api/cluster-role-binding.yaml
-  - backstage/configmap.yaml
-  - backstage/secret.yaml
-  - backstage/deployment.yaml
-  - backstage/service.yaml
-  - backstage/ingress.yaml
