@@ -70,6 +70,7 @@ model Application {
   repositoryUrl  String?
   webhookSecret  String?
   status         String   @default("creating") // creating | active | failed | archived
+  config         Json     @default("{}")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -112,6 +113,7 @@ model Deployment {
   createdAt        DateTime  @default(now())
 
   pipelines Pipeline[]
+  vulnerabilities DeploymentVulnerability[]
 }
 
 // ─── Pipeline ───────────────────────────────────────────────────────────────
@@ -126,6 +128,49 @@ model Pipeline {
   startedAt    DateTime  @default(now())
   completedAt  DateTime?
   createdAt    DateTime  @default(now())
+
+  steps PipelineStep[]
+}
+
+// ─── Pipeline Step ──────────────────────────────────────────────────────────
+model PipelineStep {
+  id           String   @id @default(uuid())
+  pipelineId   String
+  pipeline     Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  name         String
+  order        Int
+  status       String   @default("pending") // pending | running | success | failed | skipped
+  action       String
+  params       Json     @default("{}")
+  output       Json?
+  errorMessage String?  @db.Text
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+
+  @@index([pipelineId])
+  @@index([status])
+}
+
+// ─── Deployment Vulnerability (Trivy / Snyk / Grype) ────────────────────────
+model DeploymentVulnerability {
+  id             String   @id @default(uuid())
+  deploymentId   String
+  deployment     Deployment @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+  cveId          String
+  severity       String   // critical | high | medium | low
+  packageName    String
+  packageVersion String
+  fixedVersion   String?
+  title          String
+  description    String?  @db.Text
+  scanSource     String   @default("trivy")
+  rawReport      Json     @default("{}")
+  detectedAt     DateTime @default(now())
+
+  @@index([deploymentId])
+  @@index([severity])
+  @@index([cveId])
 }
 
 // ─── Politique de Sécurité ─────────────────────────────────────────────────
