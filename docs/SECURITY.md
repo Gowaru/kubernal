@@ -176,3 +176,24 @@ These are allowlisted in `.gitleaks.toml`. To add a new pattern, edit that file 
 - **Workload Identity** — replace static `dockerconfigjson` with cloud IAM
 
 See [Phase 14+ roadmap in the main project memory] for timeline.
+
+---
+
+## 10. Known false positives (GitHub Secret Scanning)
+
+GitHub's [secret scanner](https://docs.github.com/en/code-security/secret-scanning/about-secret-scanning)
+may flag values that match well-known third-party formats but are actually our own internal secrets.
+When closing such an alert, link this section in the comment.
+
+| Pattern                  | GitHub flags as                | Why it's a false positive                                                                                                                                                  |
+|--------------------------|--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `whsec_[a-f0-9]{48}`     | Stripe Webhook Signing Secret  | Our own webhook signing format, generated at runtime by [`generateSecret()`](../apps/api/src/shared/webhook-verify.ts#L62): HMAC-SHA256 of `kubernal-webhook` truncated to 48 hex chars. Used for HMAC signature verification on incoming GitHub / GitLab / Bitbucket push events. |
+
+**Do NOT** add these patterns to `.gitleaks.toml` allowlist — we still want to detect accidental
+commits of real values so we can redact them. The false positive only applies to GitHub's
+public-facing scanner (and to our internal scanner on PRs from forks).
+
+**When closing a false-positive alert**, use this template:
+
+> False positive: this is our own webhook signing format (`apps/api/src/shared/webhook-verify.ts:62`), not a Stripe secret. The leaked value has been rotated via `POST /api/v1/applications/{id}/webhook/regenerate` and masked in the documentation. See `docs/SECURITY.md` § 10.
+

@@ -599,7 +599,7 @@ Le **dev flow** relie le repository Git d'une application à ses déploiements K
 ```bash
 # 1. Génération d'un secret
 $ curl -X POST /api/v1/applications/7d9fc55c-.../webhook/regenerate
-{ "data": { "applicationId": "7d9fc55c-...", "secret": "whsec_15f588d8cc9b25f40f0c6b2a0fb4afeb8e7063042a101585" } }
+{ "data": { "applicationId": "7d9fc55c-...", "secret": "<WEBHOOK_SECRET_REGENERATED>" } }
 
 # 2. Push event avec signature valide
 $ PAYLOAD='{"ref":"refs/heads/main","after":"a1b2c3d4...","repository":{"full_name":"Gowaru/payment-api"},"sender":{"login":"alexander"}}'
@@ -607,6 +607,8 @@ $ SIG="sha256=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$SECRET" -hex |
 $ curl -X POST /api/v1/webhooks/7d9fc55c-.../github -H "X-Hub-Signature-256: $SIG" -d "$PAYLOAD"
 { "data": { "kind": "DeploymentCreated", "deploymentId": "f62330e2-...", "version": "git-a1b2c3d", "branch": "main", "author": "alexander", "status": "building" } }
 HTTP 201
+
+> **Note** : la valeur du secret a été masquée après détection par GitHub Secret Scanning (faux positif vs regex Stripe). Format interne : `whsec_<48 hex>` — voir [`apps/api/src/shared/webhook-verify.ts:62`](../apps/api/src/shared/webhook-verify.ts).
 
 # 3. Push event avec signature INVALIDE
 $ curl -X POST /api/v1/webhooks/7d9fc55c-.../github -H "X-Hub-Signature-256: sha256=deadbeef" -d "$PAYLOAD"
