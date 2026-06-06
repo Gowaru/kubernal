@@ -29,3 +29,17 @@
 - Use any testing tools, libraries available to the project for testing your changes
 - Never assume your changes simply work, always test!
 - If the project does not have any testing tools, scripts, MCP tools, skills, etc. available for testing, ask the user whether testing should be skipped.
+
+## SECRETS MANAGEMENT
+
+- **NEVER** commit real secrets, tokens, passwords, private keys, or cert material
+- Real manifests follow `secret.yaml` pattern → already in `.gitignore` (use `secret.yaml.example` for templates)
+- Real env files (`.env`) → already in `.gitignore` (use `.env.example` for templates)
+- Placeholder format inside committed templates: `<PLACEHOLDER_NAME_IN_SNAKE_CASE>`
+- Pre-commit hook `.pre-commit-config.yaml` runs gitleaks on staged changes
+- CI workflow `.github/workflows/secret-scan.yml` runs gitleaks on full git history
+- Manual scan: `bash scripts/scan-secrets.sh` (working tree) or `bash scripts/scan-secrets.sh history`
+- Allowlist config: `.gitleaks.toml` (placeholders, `*.example*` paths)
+- Rotation procedure + allowed storage: see `docs/SECURITY.md`
+- If a secret leaks: see `docs/SECURITY.md § Incident Response` (rotate → purge history → re-deploy)
+

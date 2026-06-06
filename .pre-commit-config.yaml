@@ -1,0 +1,11 @@
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+        name: gitleaks (secrets detection)
+        description: Scan staged changes for secrets, API keys, and credentials
+        entry: gitleaks protect --staged --redact --no-banner
+        language: system
+        stages: [pre-commit]
+        require_serial: true

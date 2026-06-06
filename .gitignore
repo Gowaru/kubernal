@@ -10,6 +10,9 @@ build/
 .env
 .env.local
 .env.*.local
+**/.env
+**/.env.local
+**/.env.*.local
 
 # IDE
 .vscode/
@@ -52,6 +55,41 @@ kustomize
 # TLS certificates (regenerated on demand)
 infra/k8s/tls/*.key
 infra/k8s/tls/*.crt
+
+# Kubernetes secrets (real values live in *.yaml.example templates)
+infra/k8s/*/secret.yaml
+infra/k8s/**/secret.yaml
+*.secret.yaml
+**/secrets/
+# Allow template files explicitly (negation comes after the rule)
+!infra/k8s/*/secret.yaml.example
+!**/secret.yaml.example
+
+# Generic credentials & key material
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+*.asc
+.gpg/
+
+# Docker registry credentials
+.docker/config.json
+config.json
+config.json.bak
+
+# Service-account tokens / cloud creds
+**/gcp-credentials.json
+**/aws-credentials
+**/azure-credentials
+**/kubeconfig*
+!**/kubeconfig.example
 
 skills-lock.json
 opencode.json

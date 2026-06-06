@@ -1,0 +1,52 @@
+title = "Kubernal gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allow placeholders, example files, and dev patterns"
+regexes = [
+  # Generic placeholders
+  '''<PLACEHOLDER_[A-Z_]+>''',
+  '''<your-[a-z-]+>''',
+  '''<[a-z_-]+>''',
+  # GitHub PAT placeholders (used in error messages, docs, code)
+  '''ghp_xxx''',
+  '''gho_xxx''',
+  '''ghs_xxx''',
+  '''ghr_xxx''',
+  '''ghu_xxx''',
+  # Test/dev password
+  '''kubernal_dev''',
+  '''admin@local''',
+  # Common dev words
+  '''changeme''',
+  '''yourpasswordhere''',
+]
+paths = [
+  '''\.example$''',
+  '''\.example\.yaml$''',
+  '''\.example\.yml$',
+  '''\.example\.env$''',
+  '''node_modules/''',
+  '''dist/''',
+  '''build/''',
+  '''\.git/''',
+  '''coverage/''',
+  '''playwright-tests/''',
+  '''test-results/''',
+  '''skills-lock\.json''',
+  '''opencode\.json''',
+  '''AGENTS\.md''',
+  '''docs/SECURITY\.md''',
+  '''\.gitleaks\.toml$''',
+]
+stopwords = [
+  "placeholder",
+  "example",
+  "PLACEHOLDER",
+  "EXAMPLE",
+  "your-org",
+  "your-repo",
+  "your-token",
+]
