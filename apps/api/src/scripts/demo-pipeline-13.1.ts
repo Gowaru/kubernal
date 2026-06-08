@@ -331,7 +331,8 @@ async function runPhase131Demo(): Promise<void> {
   });
   steps.push(setupStep.step);
   if (setupStep.error || !setupStep.value) {
-    process.stderr.write(`\nFatal: setup failed\n\n`);
+    const msg = setupStep.error instanceof Error ? setupStep.error.message : String(setupStep.error);
+    process.stderr.write(`\nFatal: setup failed - ${msg}\n\n`);
     process.exit(1);
   }
   const ids = setupStep.value;
@@ -886,10 +887,162 @@ async function runPhase133Demo(): Promise<void> {
   );
 }
 
+async function runPhase134Demo(): Promise<void> {
+  printHeader('Phase 13.4 — push:image (2-step pipeline: build + push)');
+  const sampleAppDir = path.resolve(process.cwd(), 'test-fixtures', 'sample-app');
+  const dockerfilePath = path.join(sampleAppDir, 'Dockerfile');
+  const steps: DemoStep[] = [];
+  const start = Date.now();
+
+  process.stdout.write('\n  Verifying local sample-app fixture on disk...\n');
+  const fixtureStep = await runStep(
+    '1.1 stat sample-app/Dockerfile',
+    async () => {
+      if (!existsSync(sampleAppDir)) {
+        throw new Error(`sample-app directory not found at ${sampleAppDir}`);
+      }
+      if (!existsSync(dockerfilePath)) {
+        throw new Error(`Dockerfile not found at ${dockerfilePath}`);
+      }
+      const { readFileSync } = await import('node:fs');
+      const dockerfile = readFileSync(dockerfilePath, 'utf8');
+      process.stdout.write(`     context:    ${sampleAppDir}\n`);
+      process.stdout.write(`     dockerfile: ${dockerfilePath}\n`);
+      process.stdout.write(`     content:\n`);
+      for (const line of dockerfile.split('\n')) {
+        process.stdout.write(`       ${line}\n`);
+      }
+      return { sampleAppDir, dockerfilePath };
+    },
+  );
+  steps.push(fixtureStep.step);
+
+  process.stdout.write('\n  Reusing team + user from Phase 13.1...\n');
+  const setupStep = await runStep('2.1 create template + app + env + deployment', async () => {
+    const team = await findOrCreateTeam();
+    const user = await findOrCreateUser(team.id);
+    const template = await findOrCreateTemplate({
+      name: `pipeline-demo-13-4-${Date.now()}`,
+      description: 'Phase 13.4 pipeline demo template (2 steps: build + push)',
+      steps: [
+        {
+          id: 'build',
+          name: 'Build sample image from local Dockerfile',
+          action: 'build:image',
+          input: {
+            context: path.resolve(process.cwd(), 'test-fixtures', 'sample-app'),
+            dockerfile: 'Dockerfile',
+            image: 'localhost:5000/kubernal-sample:13.4-demo',
+            labels: { 'kubernal.io/phase': '13.4' },
+          },
+        },
+        {
+          id: 'push',
+          name: 'Push image to local registry',
+          action: 'push:image',
+          input: { image: 'localhost:5000/kubernal-sample:13.4-demo' },
+        },
+      ],
+    });
+    const app = await findOrCreateApplication({
+      name: 'phase-13-4-demo-app',
+      description: 'Phase 13.4 pipeline demo application',
+      templateId: template.id,
+      ownerId: user.id,
+      teamId: team.id,
+    });
+    const env = await findOrCreateEnvironment({
+      name: 'dev',
+      type: 'dev',
+      applicationId: app.id,
+      namespace: `kubernal-demo-13-4-${Date.now()}-dev`.slice(0, 63),
+    });
+    const deployment = await findOrCreateDeployment({
+      applicationId: app.id,
+      environmentId: env.id,
+      version: 'v13.4.0',
+      commitSha: 'demo13.4a1b2',
+    });
+    return { template, app, env, deployment };
+  });
+  steps.push(setupStep.step);
+
+  const templateId = setupStep.value!.template.id;
+  const deploymentId = setupStep.value!.deployment.id;
+
+  process.stdout.write('\n  Executing 2-step push pipeline...\n');
+  const pipelineRes = await fetch('http://127.0.0.1:4000/api/v1/pipelines/execute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deploymentId: deploymentId, templateId: templateId, params: {} }),
+  });
+  if (!pipelineRes.ok) {
+    throw new Error(`POST /pipelines/execute failed: ${pipelineRes.status} ${await pipelineRes.text()}`);
+  }
+  const pipeline = (await pipelineRes.json()).data;
+
+  const finalPipeline = await pollPipelineCompletion(pipeline.id, 120);
+  const pipelineDuration = Date.now() - start;
+
+  const pipelineStepsRes = await fetch(`http://127.0.0.1:4000/api/v1/pipelines/${finalPipeline.id}/steps`);
+  const pipelineSteps = (await pipelineStepsRes.json()).data;
+
+  const buildStepResult = pipelineSteps.find((s: unknown) => (s as Record<string, unknown>).action === 'build:image');
+  const pushStepResult = pipelineSteps.find((s: unknown) => (s as Record<string, unknown>).action === 'push:image');
+  if (buildStepResult) steps.push(buildStepResult as DemoStep);
+  if (pushStepResult) steps.push(pushStepResult as DemoStep);
+
+  const sourceTag = 'localhost:5000/kubernal-sample:13.4-demo';
+  const targetTag = 'localhost:5000/kubernal-sample:13.4-demo';
+
+  process.stdout.write('\n  Verifying pushed image...\n');
+  const verifyPushStep = await runStep('6.1 docker image inspect', async () => {
+    await execFileAsync('docker', ['image', 'inspect', targetTag]);
+  });
+  steps.push(verifyPushStep.step);
+
+  process.stdout.write('\n  Cleaning up pushed image...\n');
+  const cleanupStep = await runStep('7.1 docker rmi pushed image', async () => {
+    try {
+      await execFileAsync('docker', ['rmi', targetTag]);
+      process.stdout.write(`     removed ${targetTag}\n`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      process.stdout.write(`     WARN: docker rmi failed: ${message}\n`);
+    }
+  });
+  steps.push(cleanupStep.step);
+
+  printHeader('Summary (Phase 13.4)');
+  for (const step of steps) {
+    process.stdout.write(fmtStepResult(step) + '\n');
+  }
+  process.stdout.write(`\n  Pipeline status:    ${finalPipeline.status}\n`);
+  process.stdout.write(`  Pipeline duration:  ${pipelineDuration}ms\n`);
+  process.stdout.write(`  Steps executed:     ${pipelineSteps.length}\n`);
+  process.stdout.write(`  Source tag:         ${sourceTag}\n`);
+  process.stdout.write(`  Pushed tag:         ${targetTag}\n`);
+  process.stdout.write(`  Total duration:     ${Date.now() - start}ms\n`);
+  process.stdout.write('\n' + '━'.repeat(78) + '\n\n');
+
+  logger.info(
+    {
+      pipelineId: finalPipeline.id,
+      finalStatus: finalPipeline.status,
+      durationMs: pipelineDuration,
+      stepCount: pipelineSteps.length,
+      sourceTag,
+      targetTag,
+    },
+    'Phase 13.4 pipeline demo complete',
+  );
+}
+
 async function main(): Promise<void> {
   await runPhase131Demo();
   await runPhase132Demo();
   await runPhase133Demo();
+  await runPhase134Demo();
 }
 
 void main().catch((error: unknown) => {
