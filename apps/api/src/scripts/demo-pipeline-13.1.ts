@@ -178,10 +178,11 @@ async function findOrCreateApplication(args: {
 
 async function findOrCreateEnvironment(args: {
   name: string;
+  type?: string;
   applicationId: string;
   namespace: string;
 }): Promise<Environment> {
-  const existing = await db.environment.findFirst({ where: { name: args.name } });
+  const existing = await db.environment.findFirst({ where: { name: args.name, applicationId: args.applicationId } });
   if (existing) {
     return {
       id: existing.id,
@@ -192,7 +193,7 @@ async function findOrCreateEnvironment(args: {
   }
   return api<{ data: Environment }>('POST', '/api/v1/environments', {
     name: args.name,
-    type: 'dev',
+    type: args.type ?? 'dev',
     applicationId: args.applicationId,
     namespace: args.namespace.slice(0, 63),
     clusterName: 'kubernal',
@@ -1038,11 +1039,182 @@ async function runPhase134Demo(): Promise<void> {
   );
 }
 
+async function runPhase135Demo(): Promise<void> {
+  printHeader('Phase 13.5+13.6 — scan:image + deploy:manifest (2-step pipeline)');
+  const steps: DemoStep[] = [];
+  const start = Date.now();
+
+  process.stdout.write('\n  Reusing team + user from Phase 13.1...\n');
+  const setupStep = await runStep('1.1 create template + app + env + deployment', async () => {
+    const team = await findOrCreateTeam();
+    const user = await findOrCreateUser(team.id);
+
+    const nginxYaml = [
+      'apiVersion: apps/v1',
+      'kind: Deployment',
+      'metadata:',
+      '  name: nginx-demo',
+      '  labels:',
+      '    app: nginx-demo',
+      'spec:',
+      '  replicas: 1',
+      '  selector:',
+      '    matchLabels:',
+      '      app: nginx-demo',
+      '  template:',
+      '    metadata:',
+      '      labels:',
+      '        app: nginx-demo',
+      '    spec:',
+      '      containers:',
+      '      - name: nginx',
+      '        image: nginx:alpine',
+      '        ports:',
+      '        - containerPort: 80',
+    ].join('\n');
+
+    const template = await findOrCreateTemplate({
+      name: `pipeline-demo-135-${Date.now()}`,
+      description: 'Phase 13.5+13.6 demo template (2 steps: scan + deploy)',
+      steps: [
+        {
+          id: 'scan',
+          name: 'Scan nginx:alpine with Trivy',
+          action: 'scan:image',
+          input: { image: 'nginx:alpine', severity: ['CRITICAL', 'HIGH'], exitCode: false },
+        },
+        {
+          id: 'deploy',
+          name: 'Deploy nginx to demo namespace',
+          action: 'deploy:manifest',
+          input: { manifests: [nginxYaml], waitRollout: false },
+        },
+      ],
+    });
+    const app = await findOrCreateApplication({
+      name: 'phase-13-5-demo-app',
+      description: 'Phase 13.5+13.6 pipeline demo application',
+      templateId: template.id,
+      ownerId: user.id,
+      teamId: team.id,
+    });
+    const namespace = `kubernal-135-${Date.now()}-dev`.slice(0, 63);
+    const env = await findOrCreateEnvironment({
+      name: 'dev',
+      type: 'dev',
+      applicationId: app.id,
+      namespace,
+    });
+    const deployment = await findOrCreateDeployment({
+      applicationId: app.id,
+      environmentId: env.id,
+      commitSha: 'demo13.5a1b2',
+    });
+    return { template, app, env, deployment };
+  });
+  steps.push(setupStep.step);
+  if (setupStep.error) {
+    process.stderr.write(`\nFatal: setup failed — ${setupStep.error instanceof Error ? setupStep.error.message : String(setupStep.error)}\n\n`);
+    process.exit(1);
+  }
+  const ids = setupStep.value!;
+  const targetNamespace = ids.env.namespace;
+
+  process.stdout.write('\n  Creating K8s namespace for deployment...\n');
+  const nsStep = await runStep('2.1 kubectl create namespace', async () => {
+    try {
+      await execFileAsync('kubectl', ['create', 'namespace', targetNamespace]);
+      process.stdout.write(`     created namespace ${targetNamespace}\n`);
+    } catch {
+      process.stdout.write(`     namespace ${targetNamespace} already exists\n`);
+    }
+  });
+  steps.push(nsStep.step);
+
+  process.stdout.write('\n  Executing 2-step scan+deploy pipeline...\n');
+  const pipelineRes = await fetch('http://127.0.0.1:4000/api/v1/pipelines/execute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deploymentId: ids.deployment.id, templateId: ids.template.id, params: {} }),
+  });
+  if (!pipelineRes.ok) {
+    throw new Error(`POST /pipelines/execute failed: ${pipelineRes.status} ${await pipelineRes.text()}`);
+  }
+  const pipeline = (await pipelineRes.json()).data;
+
+  const finalPipeline = await pollPipelineCompletion(pipeline.id, 180);
+  const pipelineDuration = Date.now() - start;
+
+  const pipelineStepsRes = await fetch(`http://127.0.0.1:4000/api/v1/pipelines/${finalPipeline.id}/steps`);
+  const pipelineSteps = (await pipelineStepsRes.json()).data;
+
+  printPipelineSteps(pipelineSteps);
+
+  const scanStep = pipelineSteps.find((s: PipelineStep) => s.action === 'scan:image');
+  const deployStep = pipelineSteps.find((s: PipelineStep) => s.action === 'deploy:manifest');
+
+  process.stdout.write('\n  Verifying scan results...\n');
+  const scanCheck = await runStep('2.1 check scan:image output', async () => {
+    if (!scanStep) throw new Error('scan:image step not found');
+    const out = scanStep.output as Record<string, unknown> | null;
+    if (!out) throw new Error('scan:image output is null');
+    const vulnCount = out['vulnCount'] as number;
+    const critical = out['criticalCount'] as number;
+    process.stdout.write(`     vulns found:   ${vulnCount}\n`);
+    process.stdout.write(`     CRITICAL:      ${critical}\n`);
+    process.stdout.write(`     passed:        ${out['passed']}\n`);
+    return out;
+  });
+  steps.push(scanCheck.step);
+
+  process.stdout.write('\n  Verifying deployment...\n');
+  const deployCheck = await runStep('3.1 check deploy:manifest output + kubectl get deployment', async () => {
+    if (!deployStep) throw new Error('deploy:manifest step not found');
+    const ns = targetNamespace;
+
+    const result = await execFileAsync('kubectl', ['get', 'deployment', 'nginx-demo', '-n', ns, '-o', 'name']);
+    const depName = result.stdout.trim();
+    process.stdout.write(`     deployment:     ${depName}\n`);
+    if (!depName) throw new Error('deployment not found');
+
+    await execFileAsync('kubectl', ['delete', 'deployment', 'nginx-demo', '-n', ns]);
+    process.stdout.write(`     cleaned up deployment nginx-demo\n`);
+
+    await execFileAsync('kubectl', ['delete', 'namespace', ns]);
+    process.stdout.write(`     cleaned up namespace ${ns}\n`);
+    return { namespace: ns };
+  });
+  steps.push(deployCheck.step);
+
+  printHeader('Summary (Phase 13.5+13.6)');
+  for (const step of steps) {
+    process.stdout.write(fmtStepResult(step) + '\n');
+  }
+  process.stdout.write(`\n  Pipeline status:    ${finalPipeline.status}\n`);
+  process.stdout.write(`  Pipeline duration:  ${pipelineDuration}ms\n`);
+  process.stdout.write(`  Steps executed:     ${pipelineSteps.length}\n`);
+  const scanValue = scanCheck.value as Record<string, unknown> | undefined;
+  process.stdout.write(`  Scan vulns:         ${scanValue?.['vulnCount'] ?? 'n/a'}\n`);
+  process.stdout.write(`  Total duration:     ${Date.now() - start}ms\n`);
+  process.stdout.write('\n' + '━'.repeat(78) + '\n\n');
+
+  logger.info(
+    {
+      pipelineId: finalPipeline.id,
+      finalStatus: finalPipeline.status,
+      durationMs: pipelineDuration,
+      stepCount: pipelineSteps.length,
+    },
+    'Phase 13.5+13.6 pipeline demo complete',
+  );
+}
+
 async function main(): Promise<void> {
   await runPhase131Demo();
   await runPhase132Demo();
   await runPhase133Demo();
   await runPhase134Demo();
+  await runPhase135Demo();
 }
 
 void main().catch((error: unknown) => {

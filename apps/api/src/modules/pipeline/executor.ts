@@ -47,7 +47,7 @@ export async function executePipeline(pipelineId: string): Promise<void> {
   const pipeline = await db.pipeline.findUnique({
     where: { id: pipelineId },
     include: {
-      deployment: { include: { application: true } },
+      deployment: { include: { application: true, environment: true } },
       steps: { orderBy: { order: 'asc' } },
     },
   });
@@ -95,6 +95,7 @@ export async function executePipeline(pipelineId: string): Promise<void> {
       return;
     }
 
+    const env = pipeline.deployment.environment;
     const context: ActionContext = {
       pipelineId,
       deploymentId: pipeline.deploymentId,
@@ -103,6 +104,9 @@ export async function executePipeline(pipelineId: string): Promise<void> {
       stepParams: (step.params ?? {}) as Record<string, unknown>,
       stepOutput: step.output,
       logger: makeLogger(pipelineId),
+      environment: env
+        ? { id: env.id, name: env.name, type: env.type, namespace: env.namespace }
+        : undefined,
     };
 
     try {
@@ -172,11 +176,12 @@ export async function executePipeline(pipelineId: string): Promise<void> {
 export async function executeStep(stepId: string): Promise<void> {
   const step = await db.pipelineStep.findUnique({
     where: { id: stepId },
-    include: { pipeline: { include: { deployment: true } } },
+    include: { pipeline: { include: { deployment: { include: { environment: true } } } } },
   });
   if (!step) throw new NotFoundError('PipelineStep', stepId);
 
   const action = getAction(step.action);
+  const env = step.pipeline.deployment.environment;
   const context: ActionContext = {
     pipelineId: step.pipelineId,
     deploymentId: step.pipeline.deploymentId,
@@ -185,6 +190,9 @@ export async function executeStep(stepId: string): Promise<void> {
     stepParams: (step.params ?? {}) as Record<string, unknown>,
     stepOutput: step.output,
     logger: makeLogger(step.pipelineId),
+    environment: env
+      ? { id: env.id, name: env.name, type: env.type, namespace: env.namespace }
+      : undefined,
   };
 
   await db.pipelineStep.update({
