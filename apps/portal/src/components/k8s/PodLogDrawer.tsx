@@ -166,13 +166,13 @@ export function PodLogDrawer({ pod, onClose }: PodLogDrawerProps): JSX.Element {
           <div
             ref={scrollRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto bg-[oklch(0.08_0.005_265)] p-4 font-mono text-xs leading-5"
+            className="flex-1 overflow-y-auto bg-background p-4 font-mono text-xs leading-5"
           >
             {logs.map((line, i) => {
               const level = parseLogLevel(line);
               return (
-                <p key={i} className="text-gray-300">
-                  <span className={cn(LEVEL_CLASS[level] ?? 'text-gray-300')}>
+                <p key={i} className="text-muted-foreground">
+                  <span className={cn(LEVEL_CLASS[level] ?? 'text-muted-foreground')}>
                     {line.substring(0, line.indexOf(']') + 1)}
                   </span>
                   <span>{line.substring(line.indexOf(']') + 1)}</span>

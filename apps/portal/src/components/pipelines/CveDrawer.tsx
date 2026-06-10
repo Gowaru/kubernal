@@ -11,9 +11,9 @@ interface CveDrawerProps {
 }
 
 const SEVERITY_CONFIG = {
-  CRITICAL: { color: 'text-red-400 bg-red-400/10 border-red-500/30' },
-  HIGH: { color: 'text-orange-400 bg-orange-400/10 border-orange-500/30' },
-  MEDIUM: { color: 'text-yellow-400 bg-yellow-400/10 border-yellow-500/30' },
+  CRITICAL: { color: 'text-status-error bg-status-error/10 border-status-error/30' },
+  HIGH: { color: 'text-status-warning bg-status-warning/10 border-status-warning/30' },
+  MEDIUM: { color: 'text-status-warning bg-status-warning/10 border-status-warning/30' },
   LOW: { color: 'text-zinc-400 bg-zinc-400/10 border-zinc-500/30' },
 } as const;
 
@@ -127,7 +127,7 @@ export function CveDrawer({ deploymentId, open, onClose }: CveDrawerProps): JSX.
                     </span>
                     {vuln.fixedVersion && (
                       <span>
-                        Fixe : <span className="text-emerald-400">{vuln.fixedVersion}</span>
+                        Fixe : <span className="text-status-success">{vuln.fixedVersion}</span>
                       </span>
                     )}
                   </div>

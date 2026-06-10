@@ -6,10 +6,10 @@ import { Shield, FileCheck, DollarSign, Settings, Terminal } from 'lucide-react'
 import type { SecurityPolicy, PolicyCategory, PolicySeverity } from '@kubernal/shared-types';
 
 const severityConfig: Record<PolicySeverity, { label: string; className: string }> = {
-  critical: { label: 'CRITIQUE', className: 'bg-red-500/10 text-red-400 border-red-500/20' },
-  high: { label: 'HAUTE', className: 'bg-orange-500/10 text-orange-400 border-orange-500/20' },
-  medium: { label: 'MOYENNE', className: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-  low: { label: 'BASSE', className: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
+  critical: { label: 'CRITIQUE', className: 'bg-status-error/10 text-status-error border-status-error/20' },
+  high: { label: 'HAUTE', className: 'bg-status-warning/10 text-status-warning border-status-warning/20' },
+  medium: { label: 'MOYENNE', className: 'bg-status-warning/10 text-status-warning border-status-warning/20' },
+  low: { label: 'BASSE', className: 'bg-status-warning/10 text-status-warning border-status-warning/20' },
 };
 
 const categoryConfig: Record<PolicyCategory, { label: string; icon: typeof Shield; className: string }> = {

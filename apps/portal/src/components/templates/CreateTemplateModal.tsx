@@ -178,7 +178,7 @@ export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalP
                   required
                 />
                 {errors.name && (
-                  <p className="text-xs text-red-400">{errors.name}</p>
+                  <p className="text-xs text-status-error">{errors.name}</p>
                 )}
               </div>
 
@@ -197,7 +197,7 @@ export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalP
                   </SelectContent>
                 </Select>
                 {errors.category && (
-                  <p className="text-xs text-red-400">{errors.category}</p>
+                  <p className="text-xs text-status-error">{errors.category}</p>
                 )}
               </div>
 
@@ -211,7 +211,7 @@ export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalP
                   required
                 />
                 {errors.description && (
-                  <p className="text-xs text-red-400">{errors.description}</p>
+                  <p className="text-xs text-status-error">{errors.description}</p>
                 )}
               </div>
             </div>
@@ -249,7 +249,7 @@ export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalP
                   required
                 />
                 {errors.repository && (
-                  <p className="text-xs text-red-400">{errors.repository}</p>
+                  <p className="text-xs text-status-error">{errors.repository}</p>
                 )}
               </div>
 
@@ -262,7 +262,7 @@ export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalP
                   onChange={(e) => setField('version', e.target.value)}
                 />
                 {errors.version && (
-                  <p className="text-xs text-red-400">{errors.version}</p>
+                  <p className="text-xs text-status-error">{errors.version}</p>
                 )}
               </div>
 
@@ -336,7 +336,7 @@ export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalP
             </DialogHeader>
 
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
-              <CheckCircle2 className="h-16 w-16 text-emerald-400" />
+              <CheckCircle2 className="h-16 w-16 text-status-success" />
               <p className="text-sm text-muted-foreground text-center max-w-xs">
                 Le template{' '}
                 <strong className="text-foreground">{form.name}</strong>{' '}

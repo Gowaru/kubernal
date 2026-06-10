@@ -12,9 +12,9 @@ interface PipelineStepsTimelineProps {
 
 const STEP_STATUS_CONFIG = {
   pending: { icon: Circle, className: 'text-zinc-500' },
-  running: { icon: Loader2, className: 'text-sky-400 animate-spin' },
-  success: { icon: CheckCircle2, className: 'text-emerald-400' },
-  failed: { icon: XCircle, className: 'text-red-400' },
+  running: { icon: Loader2, className: 'text-status-info animate-spin' },
+  success: { icon: CheckCircle2, className: 'text-status-success' },
+  failed: { icon: XCircle, className: 'text-status-error' },
   cancelled: { icon: XCircle, className: 'text-zinc-500' },
 } as const;
 
@@ -52,7 +52,7 @@ export function PipelineStepsTimeline({ pipelineId, deploymentId, onShowCves }: 
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
         <span className="font-medium">{pipeline.name}</span>
-        <span className={pipeline.status === 'running' ? 'text-sky-400' : ''}>
+        <span className={pipeline.status === 'running' ? 'text-status-info' : ''}>
           {pipeline.status === 'running' ? 'En cours...' : pipeline.status}
         </span>
       </div>
@@ -80,7 +80,7 @@ export function PipelineStepsTimeline({ pipelineId, deploymentId, onShowCves }: 
               <div key={step.id} className="flex gap-3">
                 <div className="flex-shrink-0 mt-0.5">
                   <div
-                    className={`flex h-5 w-5 items-center justify-center rounded-full border ${isRunning ? 'border-sky-500/30' : step.status === 'success' ? 'border-emerald-500/30' : step.status === 'failed' ? 'border-red-500/30' : 'border-zinc-600/30'}`}
+                    className={`flex h-5 w-5 items-center justify-center rounded-full border ${isRunning ? 'border-status-info/30' : step.status === 'success' ? 'border-status-success/30' : step.status === 'failed' ? 'border-status-error/30' : 'border-zinc-600/30'}`}
                   >
                     <Icon className={`h-3 w-3 ${config.className}`} />
                   </div>
@@ -97,7 +97,7 @@ export function PipelineStepsTimeline({ pipelineId, deploymentId, onShowCves }: 
                       <button
                         type="button"
                         onClick={() => onShowCves(deploymentId)}
-                        className="inline-flex items-center rounded-md border border-orange-500/30 bg-orange-400/10 px-1.5 py-0.5 text-[10px] font-semibold text-orange-400 hover:bg-orange-400/20 transition-colors"
+                        className="inline-flex items-center rounded-md border border-status-warning/30 bg-status-warning/10 px-1.5 py-0.5 text-[10px] font-semibold text-status-warning hover:bg-status-warning/20 transition-colors"
                       >
                         {vulnCount} vuln.
                       </button>
@@ -110,11 +110,11 @@ export function PipelineStepsTimeline({ pipelineId, deploymentId, onShowCves }: 
                   </div>
                   {isRunning && (
                     <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-secondary">
-                      <div className="h-full rounded-full bg-sky-500/50 animate-pulse" style={{ width: '60%' }} />
+                      <div className="h-full rounded-full bg-status-info/50 animate-pulse" style={{ width: '60%' }} />
                     </div>
                   )}
                   {step.errorMessage && (
-                    <p className="mt-1 text-xs text-red-400 line-clamp-2">{step.errorMessage}</p>
+                    <p className="mt-1 text-xs text-status-error line-clamp-2">{step.errorMessage}</p>
                   )}
                   <p className="mt-0.5 text-[10px] text-muted-foreground">
                     {step.startedAt ? formatRelativeTime(step.startedAt) : 'En attente'}

@@ -45,15 +45,15 @@ export function DeploymentAccessCard({ deploymentId }: DeploymentAccessCardProps
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-red-400">Impossible de récupérer les informations d'accès.</p>
+          <p className="text-sm text-status-error">Impossible de récupérer les informations d'accès.</p>
         </CardContent>
       </Card>
     );
   }
 
   const badgeClass = {
-    nodeport: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-    clusterip: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+    nodeport: 'bg-status-success/10 text-status-success border-status-success/30',
+    clusterip: 'bg-status-info/10 text-status-info border-status-info/30',
     none: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30',
   }[data.type];
 

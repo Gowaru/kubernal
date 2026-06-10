@@ -24,11 +24,11 @@ interface DeploymentDiffDrawerProps {
 
 const STATUS_BADGE: Record<string, string> = {
   pending: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30',
-  building: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-  deploying: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30',
-  healthy: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-  failed: 'bg-red-500/10 text-red-400 border-red-500/30',
-  rolled_back: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+  building: 'bg-status-info/10 text-status-info border-status-info/30',
+  deploying: 'bg-status-info/10 text-status-info border-status-info/30',
+  healthy: 'bg-status-success/10 text-status-success border-status-success/30',
+  failed: 'bg-status-error/10 text-status-error border-status-error/30',
+  rolled_back: 'bg-status-warning/10 text-status-warning border-status-warning/30',
   cancelled: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30',
 };
 
@@ -83,7 +83,7 @@ export function DeploymentDiffDrawer({
           )}
 
           {error && (
-            <div className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+            <div className="rounded-md border border-status-error/30 bg-status-error/10 p-3 text-sm text-status-error">
               Échec du chargement de la comparaison. {String(error.message)}
             </div>
           )}
@@ -155,8 +155,8 @@ export function DeploymentDiffDrawer({
                             <span
                               className={
                                 data.durationDelta > 0
-                                  ? 'text-red-400'
-                                  : 'text-emerald-400'
+                                  ? 'text-status-error'
+                                  : 'text-status-success'
                               }
                             >
                               ({data.durationDelta > 0 ? '+' : ''}

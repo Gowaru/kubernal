@@ -178,12 +178,12 @@ export function Sidebar(): JSX.Element {
                                 <span>{item.label}</span>
                                 <div className="flex items-center gap-1.5">
                                   {showBadge && (
-                                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-status-error px-1.5 text-[10px] font-bold text-white">
                                       {pendingApprovals}
                                     </span>
                                   )}
                                   {item.badge === 'warning' && warningEventCount > 0 && (
-                                    <span className="ml-auto bg-amber-500/10 text-amber-400 text-xs font-medium px-2 py-0.5 rounded-full">
+                                    <span className="ml-auto bg-status-warning/10 text-status-warning text-xs font-medium px-2 py-0.5 rounded-full">
                                       {warningEventCount}
                                     </span>
                                   )}
@@ -195,7 +195,7 @@ export function Sidebar(): JSX.Element {
                             )}
 
                             {collapsed && showBadge && (
-                              <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-sidebar-background" />
+                              <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-status-error ring-2 ring-sidebar-background" />
                             )}
                           </>
                         )}
@@ -205,7 +205,7 @@ export function Sidebar(): JSX.Element {
                       <TooltipContent side="right" className="flex items-center gap-2">
                         <span>{item.label}</span>
                         {showBadge && (
-                          <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                          <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-status-error px-1 text-[9px] font-bold text-white">
                             {pendingApprovals}
                           </span>
                         )}

@@ -3,7 +3,6 @@ import { promisify } from 'node:util';
 import type { ActionContext, ActionResult, PipelineAction } from './types.js';
 
 const execFileAsync = promisify(execFile);
-const DEFAULT_MAX_BUFFER = 10 * 1024 * 1024;
 
 const DEFAULT_TIMEOUT_MS = 600_000;
 const MAX_BUFFER_BYTES = 50 * 1024 * 1024;

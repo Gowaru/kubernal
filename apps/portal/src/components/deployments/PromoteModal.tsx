@@ -117,20 +117,20 @@ export function PromoteModal({
               </div>
 
               {targetEnv.requiresApproval ? (
-                <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
-                  <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+                <div className="flex items-start gap-2 rounded-lg border border-status-warning/30 bg-status-warning/5 p-3 text-xs">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-status-warning mt-0.5" />
                   <div>
-                    <p className="font-medium text-amber-400">Approbation requise</p>
+                    <p className="font-medium text-status-warning">Approbation requise</p>
                     <p className="text-muted-foreground mt-0.5">
                       Ce déploiement devra être approuvé manuellement avant d'être créé dans le cluster.
                     </p>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs">
-                  <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+                <div className="flex items-start gap-2 rounded-lg border border-status-success/30 bg-status-success/5 p-3 text-xs">
+                  <ShieldCheck className="h-4 w-4 shrink-0 text-status-success mt-0.5" />
                   <div>
-                    <p className="font-medium text-emerald-400">Déploiement automatique</p>
+                    <p className="font-medium text-status-success">Déploiement automatique</p>
                     <p className="text-muted-foreground mt-0.5">
                       Le worker IDP va créer le K8s Deployment dès la confirmation.
                     </p>
@@ -172,7 +172,7 @@ export function PromoteModal({
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                <CheckCircle2 className="h-5 w-5 text-status-success" />
                 Promotion créée
               </DialogTitle>
               <DialogDescription>

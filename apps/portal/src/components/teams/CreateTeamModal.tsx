@@ -161,7 +161,7 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): J
                   required
                 />
                 {errors.name && (
-                  <p className="text-xs text-red-400">{errors.name}</p>
+                  <p className="text-xs text-status-error">{errors.name}</p>
                 )}
               </div>
 
@@ -174,7 +174,7 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): J
                   onChange={(e) => setField('description', e.target.value)}
                 />
                 {errors.description && (
-                  <p className="text-xs text-red-400">{errors.description}</p>
+                  <p className="text-xs text-status-error">{errors.description}</p>
                 )}
               </div>
 
@@ -188,7 +188,7 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): J
                   required
                 />
                 {errors.namespacePrefix && (
-                  <p className="text-xs text-red-400">{errors.namespacePrefix}</p>
+                  <p className="text-xs text-status-error">{errors.namespacePrefix}</p>
                 )}
               </div>
             </div>
@@ -225,7 +225,7 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): J
                     onChange={(e) => setField('quotaCpu', e.target.value)}
                   />
                   {errors.quotaCpu && (
-                    <p className="text-xs text-red-400">{errors.quotaCpu}</p>
+                    <p className="text-xs text-status-error">{errors.quotaCpu}</p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -237,7 +237,7 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): J
                     onChange={(e) => setField('quotaMemory', e.target.value)}
                   />
                   {errors.quotaMemory && (
-                    <p className="text-xs text-red-400">{errors.quotaMemory}</p>
+                    <p className="text-xs text-status-error">{errors.quotaMemory}</p>
                   )}
                 </div>
               </div>
@@ -314,7 +314,7 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): J
             </DialogHeader>
 
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
-              <CheckCircle2 className="h-16 w-16 text-emerald-400" />
+              <CheckCircle2 className="h-16 w-16 text-status-success" />
               <p className="text-sm text-muted-foreground text-center max-w-xs">
                 L'équipe{' '}
                 <strong className="text-foreground">{form.name}</strong>{' '}

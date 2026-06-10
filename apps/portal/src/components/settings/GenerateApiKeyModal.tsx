@@ -181,7 +181,7 @@ export function GenerateApiKeyModal({ open, onOpenChange, onKeyGenerated }: Gene
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                <ShieldCheck className="h-4 w-4 text-status-success" />
                 Clé API générée
               </DialogTitle>
               <DialogDescription>
@@ -190,9 +190,9 @@ export function GenerateApiKeyModal({ open, onOpenChange, onKeyGenerated }: Gene
             </DialogHeader>
 
             <div className="space-y-4 py-2">
-              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-200/90">
+              <div className="rounded-lg border border-status-warning/20 bg-status-warning/5 p-3 flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-status-warning shrink-0 mt-0.5" />
+                <p className="text-xs text-status-warning/90">
                   Pour des raisons de sécurité, cette clé ne sera affichée qu'une seule fois.
                   Stockez-la dans un endroit sûr (gestionnaire de secrets).
                 </p>
@@ -211,7 +211,7 @@ export function GenerateApiKeyModal({ open, onOpenChange, onKeyGenerated }: Gene
                     className="shrink-0"
                     aria-label="Copier la clé"
                   >
-                    {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                    {copied ? <Check className="h-4 w-4 text-status-success" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>

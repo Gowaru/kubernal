@@ -237,7 +237,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                   required
                 />
                 {errors.name && (
-                  <p className="text-xs text-red-400">{errors.name}</p>
+                  <p className="text-xs text-status-error">{errors.name}</p>
                 )}
               </div>
 
@@ -250,7 +250,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                   onChange={(e) => setField('description', e.target.value)}
                 />
                 {errors.description && (
-                  <p className="text-xs text-red-400">{errors.description}</p>
+                  <p className="text-xs text-status-error">{errors.description}</p>
                 )}
               </div>
 
@@ -273,14 +273,14 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                   )}
                 </div>
                 {form.repositoryUrl && isValidRepoUrl(form.repositoryUrl) && (
-                  <p className="text-xs text-emerald-400">
+                  <p className="text-xs text-status-success">
                     {detectProvider(form.repositoryUrl) === 'github' && 'GitHub détecté'}
                     {detectProvider(form.repositoryUrl) === 'gitlab' && 'GitLab détecté'}
                     {detectProvider(form.repositoryUrl) === 'bitbucket' && 'Bitbucket détecté'}
                   </p>
                 )}
                 {errors.repositoryUrl && (
-                  <p className="text-xs text-red-400">{errors.repositoryUrl}</p>
+                  <p className="text-xs text-status-error">{errors.repositoryUrl}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
                   Lien direct vers les commits et les diffs. Si vide, le dépôt du template sera utilisé.
@@ -325,7 +325,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                   </SelectContent>
                 </Select>
                 {errors.teamId && (
-                  <p className="text-xs text-red-400">{errors.teamId}</p>
+                  <p className="text-xs text-status-error">{errors.teamId}</p>
                 )}
               </div>
 
@@ -344,7 +344,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                   </SelectContent>
                 </Select>
                 {errors.templateId && (
-                  <p className="text-xs text-red-400">{errors.templateId}</p>
+                  <p className="text-xs text-status-error">{errors.templateId}</p>
                 )}
               </div>
 
@@ -397,7 +397,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                 <div key={key} className="space-y-2">
                   <Label htmlFor={`param-${key}`}>
                     {def.label || key}
-                    {def.required && <span className="text-red-400 ml-1">*</span>}
+                    {def.required && <span className="text-status-error ml-1">*</span>}
                   </Label>
 
                   {def.enum ? (
@@ -445,7 +445,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                     />
                   )}
                   {errors[key] && (
-                    <p className="text-xs text-red-400">{errors[key]}</p>
+                    <p className="text-xs text-status-error">{errors[key]}</p>
                   )}
                 </div>
               ))}
@@ -491,7 +491,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
             </DialogHeader>
 
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
-              <CheckCircle2 className="h-16 w-16 text-emerald-400" />
+              <CheckCircle2 className="h-16 w-16 text-status-success" />
               <p className="text-sm text-muted-foreground text-center max-w-xs">
                 L'application{' '}
                 <strong className="text-foreground">{form.name}</strong>{' '}

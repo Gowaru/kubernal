@@ -72,7 +72,7 @@ async function deployManifestActionExecute(context: ActionContext): Promise<Acti
   const params = parseDeployParams(context.stepParams, context.workspaceDir);
   const { manifests: rawManifests, manifestDir, namespace: overrideNs, kubeconfig, waitRollout, rolloutTimeoutMs, prune } = params;
 
-  let manifests = [...rawManifests];
+  const manifests = [...rawManifests];
   if (manifestDir) {
     if (existsSync(manifestDir)) {
       const files = readdirSync(manifestDir).filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'));

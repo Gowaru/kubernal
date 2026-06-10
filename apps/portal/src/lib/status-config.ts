@@ -25,32 +25,32 @@ export interface ApplicationStatusVisual {
 export const DEPLOYMENT_STATUS_CONFIG: Record<DeploymentStatus, DeploymentStatusVisual> = {
   pending: {
     label: 'En attente',
-    className: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+    className: 'bg-status-warning/10 text-status-warning border-status-warning/20',
     icon: Clock,
   },
   building: {
     label: 'En construction',
-    className: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    className: 'bg-status-info/10 text-status-info border-status-info/20',
     icon: Hammer,
   },
   deploying: {
     label: 'Déploiement',
-    className: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    className: 'bg-status-warning/10 text-status-warning border-status-warning/20',
     icon: Loader2,
   },
   healthy: {
     label: 'Succès',
-    className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    className: 'bg-status-success/10 text-status-success border-status-success/20',
     icon: CheckCircle2,
   },
   failed: {
     label: 'Échec',
-    className: 'bg-red-500/10 text-red-400 border-red-500/20',
+    className: 'bg-status-error/10 text-status-error border-status-error/20',
     icon: XCircle,
   },
   rolled_back: {
     label: 'Rollback',
-    className: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+    className: 'bg-status-warning/10 text-status-warning border-status-warning/20',
     icon: Undo2,
   },
   cancelled: {
@@ -63,18 +63,18 @@ export const DEPLOYMENT_STATUS_CONFIG: Record<DeploymentStatus, DeploymentStatus
 export const APPLICATION_STATUS_CONFIG: Record<ApplicationStatus, ApplicationStatusVisual> = {
   active: {
     label: 'Actif',
-    className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    dot: 'bg-emerald-400',
+    className: 'bg-status-success/10 text-status-success border-status-success/20',
+    dot: 'bg-status-success',
   },
   creating: {
     label: 'Création',
-    className: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    dot: 'bg-amber-400',
+    className: 'bg-status-warning/10 text-status-warning border-status-warning/20',
+    dot: 'bg-status-warning',
   },
   failed: {
     label: 'Échec',
-    className: 'bg-red-500/10 text-red-400 border-red-500/20',
-    dot: 'bg-red-400',
+    className: 'bg-status-error/10 text-status-error border-status-error/20',
+    dot: 'bg-status-error',
   },
   archived: {
     label: 'Archivé',

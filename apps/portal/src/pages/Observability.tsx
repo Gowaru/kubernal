@@ -81,15 +81,15 @@ const levelIcons = {
 };
 
 const levelColors = {
-  info: 'text-blue-400',
-  warn: 'text-amber-400',
-  error: 'text-red-400',
+  info: 'text-status-info',
+  warn: 'text-status-warning',
+  error: 'text-status-error',
 };
 
 const levelBadge = {
-  info: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  warn: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  error: 'bg-red-500/10 text-red-400 border-red-500/20',
+  info: 'bg-status-info/10 text-status-info border-status-info/20',
+  warn: 'bg-status-warning/10 text-status-warning border-status-warning/20',
+  error: 'bg-status-error/10 text-status-error border-status-error/20',
 };
 
 interface MetricSnapshot {
@@ -190,7 +190,7 @@ export default function Observability(): JSX.Element {
     {
       label: "Taux d'erreur",
       value: `${metrics.current.errorRate.toFixed(1)}%`,
-      color: metrics.current.errorRate > 8 ? 'text-red-400' : metrics.current.errorRate > 4 ? 'text-amber-400' : 'text-emerald-400',
+      color: metrics.current.errorRate > 8 ? 'text-status-error' : metrics.current.errorRate > 4 ? 'text-status-warning' : 'text-status-success',
       icon: AlertCircle,
       dataKey: 'errorRate' as const,
       unit: '%',
@@ -206,7 +206,7 @@ export default function Observability(): JSX.Element {
     {
       label: 'Latence p95',
       value: `${Math.round(metrics.current.latency)}ms`,
-      color: metrics.current.latency > 800 ? 'text-red-400' : metrics.current.latency > 400 ? 'text-amber-400' : 'text-blue-400',
+      color: metrics.current.latency > 800 ? 'text-status-error' : metrics.current.latency > 400 ? 'text-status-warning' : 'text-status-info',
       icon: Timer,
       dataKey: 'latency' as const,
       unit: 'ms',
@@ -214,7 +214,7 @@ export default function Observability(): JSX.Element {
     {
       label: 'CPU',
       value: `${Math.round(metrics.current.cpu)}%`,
-      color: metrics.current.cpu > 80 ? 'text-red-400' : metrics.current.cpu > 60 ? 'text-amber-400' : 'text-blue-400',
+      color: metrics.current.cpu > 80 ? 'text-status-error' : metrics.current.cpu > 60 ? 'text-status-warning' : 'text-status-info',
       icon: Cpu,
       dataKey: 'cpu' as const,
       unit: '%',
@@ -222,7 +222,7 @@ export default function Observability(): JSX.Element {
     {
       label: 'Mémoire',
       value: `${Math.round(metrics.current.memory)}%`,
-      color: metrics.current.memory > 80 ? 'text-red-400' : metrics.current.memory > 60 ? 'text-amber-400' : 'text-blue-400',
+      color: metrics.current.memory > 80 ? 'text-status-error' : metrics.current.memory > 60 ? 'text-status-warning' : 'text-status-info',
       icon: MemoryStick,
       dataKey: 'memory' as const,
       unit: '%',
@@ -238,11 +238,11 @@ export default function Observability(): JSX.Element {
   ];
 
   const chartColor = (dataKey: string): string => {
-    if (dataKey === 'errorRate') return '#ef4444';
-    if (dataKey === 'cpu' || dataKey === 'memory') return '#8b5cf6';
-    if (dataKey === 'latency') return '#f59e0b';
-    if (dataKey === 'activeDeployments') return '#a78bfa';
-    return '#3b82f6';
+    if (dataKey === 'errorRate') return 'var(--color-status-error)';
+    if (dataKey === 'cpu' || dataKey === 'memory') return 'var(--color-category-compliance)';
+    if (dataKey === 'latency') return 'var(--color-status-warning)';
+    if (dataKey === 'activeDeployments') return 'var(--color-category-compliance)';
+    return 'var(--color-status-info)';
   };
 
   return (
@@ -271,7 +271,7 @@ export default function Observability(): JSX.Element {
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <div className={`h-2 w-2 rounded-full ${paused ? 'bg-muted-foreground' : 'bg-emerald-400'}`} />
+            <div className={`h-2 w-2 rounded-full ${paused ? 'bg-muted-foreground' : 'bg-status-success'}`} />
             <span className="text-xs text-muted-foreground">
               {paused ? 'En pause' : 'En direct'}
             </span>
@@ -335,7 +335,7 @@ export default function Observability(): JSX.Element {
           <span className="font-mono font-medium text-status-success">{uptime}%</span>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span>Erreurs : <span className="font-mono text-red-400">{metrics.history.filter(m => m.errorRate > 8).length}</span></span>
+          <span>Erreurs : <span className="font-mono text-status-error">{metrics.history.filter(m => m.errorRate > 8).length}</span></span>
           <span>CPU max : <span className="font-mono">{Math.round(Math.max(...metrics.history.map(m => m.cpu)))}%</span></span>
           <span>Latence max : <span className="font-mono">{Math.round(Math.max(...metrics.history.map(m => m.latency)))}ms</span></span>
         </div>
