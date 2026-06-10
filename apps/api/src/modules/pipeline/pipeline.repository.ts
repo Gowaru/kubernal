@@ -96,6 +96,13 @@ export const pipelineRepository = {
     });
   },
 
+  findWithSteps(id: string) {
+    return db.pipeline.findUnique({
+      where: { id },
+      include: { deployment: true, steps: { orderBy: { order: 'asc' } } },
+    });
+  },
+
   findPendingPipelines() {
     return db.pipeline.findMany({
       where: { status: 'pending' },

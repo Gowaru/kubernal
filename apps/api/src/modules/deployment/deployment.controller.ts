@@ -54,6 +54,12 @@ export const deploymentController = {
     res.json({ data: deployment });
   },
 
+  async getVulnerabilities(req: Request, res: Response) {
+    const id = req.params.id as string;
+    const vulnerabilities = await deploymentService.getVulnerabilities(id);
+    res.json({ data: vulnerabilities, total: vulnerabilities.length });
+  },
+
   async compare(req: Request, res: Response) {
     const { from, to } = compareDeploymentsQuerySchema.parse(req.query);
     const diff = await deploymentService.compare(from, to);

@@ -16,6 +16,12 @@ export const pipelineService = {
     return pipelineRepository.create({ ...data, status: 'running' });
   },
 
+  async getWithSteps(id: string) {
+    const pipeline = await pipelineRepository.findWithSteps(id);
+    if (!pipeline) throw new NotFoundError('Pipeline', id);
+    return pipeline;
+  },
+
   async updateStatus(id: string, status: string) {
     await this.getById(id);
     const completedAt = ['success', 'failed', 'cancelled'].includes(status)

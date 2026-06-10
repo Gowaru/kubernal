@@ -57,6 +57,19 @@ export const pipelineController = {
       throw new ValidationError(`Template '${template.name}' has no steps defined`);
     }
 
+    const application = await db.application.findUnique({
+      where: { id: deployment.applicationId },
+      select: { config: true, name: true },
+    });
+    const appConfig = (application?.config as Record<string, unknown>) ?? {};
+    const registryHost = process.env['REGISTRY_HOST'] ?? 'localhost:5000';
+    const computedParams: Record<string, unknown> = {
+      name: application?.name ?? 'unknown',
+      version: deployment.version,
+      image: `${registryHost}/${application?.name ?? 'unknown'}:${deployment.version}`,
+      imageTag: `${registryHost}/${application?.name ?? 'unknown'}:${deployment.version}`,
+    };
+
     const pipeline = await db.pipeline.create({
       data: {
         deploymentId,
@@ -72,6 +85,8 @@ export const pipelineController = {
       const stepName = step.name ?? step.id ?? `step-${i + 1}`;
       const stepParams = {
         ...(step.input ?? {}),
+        ...appConfig,
+        ...computedParams,
         ...params,
       };
       await pipelineRepository.addStep(pipeline.id, {
@@ -96,6 +111,33 @@ export const pipelineController = {
     if (!pipeline) throw new NotFoundError('Pipeline', id);
     const steps = await pipelineRepository.findStepsByPipeline(id);
     res.json({ data: steps, total: steps.length });
+  },
+
+  async streamEvents(req: Request, res: Response) {
+    const id = req.params.id as string;
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    });
+
+    const send = async () => {
+      try {
+        const pipeline = await pipelineService.getWithSteps(id);
+        res.write(`data: ${JSON.stringify(pipeline)}\n\n`);
+      } catch {
+        res.write(`data: ${JSON.stringify({ error: 'Pipeline not found' })}\n\n`);
+      }
+    };
+
+    await send();
+
+    const interval = setInterval(send, 3000);
+
+    req.on('close', () => {
+      clearInterval(interval);
+    });
   },
 
   async listAvailableActions(_req: Request, res: Response) {

@@ -9,6 +9,7 @@ type CreateApplicationInput = {
   teamId: string;
   templateId: string;
   ownerId: string;
+  config?: Record<string, unknown>;
 };
 
 export function useApplications(): UseQueryResult<Application[], Error> {

@@ -1,0 +1,24 @@
+replicaCount: {{replicas}}
+
+image:
+  repository: ghcr.io/kubernal/{{name}}
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: {{port}}
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+ingress:
+  enabled: false
+  host: ""
+
+env: {}

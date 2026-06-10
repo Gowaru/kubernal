@@ -94,6 +94,13 @@ export const deploymentService = {
     return deploymentRepository.savePolicyViolations(id, violations);
   },
 
+  async getVulnerabilities(id: string) {
+    return db.deploymentVulnerability.findMany({
+      where: { deploymentId: id },
+      orderBy: { detectedAt: 'desc' },
+    });
+  },
+
   async compare(fromId: string, toId: string): Promise<DeploymentDiff> {
     const [from, to] = await Promise.all([
       this.getById(fromId),

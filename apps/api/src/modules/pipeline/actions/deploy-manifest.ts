@@ -1,7 +1,7 @@
 import * as yaml from 'js-yaml';
 import { execFile } from 'node:child_process';
-import { writeFileSync, mkdtempSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { writeFileSync, mkdtempSync, rmSync, readdirSync, readFileSync, existsSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
 import type { ActionContext, ActionResult, PipelineAction } from './types.js';
@@ -32,8 +32,9 @@ function validateOptionalPositiveInt(value: unknown, field: string, max: number)
   return Math.min(value, max);
 }
 
-function parseDeployParams(raw: Record<string, unknown>): {
+function parseDeployParams(raw: Record<string, unknown>, workspaceDir?: string): {
   manifests: string[];
+  manifestDir?: string;
   namespace?: string;
   kubeconfig?: string;
   waitRollout: boolean;
@@ -41,10 +42,18 @@ function parseDeployParams(raw: Record<string, unknown>): {
   prune: boolean;
 } {
   const rawManifests = raw['manifests'];
-  if (!rawManifests) {
-    throw new Error('deploy:manifest: params.manifests is required');
+  const manifestDirRaw = typeof raw['manifestDir'] === 'string' && raw['manifestDir'].length > 0
+    ? raw['manifestDir']
+    : undefined;
+  let manifestDir: string | undefined;
+  if (manifestDirRaw && workspaceDir) {
+    manifestDir = resolve(workspaceDir, manifestDirRaw);
   }
-  const manifests = Array.isArray(rawManifests) ? rawManifests : [rawManifests];
+
+  if (!rawManifests && !manifestDir) {
+    throw new Error('deploy:manifest: params.manifests or params.manifestDir is required');
+  }
+  const manifests = Array.isArray(rawManifests) ? rawManifests : (rawManifests ? [rawManifests] : []);
   const validManifests = manifests.every((m) => typeof m === 'string');
   if (!validManifests) {
     throw new Error('deploy:manifest: params.manifests must be a string or array of strings');
@@ -56,12 +65,30 @@ function parseDeployParams(raw: Record<string, unknown>): {
   const rolloutTimeoutMs = validateOptionalPositiveInt(raw['rolloutTimeoutMs'], 'rolloutTimeoutMs', 1_800_000) ?? 300_000;
   const prune = validateOptionalBoolean(raw['prune'], 'prune', false);
 
-  return { manifests, namespace, kubeconfig, waitRollout, rolloutTimeoutMs, prune };
+  return { manifests, manifestDir, namespace, kubeconfig, waitRollout, rolloutTimeoutMs, prune };
 }
 
 async function deployManifestActionExecute(context: ActionContext): Promise<ActionResult> {
-  const params = parseDeployParams(context.stepParams);
-  const { manifests, namespace: overrideNs, kubeconfig, waitRollout, rolloutTimeoutMs, prune } = params;
+  const params = parseDeployParams(context.stepParams, context.workspaceDir);
+  const { manifests: rawManifests, manifestDir, namespace: overrideNs, kubeconfig, waitRollout, rolloutTimeoutMs, prune } = params;
+
+  let manifests = [...rawManifests];
+  if (manifestDir) {
+    if (existsSync(manifestDir)) {
+      const files = readdirSync(manifestDir).filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'));
+      context.logger.info(`Loading ${files.length} manifest(s) from ${manifestDir}`);
+      for (const file of files) {
+        const content = readFileSync(join(manifestDir, file), 'utf-8');
+        manifests.push(content);
+      }
+    } else {
+      context.logger.warn(`manifestDir '${manifestDir}' does not exist`);
+    }
+  }
+
+  if (manifests.length === 0) {
+    throw new Error('deploy:manifest: no manifests to deploy');
+  }
 
   const targetNs = overrideNs ?? context.environment?.namespace;
   if (!targetNs) {
@@ -150,8 +177,8 @@ export const deployManifestAction: PipelineAction = {
     if (!raw || typeof raw !== 'object') {
       throw new Error('deploy:manifest: params must be an object');
     }
-    if (!raw['manifests']) {
-      throw new Error('deploy:manifest: params.manifests is required');
+    if (!raw['manifests'] && !raw['manifestDir']) {
+      throw new Error('deploy:manifest: params.manifests or params.manifestDir is required');
     }
   },
   async execute(context: ActionContext): Promise<ActionResult> {

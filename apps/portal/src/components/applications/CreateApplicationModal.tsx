@@ -1,4 +1,4 @@
-import { useState, useCallback, type JSX } from 'react';
+import { useState, useEffect, useCallback, type JSX } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,17 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { detectProvider, isValidRepoUrl, REPO_URL_REGEX } from '@/lib/repo-utils';
 
+interface ParamDefinition {
+  type: 'string' | 'number' | 'boolean';
+  label?: string;
+  default?: unknown;
+  required?: boolean;
+  enum?: string[];
+  disabled?: boolean;
+}
+
+type TemplateParameters = Record<string, ParamDefinition>;
+
 const formSchema = z.object({
   name: z.string().min(1, 'Le nom est requis'),
   description: z.string().optional(),
@@ -42,10 +53,32 @@ const formSchema = z.object({
 });
 
 type FormData = z.infer<typeof formSchema>;
+type Step = 'step1' | 'step2' | 'step3' | 'progress' | 'success';
 
 interface CreateApplicationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+function getDefaultConfig(template: { parameters?: unknown } | undefined): Record<string, unknown> {
+  if (!template?.parameters || typeof template.parameters !== 'object') return {};
+  const params = template.parameters as TemplateParameters;
+  const config: Record<string, unknown> = {};
+  for (const [key, param] of Object.entries(params)) {
+    if (param && typeof param === 'object' && 'default' in param && param.default !== undefined) {
+      config[key] = param.default;
+    }
+  }
+  return config;
+}
+
+function getParamDefs(template: { parameters?: unknown } | undefined): TemplateParameters {
+  if (!template?.parameters || typeof template.parameters !== 'object') return {};
+  return template.parameters as TemplateParameters;
+}
+
+function hasParams(template: { parameters?: unknown } | undefined): boolean {
+  return Object.keys(getParamDefs(template)).length > 0;
 }
 
 export function CreateApplicationModal({ open, onOpenChange }: CreateApplicationModalProps): JSX.Element {
@@ -54,7 +87,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
   const { data: templates } = useTemplates();
   const createApplication = useCreateApplication();
 
-  const [step, setStep] = useState<'step1' | 'step2' | 'progress' | 'success'>('step1');
+  const [step, setStep] = useState<Step>('step1');
   const [form, setForm] = useState<FormData>({
     name: '',
     description: '',
@@ -62,16 +95,29 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
     teamId: '',
     templateId: '',
   });
-  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [formConfig, setFormConfig] = useState<Record<string, unknown>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData | string, string>>>({});
+
+  const selectedTemplate = templates?.find((t) => t.id === form.templateId);
+
+  useEffect(() => {
+    setFormConfig(getDefaultConfig(selectedTemplate));
+  }, [form.templateId, templates]);
 
   const setField = <K extends keyof FormData>(key: K, value: FormData[K]): void => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
   };
 
+  const setConfigField = (key: string, value: unknown): void => {
+    setFormConfig((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => ({ ...prev, [key]: undefined }));
+  };
+
   const reset = useCallback(() => {
     setStep('step1');
     setForm({ name: '', description: '', repositoryUrl: '', teamId: '', templateId: '' });
+    setFormConfig({});
     setErrors({});
   }, []);
 
@@ -106,21 +152,39 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
     return true;
   };
 
+  const validateStep3 = (): boolean => {
+    const paramDefs = getParamDefs(selectedTemplate);
+    const newErrors: Record<string, string> = {};
+    for (const [key, def] of Object.entries(paramDefs)) {
+      if (def.required && (formConfig[key] === undefined || formConfig[key] === '' || formConfig[key] === null)) {
+        newErrors[key] = `Le champ "${def.label || key}" est requis`;
+      }
+    }
+    setErrors((prev) => ({ ...prev, ...newErrors }));
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleNext = (): void => {
     if (step === 'step1' && validateStep1()) {
       setStep('step2');
     } else if (step === 'step2' && validateStep2()) {
+      if (hasParams(selectedTemplate)) {
+        setStep('step3');
+      } else {
+        handleSubmit();
+      }
+    } else if (step === 'step3' && validateStep3()) {
       handleSubmit();
     }
   };
 
   const handleBack = (): void => {
     if (step === 'step2') setStep('step1');
+    else if (step === 'step3') setStep('step2');
   };
 
   const handleSubmit = async (): Promise<void> => {
     setStep('progress');
-
     try {
       await createApplication.mutateAsync({
         name: form.name,
@@ -129,6 +193,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
         teamId: form.teamId,
         templateId: form.templateId,
         ownerId: currentUser?.id ?? '',
+        config: Object.keys(formConfig).length > 0 ? formConfig : undefined,
       });
       setStep('success');
     } catch {
@@ -145,7 +210,9 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
   };
 
   const selectedTeam = teams?.find((t) => t.id === form.teamId);
-  const selectedTemplate = templates?.find((t) => t.id === form.templateId);
+  const totalSteps = hasParams(selectedTemplate) ? 3 : 2;
+
+  const paramDefs = getParamDefs(selectedTemplate);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -155,7 +222,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
             <DialogHeader>
               <DialogTitle>Nouvelle application</DialogTitle>
               <DialogDescription>
-                Étape 1 sur 2 — Informations générales
+                Étape 1 sur {totalSteps} — Informations générales
               </DialogDescription>
             </DialogHeader>
 
@@ -238,7 +305,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
             <DialogHeader>
               <DialogTitle>Nouvelle application</DialogTitle>
               <DialogDescription>
-                Étape 2 sur 2 — Équipe et template
+                Étape 2 sur {totalSteps} — Équipe et template
               </DialogDescription>
             </DialogHeader>
 
@@ -302,10 +369,94 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                 <ChevronLeft className="mr-2 h-4 w-4" />
                 Retour
               </Button>
-              <Button onClick={handleNext} disabled={createApplication.isPending}>
-                {createApplication.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Button onClick={handleNext}>
+                {hasParams(selectedTemplate) ? (
+                  <>
+                    Suivant
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </>
+                ) : (
+                  'Créer l\'application'
                 )}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+
+        {step === 'step3' && (
+          <>
+            <DialogHeader>
+              <DialogTitle>Nouvelle application</DialogTitle>
+              <DialogDescription>
+                Étape 3 sur 3 — Configuration du template
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              {Object.entries(paramDefs).map(([key, def]) => (
+                <div key={key} className="space-y-2">
+                  <Label htmlFor={`param-${key}`}>
+                    {def.label || key}
+                    {def.required && <span className="text-red-400 ml-1">*</span>}
+                  </Label>
+
+                  {def.enum ? (
+                    <Select
+                      value={String(formConfig[key] ?? def.default ?? '')}
+                      onValueChange={(v) => setConfigField(key, v)}
+                    >
+                      <SelectTrigger id={`param-${key}`}>
+                        <SelectValue placeholder={`Choisir ${def.label || key}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {def.enum.map((opt) => (
+                          <SelectItem key={opt} value={opt}>
+                            {opt}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : def.type === 'boolean' ? (
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        id={`param-${key}`}
+                        type="checkbox"
+                        checked={formConfig[key] === true}
+                        onChange={(e) => setConfigField(key, e.target.checked)}
+                        className="h-4 w-4 rounded border-border bg-muted text-primary focus:ring-primary"
+                      />
+                      <Label htmlFor={`param-${key}`} className="text-sm text-muted-foreground cursor-pointer">
+                        Activer
+                      </Label>
+                    </div>
+                  ) : (
+                    <Input
+                      id={`param-${key}`}
+                      type={def.type === 'number' ? 'number' : 'text'}
+                      placeholder={def.label || key}
+                      value={String(formConfig[key] ?? def.default ?? '')}
+                      onChange={(e) =>
+                        setConfigField(
+                          key,
+                          def.type === 'number' ? (e.target.value ? Number(e.target.value) : '') : e.target.value,
+                        )
+                      }
+                      disabled={def.disabled}
+                    />
+                  )}
+                  {errors[key] && (
+                    <p className="text-xs text-red-400">{errors[key]}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <DialogFooter className="justify-between">
+              <Button variant="outline" onClick={handleBack}>
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Retour
+              </Button>
+              <Button onClick={handleNext}>
                 Créer l'application
               </Button>
             </DialogFooter>

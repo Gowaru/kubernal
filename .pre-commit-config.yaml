@@ -9,3 +9,10 @@ repos:
         language: system
         stages: [pre-commit]
         require_serial: true
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+        name: actionlint (GitHub Actions workflow linter)
+        description: Lint .github/workflows/*.yml for syntax and correctness
+        stages: [pre-commit]

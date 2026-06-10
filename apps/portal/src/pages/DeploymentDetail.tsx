@@ -17,9 +17,11 @@ import { useCrossplaneClaims } from '@/hooks/useCrossplaneClaims';
 import { useHPA } from '@/hooks/useHPA';
 import { useK8sEvents } from '@/hooks/useK8sEvents';
 import { useClusterInfo } from '@/hooks/useClusterInfo';
+import { usePipelinesByDeployment } from '@/hooks/usePipelines';
+import { PipelineStepsTimeline } from '@/components/pipelines/PipelineStepsTimeline';
+import { CveDrawer } from '@/components/pipelines/CveDrawer';
 import { K8sContextBar } from '@/components/k8s/K8sContextBar';
 import { ArgoSyncBadge } from '@/components/k8s/ArgoSyncBadge';
-import { GitOpsPipeline } from '@/components/k8s/GitOpsPipeline';
 import { InfrastructureClaims } from '@/components/k8s/InfrastructureClaims';
 import { PodGrid } from '@/components/k8s/PodGrid';
 import { ResourceGauge } from '@/components/k8s/ResourceGauge';
@@ -91,6 +93,10 @@ export default function DeploymentDetail(): JSX.Element {
   const { data: hpaData } = useHPA(namespace);
   const { data: events } = useK8sEvents(namespace);
 
+  const { data: pipelinesByDeployment } = usePipelinesByDeployment(id);
+  const firstPipeline = pipelinesByDeployment?.[0] ?? null;
+
+  const [cveDeploymentId, setCveDeploymentId] = useState<string | null>(null);
   const [selectedPod, setSelectedPod] = useState<K8sPod | null>(null);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [approveStep, setApproveStep] = useState<'confirm' | 'progress' | 'success'>('confirm');
@@ -263,10 +269,18 @@ export default function DeploymentDetail(): JSX.Element {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Pipeline GitOps</CardTitle>
+          <CardTitle className="text-base">Pipeline</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <GitOpsPipeline deploymentStatus={deployment.status} argoStatus={defaultArgoStatus} />
+          {firstPipeline ? (
+            <PipelineStepsTimeline
+              pipelineId={firstPipeline.id}
+              deploymentId={deployment.id}
+              onShowCves={(did) => setCveDeploymentId(did)}
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground text-center py-8">Aucun pipeline exécuté</p>
+          )}
         </CardContent>
       </Card>
 
@@ -380,6 +394,12 @@ export default function DeploymentDetail(): JSX.Element {
           </CardContent>
         </Card>
       )}
+
+      <CveDrawer
+        deploymentId={cveDeploymentId}
+        open={!!cveDeploymentId}
+        onClose={() => setCveDeploymentId(null)}
+      />
 
       <PodLogDrawer pod={selectedPod} onClose={() => setSelectedPod(null)} />
 

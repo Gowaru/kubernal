@@ -49,12 +49,12 @@ We assume **defense in depth**: even if one secret leaks, the others stay locked
 
 ## 4. Per-secret recipes
 
-### 4.1 GitHub Personal Access Token (`GITHUB_TOKEN`)
+### 4.1 GitHub Personal Access Token (`GH_PERSONAL_ACCESS_TOKEN`)
 
 - **Source**: <https://github.com/settings/tokens> (fine-grained, expiry ≤ 90 days)
 - **Scopes**: `repo`, `read:org`, `write:packages`, `read:packages`
 - **Storage**:
-  - CI: `Settings → Secrets and variables → Actions → GITHUB_TOKEN`
+  - CI: `Settings → Secrets and variables → Actions → GH_PERSONAL_ACCESS_TOKEN`
   - Local: `apps/api/.env` (`GITHUB_TOKEN=...`) **and** `~/.docker/config.json` (base64 of `user:token`)
 - **Rotation cadence**: every 90 days **or** on offboarding / suspected leak
 - **Test after rotation**: `npx tsx apps/api/src/scripts/demo-ghcr-trivy.ts` (E2E login + push + scan)

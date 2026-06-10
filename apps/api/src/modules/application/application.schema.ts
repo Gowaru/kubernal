@@ -15,6 +15,7 @@ export const createApplicationSchema = z.object({
       'Doit être une URL GitHub, GitLab ou Bitbucket (.git)',
     )
     .optional(),
+  config: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
 export const updateApplicationSchema = z.object({

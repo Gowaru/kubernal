@@ -125,6 +125,7 @@ export function createRouter(): Router {
     deploymentController.recordViolations,
   );
   router.get('/deployments/:id/access', kubernetesController.getDeploymentAccess);
+  router.get('/deployments/:id/vulnerabilities', deploymentController.getVulnerabilities);
 
   // ─── Pipelines ──────────────────────────────────────────────────────────
   router.get('/pipelines', pipelineController.list);
@@ -134,6 +135,7 @@ export function createRouter(): Router {
     pipelineController.executeFromTemplate,
   );
   router.get('/pipelines/actions', pipelineController.listAvailableActions);
+  router.get('/pipelines/:id/events', pipelineController.streamEvents);
   router.get('/pipelines/:id', pipelineController.getById);
   router.get('/pipelines/:id/steps', pipelineController.getSteps);
   router.post('/pipelines', validate(createPipelineSchema), pipelineController.create);

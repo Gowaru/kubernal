@@ -26,22 +26,29 @@ export const applicationService = {
     teamId: string;
     ownerId: string;
     repositoryUrl?: string;
+    config?: Record<string, unknown>;
   }) {
     const template = await db.goldenPathTemplate.findUnique({
       where: { id: data.templateId },
-      select: { repository: true },
+      select: { repository: true, steps: true },
     });
     const team = await db.team.findUnique({
       where: { id: data.teamId },
       select: { namespacePrefix: true },
     });
 
+    const hasScaffoldStep = Array.isArray(template?.steps) &&
+      (template.steps as Array<Record<string, unknown>>).some((s) => s?.['action'] === 'scaffold:project');
+
+    const { config, ...appData } = data;
+
     return db.$transaction(async (tx) => {
       const app = await tx.application.create({
         data: {
-          ...data,
+          ...appData,
           status: 'active',
-          repositoryUrl: data.repositoryUrl ?? template?.repository ?? null,
+          config: (config ?? {}) as Record<string, never>,
+          repositoryUrl: data.repositoryUrl ?? (hasScaffoldStep ? null : template?.repository ?? null),
         },
         include: { team: true, template: true, owner: true },
       });

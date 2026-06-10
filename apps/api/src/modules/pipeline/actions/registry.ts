@@ -4,6 +4,7 @@ import { fetchTemplateAction } from './fetch-template.js';
 import { provisionInfrastructureAction } from './provision-infrastructure.js';
 import { pushImageAction } from './push-image.js';
 import { runScriptAction } from './run-script.js';
+import { scaffoldProjectAction } from './scaffold-project.js';
 import { scanImageAction } from './scan-image.js';
 import type { PipelineAction } from './types.js';
 
@@ -15,6 +16,7 @@ const REGISTRY: Record<string, PipelineAction> = {
   [pushImageAction.name]: pushImageAction,
   [scanImageAction.name]: scanImageAction,
   [deployManifestAction.name]: deployManifestAction,
+  [scaffoldProjectAction.name]: scaffoldProjectAction,
 };
 
 export function getAction(name: string): PipelineAction {
