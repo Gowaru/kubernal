@@ -36,7 +36,7 @@ const categoryConfig: Record<TemplateCategory, { label: string; className: strin
   },
   function: {
     label: 'Function',
-    className: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+    className: 'bg-status-error/10 text-status-error border-status-error/20',
     icon: FileJson,
   },
 };

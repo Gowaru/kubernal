@@ -54,7 +54,7 @@ export function DeploymentAccessCard({ deploymentId }: DeploymentAccessCardProps
   const badgeClass = {
     nodeport: 'bg-status-success/10 text-status-success border-status-success/30',
     clusterip: 'bg-status-info/10 text-status-info border-status-info/30',
-    none: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30',
+    none: 'bg-muted-foreground/10 text-muted-foreground border-muted-foreground/30',
   }[data.type];
 
   const typeLabel = {

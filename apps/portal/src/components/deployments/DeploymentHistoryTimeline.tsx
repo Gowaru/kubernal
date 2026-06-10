@@ -18,13 +18,13 @@ interface DeploymentHistoryTimelineProps {
 }
 
 const STATUS_BADGE: Record<string, string> = {
-  pending: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30',
+  pending: 'bg-muted-foreground/10 text-muted-foreground border-muted-foreground/30',
   building: 'bg-status-info/10 text-status-info border-status-info/30',
   deploying: 'bg-status-info/10 text-status-info border-status-info/30',
   healthy: 'bg-status-success/10 text-status-success border-status-success/30',
   failed: 'bg-status-error/10 text-status-error border-status-error/30',
   rolled_back: 'bg-status-warning/10 text-status-warning border-status-warning/30',
-  cancelled: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30',
+  cancelled: 'bg-muted-foreground/10 text-muted-foreground border-muted-foreground/30',
 };
 
 const TRIGGER_LABEL: Record<string, string> = {

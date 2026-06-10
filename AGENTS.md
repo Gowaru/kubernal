@@ -43,3 +43,12 @@
 - Rotation procedure + allowed storage: see `docs/SECURITY.md`
 - If a secret leaks: see `docs/SECURITY.md § Incident Response` (rotate → purge history → re-deploy)
 
+## PROTECTED INTERNAL ENDPOINTS
+
+- `POST /api/v1/applications/:appId/webhook/regenerate` is protected by `requireInternalApiKey()` middleware
+  - Requires `INTERNAL_API_KEY` env var (32+ chars) on the API server
+  - Caller must send header `x-internal-api-key: <value>`
+  - The portal UI does NOT send this header (frontend cannot hold the secret); regeneration through the UI is intentionally disabled until proper SSO/RBAC lands (Phase 13.10+)
+  - For CLI/automation: `curl -H "x-internal-api-key: $INTERNAL_API_KEY" ...`
+  - Generate a key: `openssl rand -hex 32`
+

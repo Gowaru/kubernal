@@ -22,11 +22,13 @@ regexes = [
   # Common dev words
   '''changeme''',
   '''yourpasswordhere''',
+  # Mock data with API-key-like patterns (Settings.tsx fixtures)
+  '''kpl_[a-f0-9]{32}''',
 ]
 paths = [
   '''\.example$''',
   '''\.example\.yaml$''',
-  '''\.example\.yml$',
+  '''\.example\.yml$''',
   '''\.example\.env$''',
   '''node_modules/''',
   '''dist/''',

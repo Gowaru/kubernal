@@ -20,7 +20,7 @@ export function StatsCard({ title, value, description, icon: Icon, trend }: Stat
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
             <p className="text-3xl font-bold">{value}</p>
             {trend && (
-              <p className={cn('text-xs', trend.positive ? 'text-emerald-500' : 'text-red-500')}>
+              <p className={cn('text-xs', trend.positive ? 'text-status-success' : 'text-status-error')}>
                 {trend.positive ? '↑' : '↓'} {trend.value}%
               </p>
             )}

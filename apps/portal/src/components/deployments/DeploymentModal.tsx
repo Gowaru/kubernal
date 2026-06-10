@@ -317,7 +317,7 @@ export function DeploymentModal({
             </DialogHeader>
 
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
-              <CheckCircle2 className="h-16 w-16 text-emerald-400" />
+              <CheckCircle2 className="h-16 w-16 text-status-success" />
               <p className="text-sm text-muted-foreground text-center max-w-xs">
                 L'application a été déployée sur l'environnement{' '}
                 <strong className="text-foreground">

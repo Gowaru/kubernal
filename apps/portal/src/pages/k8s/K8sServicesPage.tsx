@@ -27,10 +27,10 @@ import {
 import type { K8sServiceType } from '@kubernal/shared-types';
 
 const TYPE_COLORS: Record<K8sServiceType, string> = {
-  LoadBalancer: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  NodePort: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  ClusterIP: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
-  ExternalName: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  LoadBalancer: 'bg-status-info/20 text-status-info border-status-info/30',
+  NodePort: 'bg-status-warning/20 text-status-warning border-status-warning/30',
+  ClusterIP: 'bg-muted-foreground/20 text-muted-foreground border-muted-foreground/30',
+  ExternalName: 'bg-category-compliance/20 text-category-compliance border-category-compliance/30',
 };
 
 function formatAge(iso: string): string {

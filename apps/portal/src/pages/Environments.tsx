@@ -75,7 +75,7 @@ export default function Environments(): JSX.Element {
                     <Icon className={`h-5 w-5 ${config.color}`} />
                     {config.label}
                   </CardTitle>
-                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                  <Badge variant="outline" className="bg-status-success/10 text-status-success border-status-success/20">
                     {environments.length} app{environments.length > 1 ? 's' : ''}
                   </Badge>
                 </div>
@@ -95,7 +95,7 @@ export default function Environments(): JSX.Element {
                       <div className="flex items-center gap-2">
                         <code className="text-xs text-muted-foreground">{env.namespace}</code>
                         {env.requiresApproval && (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" aria-label="Approbation requise" />
+                          <CheckCircle2 className="h-3.5 w-3.5 text-status-warning" aria-label="Approbation requise" />
                         )}
                       </div>
                     </div>

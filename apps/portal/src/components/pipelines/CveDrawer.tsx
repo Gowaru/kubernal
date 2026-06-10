@@ -14,7 +14,7 @@ const SEVERITY_CONFIG = {
   CRITICAL: { color: 'text-status-error bg-status-error/10 border-status-error/30' },
   HIGH: { color: 'text-status-warning bg-status-warning/10 border-status-warning/30' },
   MEDIUM: { color: 'text-status-warning bg-status-warning/10 border-status-warning/30' },
-  LOW: { color: 'text-zinc-400 bg-zinc-400/10 border-zinc-500/30' },
+  LOW: { color: 'text-muted-foreground bg-muted-foreground/10 border-muted-foreground/30' },
 } as const;
 
 type SeverityKey = keyof typeof SEVERITY_CONFIG;

@@ -159,7 +159,7 @@ export function WebhookConfigCard({
             </Button>
           </div>
           {lastSecret && (
-            <p className="text-xs text-amber-400 flex items-center gap-1.5">
+            <p className="text-xs text-status-warning flex items-center gap-1.5">
               <CheckCircle2 className="h-3 w-3" />
               Nouveau secret généré. Copiez-le maintenant, il ne sera plus affiché.
             </p>

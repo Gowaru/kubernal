@@ -459,7 +459,7 @@ export default function DeploymentDetail(): JSX.Element {
                 <DialogDescription>Le déploiement a été approuvé et est en cours d'exécution.</DialogDescription>
               </DialogHeader>
               <div className="flex flex-col items-center justify-center py-8 space-y-4">
-                <CheckCircle2 className="h-16 w-16 text-emerald-400" />
+                <CheckCircle2 className="h-16 w-16 text-status-success" />
                 <p className="text-sm text-muted-foreground text-center max-w-xs">
                   Le déploiement <strong className="text-foreground">{deployment.version}</strong> a été approuvé avec succès.
                 </p>

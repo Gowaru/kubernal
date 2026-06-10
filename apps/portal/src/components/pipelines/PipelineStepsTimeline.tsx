@@ -11,11 +11,11 @@ interface PipelineStepsTimelineProps {
 }
 
 const STEP_STATUS_CONFIG = {
-  pending: { icon: Circle, className: 'text-zinc-500' },
+  pending: { icon: Circle, className: 'text-muted-foreground' },
   running: { icon: Loader2, className: 'text-status-info animate-spin' },
   success: { icon: CheckCircle2, className: 'text-status-success' },
   failed: { icon: XCircle, className: 'text-status-error' },
-  cancelled: { icon: XCircle, className: 'text-zinc-500' },
+  cancelled: { icon: XCircle, className: 'text-muted-foreground' },
 } as const;
 
 function formatDuration(startedAt: string | null, completedAt: string | null): string {
@@ -80,7 +80,7 @@ export function PipelineStepsTimeline({ pipelineId, deploymentId, onShowCves }: 
               <div key={step.id} className="flex gap-3">
                 <div className="flex-shrink-0 mt-0.5">
                   <div
-                    className={`flex h-5 w-5 items-center justify-center rounded-full border ${isRunning ? 'border-status-info/30' : step.status === 'success' ? 'border-status-success/30' : step.status === 'failed' ? 'border-status-error/30' : 'border-zinc-600/30'}`}
+                    className={`flex h-5 w-5 items-center justify-center rounded-full border ${isRunning ? 'border-status-info/30' : step.status === 'success' ? 'border-status-success/30' : step.status === 'failed' ? 'border-status-error/30' : 'border-muted-foreground/30'}`}
                   >
                     <Icon className={`h-3 w-3 ${config.className}`} />
                   </div>

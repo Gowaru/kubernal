@@ -11,6 +11,7 @@ import { kubernetesController } from '../../../modules/kubernetes/kubernetes.con
 import { webhookController } from '../../../modules/webhook/webhook.controller.js';
 
 import { validate } from '../../../shared/middleware/validate.js';
+import { requireInternalApiKey } from '../../../shared/middleware/require-internal-api-key.js';
 import { createUserSchema, updateUserSchema } from '../../../modules/user/user.schema.js';
 import { createTeamSchema, updateTeamSchema } from '../../../modules/team/team.schema.js';
 import {
@@ -180,7 +181,11 @@ export function createRouter(): Router {
 
   // ─── Webhooks (incoming from GitHub/GitLab/Bitbucket) ─────────────────
   router.get('/applications/:appId/webhook', webhookController.getConfig);
-  router.post('/applications/:appId/webhook/regenerate', webhookController.regenerateSecret);
+  router.post(
+    '/applications/:appId/webhook/regenerate',
+    requireInternalApiKey(),
+    webhookController.regenerateSecret,
+  );
   router.post('/webhooks/:appId/:provider', webhookController.ingest);
 
   return router;

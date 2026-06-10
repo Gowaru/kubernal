@@ -267,7 +267,7 @@ export default function Settings(): JSX.Element {
                     className="h-8 w-8"
                     onClick={() => handleCopyKey(k.id, k.key)}
                   >
-                    {copiedKey === k.id ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                    {copiedKey === k.id ? <Check className="h-4 w-4 text-status-success" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
