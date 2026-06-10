@@ -1,16 +1,17 @@
+import type { SecurityPolicy } from '@prisma/client';
 import { db } from '../../shared/database.js';
 import { toJsonValue } from '../../shared/json.js';
 
 export const policyRepository = {
-  findAll() {
+  findAll(): Promise<SecurityPolicy[]> {
     return db.securityPolicy.findMany({ orderBy: { createdAt: 'desc' } });
   },
 
-  findById(id: string) {
+  findById(id: string): Promise<SecurityPolicy | null> {
     return db.securityPolicy.findUnique({ where: { id } });
   },
 
-  findEnabled() {
+  findEnabled(): Promise<SecurityPolicy[]> {
     return db.securityPolicy.findMany({ where: { enabled: true } });
   },
 
@@ -22,7 +23,7 @@ export const policyRepository = {
     engine: string;
     rules?: Record<string, unknown>;
     enabled?: boolean;
-  }) {
+  }): Promise<SecurityPolicy> {
     return db.securityPolicy.create({
       data: {
         ...data,
@@ -42,7 +43,7 @@ export const policyRepository = {
       rules?: Record<string, unknown>;
       enabled?: boolean;
     },
-  ) {
+  ): Promise<SecurityPolicy> {
     const { rules, ...rest } = data;
     return db.securityPolicy.update({
       where: { id },
@@ -53,7 +54,7 @@ export const policyRepository = {
     });
   },
 
-  delete(id: string) {
+  delete(id: string): Promise<SecurityPolicy> {
     return db.securityPolicy.delete({ where: { id } });
   },
 };

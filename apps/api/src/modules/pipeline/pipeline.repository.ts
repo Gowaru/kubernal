@@ -1,16 +1,17 @@
+import type { Pipeline, PipelineStep } from '@prisma/client';
 import { db } from '../../shared/database.js';
 import { toJsonValue } from '../../shared/json.js';
 
 export const pipelineRepository = {
-  findAll() {
+  findAll(): Promise<Pipeline[]> {
     return db.pipeline.findMany({ include: { deployment: true } });
   },
 
-  findById(id: string) {
+  findById(id: string): Promise<Pipeline | null> {
     return db.pipeline.findUnique({ where: { id }, include: { deployment: true } });
   },
 
-  findByDeployment(deploymentId: string) {
+  findByDeployment(deploymentId: string): Promise<Pipeline[]> {
     return db.pipeline.findMany({ where: { deploymentId } });
   },
 
@@ -20,7 +21,7 @@ export const pipelineRepository = {
     status?: string;
     stages?: Record<string, unknown>[];
     logsUrl?: string;
-  }) {
+  }): Promise<Pipeline> {
     return db.pipeline.create({
       data: {
         ...data,
@@ -30,21 +31,21 @@ export const pipelineRepository = {
     });
   },
 
-  updateStatus(id: string, status: string, completedAt?: Date) {
+  updateStatus(id: string, status: string, completedAt?: Date): Promise<Pipeline> {
     return db.pipeline.update({
       where: { id },
       data: { status, ...(completedAt ? { completedAt } : {}) },
     });
   },
 
-  addStage(id: string, stage: Record<string, unknown>) {
+  addStage(id: string, stage: Record<string, unknown>): Promise<Pipeline> {
     return db.pipeline.update({
       where: { id },
       data: { stages: { push: toJsonValue(stage) } },
     });
   },
 
-  delete(id: string) {
+  delete(id: string): Promise<Pipeline> {
     return db.pipeline.delete({ where: { id } });
   },
 
@@ -56,7 +57,7 @@ export const pipelineRepository = {
       action: string;
       params?: Record<string, unknown>;
     },
-  ) {
+  ): Promise<PipelineStep> {
     return db.pipelineStep.create({
       data: {
         pipelineId,
@@ -69,7 +70,7 @@ export const pipelineRepository = {
     });
   },
 
-  findStepsByPipeline(pipelineId: string) {
+  findStepsByPipeline(pipelineId: string): Promise<PipelineStep[]> {
     return db.pipelineStep.findMany({
       where: { pipelineId },
       orderBy: { order: 'asc' },
@@ -85,7 +86,7 @@ export const pipelineRepository = {
       startedAt?: Date;
       completedAt?: Date;
     },
-  ) {
+  ): Promise<PipelineStep> {
     const { output, ...rest } = data;
     return db.pipelineStep.update({
       where: { id: stepId },
@@ -96,14 +97,14 @@ export const pipelineRepository = {
     });
   },
 
-  findWithSteps(id: string) {
+  findWithSteps(id: string): Promise<Pipeline | null> {
     return db.pipeline.findUnique({
       where: { id },
       include: { deployment: true, steps: { orderBy: { order: 'asc' } } },
     });
   },
 
-  findPendingPipelines() {
+  findPendingPipelines(): Promise<Pipeline[]> {
     return db.pipeline.findMany({
       where: { status: 'pending' },
       orderBy: { createdAt: 'asc' },

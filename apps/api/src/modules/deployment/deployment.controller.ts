@@ -4,24 +4,24 @@ import { triggerReconcile } from './deployment.worker.js';
 import { compareDeploymentsQuerySchema } from '../kubernetes/kubernetes.schema.js';
 
 export const deploymentController = {
-  async list(_req: Request, res: Response) {
+  async list(_req: Request, res: Response): Promise<void> {
     const deployments = await deploymentService.list();
     res.json({ data: deployments, total: deployments.length });
   },
 
-  async getById(req: Request, res: Response) {
+  async getById(req: Request, res: Response): Promise<void> {
     const id = req.params.id as string;
     const deployment = await deploymentService.getById(id);
     res.json({ data: deployment });
   },
 
-  async create(req: Request, res: Response) {
+  async create(req: Request, res: Response): Promise<void> {
     const deployment = await deploymentService.create(req.body);
     void triggerReconcile(deployment.id);
     res.status(201).json({ data: deployment });
   },
 
-  async transitionStatus(req: Request, res: Response) {
+  async transitionStatus(req: Request, res: Response): Promise<void> {
     const { status } = req.body;
     const id = req.params.id as string;
     const deployment = await deploymentService.transitionStatus(id, status);
@@ -29,7 +29,7 @@ export const deploymentController = {
     res.json({ data: deployment });
   },
 
-  async approve(req: Request, res: Response) {
+  async approve(req: Request, res: Response): Promise<void> {
     const { approvedById } = req.body;
     const id = req.params.id as string;
     const deployment = await deploymentService.approve(id, approvedById);
@@ -37,7 +37,7 @@ export const deploymentController = {
     res.json({ data: deployment });
   },
 
-  async promote(req: Request, res: Response) {
+  async promote(req: Request, res: Response): Promise<void> {
     const { targetEnv } = req.body as { targetEnv: 'staging' | 'prod' };
     const id = req.params.id as string;
     const deployment = await deploymentService.promote(id, targetEnv);
@@ -47,20 +47,20 @@ export const deploymentController = {
     res.status(201).json({ data: deployment });
   },
 
-  async recordViolations(req: Request, res: Response) {
+  async recordViolations(req: Request, res: Response): Promise<void> {
     const { violations } = req.body;
     const id = req.params.id as string;
     const deployment = await deploymentService.recordViolations(id, violations);
     res.json({ data: deployment });
   },
 
-  async getVulnerabilities(req: Request, res: Response) {
+  async getVulnerabilities(req: Request, res: Response): Promise<void> {
     const id = req.params.id as string;
     const vulnerabilities = await deploymentService.getVulnerabilities(id);
     res.json({ data: vulnerabilities, total: vulnerabilities.length });
   },
 
-  async compare(req: Request, res: Response) {
+  async compare(req: Request, res: Response): Promise<void> {
     const { from, to } = compareDeploymentsQuerySchema.parse(req.query);
     const diff = await deploymentService.compare(from, to);
     res.json({ data: diff });

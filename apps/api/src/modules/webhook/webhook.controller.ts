@@ -25,7 +25,7 @@ function buildWebhookUrl(req: Request, appId: string, provider: WebhookProvider)
 }
 
 export const webhookController = {
-  async getConfig(req: Request, res: Response) {
+  async getConfig(req: Request, res: Response): Promise<void> {
     const { appId } = req.params as { appId: string };
     const app = await db.application.findUnique({
       where: { id: appId },
@@ -47,7 +47,7 @@ export const webhookController = {
     res.json({ data });
   },
 
-  async regenerateSecret(req: Request, res: Response) {
+  async regenerateSecret(req: Request, res: Response): Promise<void> {
     const { appId } = req.params as { appId: string };
     const app = await db.application.findUnique({ where: { id: appId } });
     if (!app) throw new NotFoundError('Application', appId);
@@ -61,7 +61,7 @@ export const webhookController = {
     res.json({ data: { applicationId: appId, secret: newSecret } });
   },
 
-  async ingest(req: Request, res: Response) {
+  async ingest(req: Request, res: Response): Promise<void> {
     const { appId, provider } = req.params as { appId: string; provider: string };
     const webhookProvider = detectProviderFromPath(provider);
     if (!webhookProvider) {

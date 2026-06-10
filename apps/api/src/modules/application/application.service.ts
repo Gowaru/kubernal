@@ -9,11 +9,11 @@ const DEFAULT_ENV_TYPES = [
 ] as const;
 
 export const applicationService = {
-  async list() {
+  async list(): Promise<unknown[]> {
     return applicationRepository.findAll();
   },
 
-  async getById(id: string) {
+  async getById(id: string): Promise<unknown> {
     const app = await applicationRepository.findById(id);
     if (!app) throw new NotFoundError('Application', id);
     return app;
@@ -27,7 +27,7 @@ export const applicationService = {
     ownerId: string;
     repositoryUrl?: string;
     config?: Record<string, unknown>;
-  }) {
+  }): Promise<unknown> {
     const template = await db.goldenPathTemplate.findUnique({
       where: { id: data.templateId },
       select: { repository: true, steps: true },
@@ -79,13 +79,13 @@ export const applicationService = {
       repositoryUrl?: string | null;
       status?: string;
     },
-  ) {
+  ): Promise<unknown> {
     const app = await applicationRepository.findById(id);
     if (!app) throw new NotFoundError('Application', id);
     return applicationRepository.update(id, data);
   },
 
-  async delete(id: string) {
+  async delete(id: string): Promise<unknown> {
     const app = await applicationRepository.findById(id);
     if (!app) throw new NotFoundError('Application', id);
     return applicationRepository.delete(id);

@@ -1,3 +1,4 @@
+import type { Team } from '@prisma/client';
 import { NotFoundError, ConflictError } from '../../shared/errors.js';
 import { teamRepository } from './team.repository.js';
 import { logger } from '../../shared/logger.js';
@@ -13,11 +14,11 @@ import {
 } from '../../shared/k8s-client.js';
 
 export const teamService = {
-  async list() {
+  async list(): Promise<Team[]> {
     return teamRepository.findAll();
   },
 
-  async getById(id: string) {
+  async getById(id: string): Promise<Team> {
     const team = await teamRepository.findById(id);
     if (!team) throw new NotFoundError('Team', id);
     return team;
@@ -29,7 +30,7 @@ export const teamService = {
     quotaCpu?: string;
     quotaMemory?: string;
     namespacePrefix: string;
-  }) {
+  }): Promise<Team> {
     const existing = await teamRepository.findByName(data.name);
     if (existing) throw new ConflictError(`Team '${data.name}' already exists`);
 
@@ -43,7 +44,7 @@ export const teamService = {
   async update(
     id: string,
     data: { name?: string; description?: string | null; quotaCpu?: string; quotaMemory?: string },
-  ) {
+  ): Promise<Team> {
     const team = await this.getById(id);
     const updated = await teamRepository.update(id, data);
 
@@ -60,7 +61,7 @@ export const teamService = {
     return updated;
   },
 
-  async delete(id: string) {
+  async delete(id: string): Promise<void> {
     const team = await this.getById(id);
     await teamRepository.delete(id);
 
@@ -82,7 +83,7 @@ async function provisionTeamEnvironments(
   namespacePrefix: string,
   quotaCpu = '4',
   quotaMemory = '8Gi',
-) {
+): Promise<void> {
   const labels = getNamespaceLabels(teamName, teamId);
   const splits = splitQuota(quotaCpu, quotaMemory);
 

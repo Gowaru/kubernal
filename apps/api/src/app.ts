@@ -8,7 +8,7 @@ import { notFoundHandler } from './shared/middleware/not-found.js';
 import { trackRequest, getMetrics } from './shared/metrics.js';
 import { startPipelineWorker } from './modules/pipeline/worker.js';
 
-export function createApp() {
+export function createApp(): express.Application {
   const app = express();
 
   app.use(helmet());

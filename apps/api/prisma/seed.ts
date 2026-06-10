@@ -2,7 +2,7 @@ import { createPrismaClient } from '../src/shared/database.js';
 
 const db = createPrismaClient(process.env['DATABASE_URL'] ?? '');
 
-async function main() {
+async function main(): Promise<void> {
   console.log('Seeding database...\n');
 
   // ─── Teams ──────────────────────────────────────────────────────────────

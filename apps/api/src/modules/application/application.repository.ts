@@ -1,20 +1,20 @@
 import { db } from '../../shared/database.js';
 
 export const applicationRepository = {
-  findAll() {
+  findAll(): Promise<unknown[]> {
     return db.application.findMany({
       include: { team: true, template: true, owner: true, environments: true },
     });
   },
 
-  findById(id: string) {
+  findById(id: string): Promise<unknown | null> {
     return db.application.findUnique({
       where: { id },
       include: { team: true, template: true, owner: true, environments: true, deployments: true },
     });
   },
 
-  findByTeam(teamId: string) {
+  findByTeam(teamId: string): Promise<unknown[]> {
     return db.application.findMany({ where: { teamId }, include: { environments: true } });
   },
 
@@ -26,7 +26,7 @@ export const applicationRepository = {
     ownerId: string;
     repositoryUrl?: string;
     status?: string;
-  }) {
+  }): Promise<unknown> {
     return db.application.create({
       data,
       include: { team: true, template: true, owner: true },
@@ -41,11 +41,11 @@ export const applicationRepository = {
       repositoryUrl?: string | null;
       status?: string;
     },
-  ) {
+  ): Promise<unknown> {
     return db.application.update({ where: { id }, data });
   },
 
-  delete(id: string) {
+  delete(id: string): Promise<unknown> {
     return db.application.delete({ where: { id } });
   },
 };

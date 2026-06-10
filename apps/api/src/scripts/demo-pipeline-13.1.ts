@@ -961,7 +961,6 @@ async function runPhase134Demo(): Promise<void> {
     const deployment = await findOrCreateDeployment({
       applicationId: app.id,
       environmentId: env.id,
-      version: 'v13.4.0',
       commitSha: 'demo13.4a1b2',
     });
     return { template, app, env, deployment };
@@ -980,18 +979,13 @@ async function runPhase134Demo(): Promise<void> {
   if (!pipelineRes.ok) {
     throw new Error(`POST /pipelines/execute failed: ${pipelineRes.status} ${await pipelineRes.text()}`);
   }
-  const pipeline = (await pipelineRes.json()).data;
+  const pipeline = (await pipelineRes.json() as { data: Pipeline }).data;
 
   const finalPipeline = await pollPipelineCompletion(pipeline.id, 120);
   const pipelineDuration = Date.now() - start;
 
   const pipelineStepsRes = await fetch(`http://127.0.0.1:4000/api/v1/pipelines/${finalPipeline.id}/steps`);
-  const pipelineSteps = (await pipelineStepsRes.json()).data;
-
-  const buildStepResult = pipelineSteps.find((s: unknown) => (s as Record<string, unknown>).action === 'build:image');
-  const pushStepResult = pipelineSteps.find((s: unknown) => (s as Record<string, unknown>).action === 'push:image');
-  if (buildStepResult) steps.push(buildStepResult as DemoStep);
-  if (pushStepResult) steps.push(pushStepResult as DemoStep);
+  const pipelineSteps = (await pipelineStepsRes.json() as { data: PipelineStep[] }).data;
 
   const sourceTag = 'localhost:5000/kubernal-sample:13.4-demo';
   const targetTag = 'localhost:5000/kubernal-sample:13.4-demo';
@@ -1140,13 +1134,13 @@ async function runPhase135Demo(): Promise<void> {
   if (!pipelineRes.ok) {
     throw new Error(`POST /pipelines/execute failed: ${pipelineRes.status} ${await pipelineRes.text()}`);
   }
-  const pipeline = (await pipelineRes.json()).data;
+  const pipeline = (await pipelineRes.json() as { data: Pipeline }).data;
 
   const finalPipeline = await pollPipelineCompletion(pipeline.id, 180);
   const pipelineDuration = Date.now() - start;
 
   const pipelineStepsRes = await fetch(`http://127.0.0.1:4000/api/v1/pipelines/${finalPipeline.id}/steps`);
-  const pipelineSteps = (await pipelineStepsRes.json()).data;
+  const pipelineSteps = (await pipelineStepsRes.json() as { data: PipelineStep[] }).data;
 
   printPipelineSteps(pipelineSteps);
 

@@ -2,21 +2,21 @@ import { db } from '../../shared/database.js';
 import { toJsonArray } from '../../shared/json.js';
 
 export const deploymentRepository = {
-  findAll() {
+  findAll(): Promise<unknown[]> {
     return db.deployment.findMany({
       include: { application: true, environment: true, approvedBy: true, pipelines: true },
       orderBy: { createdAt: 'desc' },
     });
   },
 
-  findById(id: string) {
+  findById(id: string): Promise<unknown | null> {
     return db.deployment.findUnique({
       where: { id },
       include: { application: true, environment: true, approvedBy: true, pipelines: true },
     });
   },
 
-  findByApplication(applicationId: string) {
+  findByApplication(applicationId: string): Promise<unknown[]> {
     return db.deployment.findMany({
       where: { applicationId },
       include: { environment: true, approvedBy: true },
@@ -24,7 +24,7 @@ export const deploymentRepository = {
     });
   },
 
-  findByEnvironment(environmentId: string) {
+  findByEnvironment(environmentId: string): Promise<unknown[]> {
     return db.deployment.findMany({
       where: { environmentId },
       orderBy: { createdAt: 'desc' },
@@ -38,35 +38,35 @@ export const deploymentRepository = {
     commitSha: string;
     trigger?: string;
     status?: string;
-  }) {
+  }): Promise<unknown> {
     return db.deployment.create({
       data,
       include: { application: true, environment: true, pipelines: true },
     });
   },
 
-  updateStatus(id: string, status: string, completedAt?: Date) {
+  updateStatus(id: string, status: string, completedAt?: Date): Promise<unknown> {
     return db.deployment.update({
       where: { id },
       data: { status, ...(completedAt ? { completedAt } : {}) },
     });
   },
 
-  approve(id: string, approvedById: string) {
+  approve(id: string, approvedById: string): Promise<unknown> {
     return db.deployment.update({
       where: { id },
       data: { approvedById, status: 'deploying' },
     });
   },
 
-  savePolicyViolations(id: string, violations: Record<string, unknown>[]) {
+  savePolicyViolations(id: string, violations: Record<string, unknown>[]): Promise<unknown> {
     return db.deployment.update({
       where: { id },
       data: { policyViolations: toJsonArray(violations) },
     });
   },
 
-  delete(id: string) {
+  delete(id: string): Promise<unknown> {
     return db.deployment.delete({ where: { id } });
   },
 };

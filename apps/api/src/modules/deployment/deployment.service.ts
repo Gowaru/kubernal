@@ -18,11 +18,11 @@ export function canTransition(from: string, to: string): boolean {
 }
 
 export const deploymentService = {
-  async list() {
+  async list(): Promise<any[]> {
     return deploymentRepository.findAll();
   },
 
-  async getById(id: string) {
+  async getById(id: string): Promise<any> {
     const deployment = await deploymentRepository.findById(id);
     if (!deployment) throw new NotFoundError('Deployment', id);
     return deployment;
@@ -35,14 +35,13 @@ export const deploymentService = {
     commitSha: string;
     trigger?: string;
     status?: string;
-  }) {
+  }): Promise<any> {
     return deploymentRepository.create(data);
   },
 
-  async transitionStatus(id: string, newStatus: string) {
-    const deployment = await deploymentRepository.findById(id);
+  async transitionStatus(id: string, newStatus: string): Promise<any> {
+    const deployment: any = await deploymentRepository.findById(id);
     if (!deployment) throw new NotFoundError('Deployment', id);
-
     const current = deployment.status;
     if (!canTransition(current, newStatus)) {
       throw new InvalidTransitionError(current, newStatus);
@@ -55,8 +54,8 @@ export const deploymentService = {
     return deploymentRepository.updateStatus(id, newStatus, completedAt);
   },
 
-  async approve(id: string, approvedById: string) {
-    const deployment = await deploymentRepository.findById(id);
+  async approve(id: string, approvedById: string): Promise<any> {
+    const deployment: any = await deploymentRepository.findById(id);
     if (!deployment) throw new NotFoundError('Deployment', id);
     if (deployment.status !== 'pending') {
       throw new InvalidTransitionError(deployment.status, 'deploying');
@@ -64,8 +63,8 @@ export const deploymentService = {
     return deploymentRepository.approve(id, approvedById);
   },
 
-  async promote(id: string, targetEnvType: 'staging' | 'prod') {
-    const source = await deploymentRepository.findById(id);
+  async promote(id: string, targetEnvType: 'staging' | 'prod'): Promise<any> {
+    const source: any = await deploymentRepository.findById(id);
     if (!source) throw new NotFoundError('Deployment', id);
     if (source.status !== 'healthy') {
       throw new InvalidTransitionError(source.status, 'promote');
@@ -88,13 +87,13 @@ export const deploymentService = {
     });
   },
 
-  async recordViolations(id: string, violations: Record<string, unknown>[]) {
-    const deployment = await deploymentRepository.findById(id);
+  async recordViolations(id: string, violations: Record<string, unknown>[]): Promise<any> {
+    const deployment: any = await deploymentRepository.findById(id);
     if (!deployment) throw new NotFoundError('Deployment', id);
     return deploymentRepository.savePolicyViolations(id, violations);
   },
 
-  async getVulnerabilities(id: string) {
+  async getVulnerabilities(id: string): Promise<any[]> {
     return db.deploymentVulnerability.findMany({
       where: { deploymentId: id },
       orderBy: { detectedAt: 'desc' },

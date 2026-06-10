@@ -12,7 +12,7 @@ const server = app.listen(PORT, () => {
   startDeploymentWorker();
 });
 
-const shutdown = (signal: string) => {
+const shutdown = (signal: string): void => {
   logger.info({ signal }, 'Shutting down...');
   stopDeploymentWorker();
   server.close(() => process.exit(0));

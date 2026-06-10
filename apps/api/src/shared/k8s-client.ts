@@ -83,7 +83,7 @@ export function getNamespaceLabels(teamName: string, teamId: string): Record<str
   };
 }
 
-export async function ensureNamespace(namespace: string, labels: Record<string, string>) {
+export async function ensureNamespace(namespace: string, labels: Record<string, string>): Promise<void> {
   try {
     await coreApi.readNamespace({ name: namespace });
     logger.info({ namespace }, 'Namespace already exists');
@@ -109,7 +109,7 @@ export async function ensureResourceQuota(
   name: string,
   cpu: string,
   memory: string,
-) {
+): Promise<void> {
   const manifest = {
     metadata: { name, namespace },
     spec: {
@@ -145,7 +145,7 @@ export async function ensureResourceQuota(
   }
 }
 
-export async function ensureLimitRange(namespace: string) {
+export async function ensureLimitRange(namespace: string): Promise<void> {
   const manifest = {
     metadata: { name: 'team-default-limits', namespace },
     spec: {

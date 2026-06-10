@@ -1,12 +1,13 @@
+import type { GoldenPathTemplate } from '@prisma/client';
 import { db } from '../../shared/database.js';
 import { toJsonValue } from '../../shared/json.js';
 
 export const templateRepository = {
-  findAll() {
+  findAll(): Promise<GoldenPathTemplate[]> {
     return db.goldenPathTemplate.findMany();
   },
 
-  findById(id: string) {
+  findById(id: string): Promise<GoldenPathTemplate | null> {
     return db.goldenPathTemplate.findUnique({ where: { id } });
   },
 
@@ -18,7 +19,7 @@ export const templateRepository = {
     repository: string;
     parameters?: Record<string, unknown>;
     steps?: Record<string, unknown>[];
-  }) {
+  }): Promise<GoldenPathTemplate> {
     return db.goldenPathTemplate.create({
       data: {
         ...data,
@@ -38,7 +39,7 @@ export const templateRepository = {
       parameters?: Record<string, unknown>;
       steps?: Record<string, unknown>[];
     },
-  ) {
+  ): Promise<GoldenPathTemplate> {
     const { parameters, steps, ...rest } = data;
     return db.goldenPathTemplate.update({
       where: { id },
@@ -50,7 +51,7 @@ export const templateRepository = {
     });
   },
 
-  delete(id: string) {
+  delete(id: string): Promise<GoldenPathTemplate> {
     return db.goldenPathTemplate.delete({ where: { id } });
   },
 };

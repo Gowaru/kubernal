@@ -1,8 +1,9 @@
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { ActionContext, ActionResult, PipelineAction } from './types.js';
 
 const execFileAsync = promisify(execFile);
+const DEFAULT_MAX_BUFFER = 10 * 1024 * 1024;
 
 const DEFAULT_TIMEOUT_MS = 600_000;
 const MAX_BUFFER_BYTES = 50 * 1024 * 1024;
@@ -17,9 +18,9 @@ interface PushImageParams {
   targetImage?: string;
   username?: string;
   password?: string;
-  insecure?: boolean;
-  retryCount?: number;
-  retryDelayMs?: number;
+  insecure: boolean;
+  retryCount: number;
+  retryDelayMs: number;
 }
 
 interface ExecFileFailure {
@@ -109,8 +110,9 @@ function parsePushImageParams(raw: Record<string, unknown>): PushImageParams {
 
 function extractRegistryFromImage(image: string): string {
   const parts = image.split('/');
-  if (parts.length >= 2 && (parts[0].includes('.') || parts[0].includes(':'))) {
-    return parts[0];
+  const first = parts[0];
+  if (first && parts.length >= 2 && (first.includes('.') || first.includes(':'))) {
+    return first;
   }
   return 'docker.io';
 }
@@ -146,7 +148,7 @@ function parseImageIdFromInspect(stdout: string): string | null {
 function parseDigestFromPushOutput(stdout: string): string | null {
   const lines = stdout.split('\n');
   for (let i = lines.length - 1; i >= 0; i--) {
-    const line = lines[i].trim();
+    const line = lines[i]?.trim() ?? '';
     const m = line.match(/^([a-z0-9]+(?:[._-][a-z0-9]+)*\/)?[a-z0-9]+(?:[._-][a-z0-9]+)*@sha256:[a-f0-9]{64}$/i);
     if (m && m[0]) {
       return m[0];
@@ -165,16 +167,25 @@ async function dockerTag(source: string, target: string, logger: ActionContext['
 }
 
 async function dockerLogin(registry: string, username: string, password: string, insecure: boolean, logger: ActionContext['logger']): Promise<void> {
-  const args = ['login', registry, '-u', username, '--password-stdin'];
-  if (insecure) args.push('--insecure');
-  logger.info(`docker login: ${registry} (user: ${username})`);
-  const result = await execFileAsync('docker', args, {
-    input: password,
-    timeout: 60_000,
+  return new Promise<void>((resolve, reject) => {
+    const args = ['login', registry, '-u', username, '--password-stdin'];
+    if (insecure) args.push('--insecure');
+    logger.info(`docker login: ${registry} (user: ${username})`);
+    const child = spawn('docker', args, { stdio: ['pipe', 'pipe', 'pipe'], timeout: 60_000 });
+    let stderr = '';
+    child.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString(); });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) {
+        if (stderr.trim()) logger.warn(`docker login stderr: ${stderr.trim()}`);
+        resolve();
+      } else {
+        reject(new Error(`docker login failed (exit ${code}): ${stderr.trim()}`));
+      }
+    });
+    child.stdin.write(password);
+    child.stdin.end();
   });
-  if (result.stderr) {
-    logger.warn(`docker login stderr: ${result.stderr.trim()}`);
-  }
 }
 
 async function dockerPush(image: string, timeoutMs: number, logger: ActionContext['logger']): Promise<{ stdout: string; stderr: string }> {

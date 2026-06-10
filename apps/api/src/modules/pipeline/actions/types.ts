@@ -10,6 +10,12 @@ export interface ActionContext {
     warn: (msg: string) => void;
     error: (msg: string) => void;
   };
+  environment?: {
+    id: string;
+    name: string;
+    type: string;
+    namespace: string;
+  };
 }
 
 export interface ActionArtifact {

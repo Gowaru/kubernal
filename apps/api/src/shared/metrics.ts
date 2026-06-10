@@ -32,19 +32,19 @@ const deploymentsStatus = new client.Gauge({
   registers: [register],
 });
 
-export function trackRequest(method: string, route: string, status: number, durationMs: number) {
+export function trackRequest(method: string, route: string, status: number, durationMs: number): void {
   httpRequestDuration.observe({ method, route, status: String(status) }, durationMs / 1000);
   httpRequestsTotal.inc({ method, route, status: String(status) });
 }
 
-export function incrementDeployments() {
+export function incrementDeployments(): void {
   deploymentsCreated.inc();
 }
 
-export function setDeploymentStatus(status: string, count: number) {
+export function setDeploymentStatus(status: string, count: number): void {
   deploymentsStatus.set({ status }, count);
 }
 
-export async function getMetrics() {
+export async function getMetrics(): Promise<string> {
   return register.metrics();
 }

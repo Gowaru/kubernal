@@ -17,30 +17,30 @@ function isTemplateStepArray(value: unknown): value is TemplateStep[] {
 }
 
 export const pipelineController = {
-  async list(_req: Request, res: Response) {
+  async list(_req: Request, res: Response): Promise<void> {
     const pipelines = await pipelineService.list();
     res.json({ data: pipelines, total: pipelines.length });
   },
 
-  async getById(req: Request, res: Response) {
+  async getById(req: Request, res: Response): Promise<void> {
     const id = req.params.id as string;
     const pipeline = await pipelineService.getById(id);
     res.json({ data: pipeline });
   },
 
-  async create(req: Request, res: Response) {
+  async create(req: Request, res: Response): Promise<void> {
     const pipeline = await pipelineService.create(req.body);
     res.status(201).json({ data: pipeline });
   },
 
-  async updateStatus(req: Request, res: Response) {
+  async updateStatus(req: Request, res: Response): Promise<void> {
     const { status } = req.body;
     const id = req.params.id as string;
     const pipeline = await pipelineService.updateStatus(id, status);
     res.json({ data: pipeline });
   },
 
-  async executeFromTemplate(req: Request, res: Response) {
+  async executeFromTemplate(req: Request, res: Response): Promise<void> {
     const { deploymentId, templateId, params } = req.body as {
       deploymentId: string;
       templateId: string;
@@ -105,7 +105,7 @@ export const pipelineController = {
     res.status(201).json({ data: created });
   },
 
-  async getSteps(req: Request, res: Response) {
+  async getSteps(req: Request, res: Response): Promise<void> {
     const id = req.params.id as string;
     const pipeline = await db.pipeline.findUnique({ where: { id } });
     if (!pipeline) throw new NotFoundError('Pipeline', id);
@@ -113,7 +113,7 @@ export const pipelineController = {
     res.json({ data: steps, total: steps.length });
   },
 
-  async streamEvents(req: Request, res: Response) {
+  async streamEvents(req: Request, res: Response): Promise<void> {
     const id = req.params.id as string;
 
     res.writeHead(200, {
@@ -122,7 +122,7 @@ export const pipelineController = {
       'Connection': 'keep-alive',
     });
 
-    const send = async () => {
+    const send = async (): Promise<void> => {
       try {
         const pipeline = await pipelineService.getWithSteps(id);
         res.write(`data: ${JSON.stringify(pipeline)}\n\n`);
@@ -140,7 +140,7 @@ export const pipelineController = {
     });
   },
 
-  async listAvailableActions(_req: Request, res: Response) {
+  async listAvailableActions(_req: Request, res: Response): Promise<void> {
     res.json({ data: listActions() });
   },
 };
