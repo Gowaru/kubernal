@@ -113,6 +113,18 @@ export const pipelineController = {
     res.json({ data: steps, total: steps.length });
   },
 
+  async getStepById(req: Request, res: Response): Promise<void> {
+    const pipelineId = req.params.id as string;
+    const stepId = req.params.stepId as string;
+    const pipeline = await db.pipeline.findUnique({ where: { id: pipelineId } });
+    if (!pipeline) throw new NotFoundError('Pipeline', pipelineId);
+    const step = await db.pipelineStep.findFirst({
+      where: { id: stepId, pipelineId },
+    });
+    if (!step) throw new NotFoundError('PipelineStep', stepId);
+    res.json({ data: step });
+  },
+
   async streamEvents(req: Request, res: Response): Promise<void> {
     const id = req.params.id as string;
 

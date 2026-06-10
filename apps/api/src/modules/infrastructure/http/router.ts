@@ -139,6 +139,7 @@ export function createRouter(): Router {
   router.get('/pipelines/:id/events', pipelineController.streamEvents);
   router.get('/pipelines/:id', pipelineController.getById);
   router.get('/pipelines/:id/steps', pipelineController.getSteps);
+  router.get('/pipelines/:id/steps/:stepId', pipelineController.getStepById);
   router.post('/pipelines', validate(createPipelineSchema), pipelineController.create);
   router.post(
     '/pipelines/:id/status',
