@@ -72,6 +72,8 @@ interface Deployment {
 interface Pipeline {
   id: string;
   status: string;
+  startedAt: string | null;
+  completedAt: string | null;
 }
 
 interface PipelineStep {

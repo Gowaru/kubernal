@@ -30,6 +30,11 @@
 - Never assume your changes simply work, always test!
 - If the project does not have any testing tools, scripts, MCP tools, skills, etc. available for testing, ask the user whether testing should be skipped.
 
+## SKILLS / CAPABILITIES CHECK
+
+- **INCOMING REQUESTS:** For every single request received, you MUST immediately analyze if there is an available skill, tool, or MCP capability that matches the context or requirement before formulating a plan or response.
+- **SKILL UTILIZATION:** Prioritize executing specific skills over generic text generation or manual work whenever an applicable tool exists.
+
 ## SECRETS MANAGEMENT
 
 - **NEVER** commit real secrets, tokens, passwords, private keys, or cert material
@@ -51,4 +56,3 @@
   - The portal UI does NOT send this header (frontend cannot hold the secret); regeneration through the UI is intentionally disabled until proper SSO/RBAC lands (Phase 13.10+)
   - For CLI/automation: `curl -H "x-internal-api-key: $INTERNAL_API_KEY" ...`
   - Generate a key: `openssl rand -hex 32`
-

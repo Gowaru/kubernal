@@ -76,6 +76,7 @@ model Application {
 
   environments  Environment[]
   deployments   Deployment[]
+  webhookConfigs WebhookConfig[]
 }
 
 // ─── Environnement ──────────────────────────────────────────────────────────
@@ -196,4 +197,40 @@ model ObservabilityConfig {
   logRetentionDays Int    @default(30)
   tracingSampleRate Float @default(0.1)
   createdAt       DateTime @default(now())
+}
+
+// ─── Webhook Outbound ────────────────────────────────────────────────────────
+model WebhookConfig {
+  id            String   @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  name          String   @default("default")
+  url           String
+  secret        String?
+  events        String[] @default(["started", "success", "failure"])
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  deliveries WebhookDelivery[]
+
+  @@index([applicationId])
+}
+
+model WebhookDelivery {
+  id              String   @id @default(uuid())
+  webhookConfigId String
+  webhookConfig   WebhookConfig @relation(fields: [webhookConfigId], references: [id], onDelete: Cascade)
+  event           String
+  status          String   @default("pending") // pending | success | failed
+  requestBody     Json?
+  responseStatus  Int?
+  responseBody    String?  @db.Text
+  durationMs      Int?
+  errorMessage    String?  @db.Text
+  retryCount      Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  @@index([webhookConfigId])
+  @@index([status])
 }

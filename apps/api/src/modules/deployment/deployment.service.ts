@@ -2,6 +2,13 @@ import { InvalidTransitionError, NotFoundError } from '../../shared/errors.js';
 import { db } from '../../shared/database.js';
 import { deploymentRepository } from './deployment.repository.js';
 import { summarizeDiff, type DeploymentDiff } from '../../shared/git-diff.js';
+import { webhookOutboundService } from '../webhook-outbound/webhook-outbound.service.js';
+import type { Deployment, DeploymentVulnerability } from '@prisma/client';
+
+interface DeploymentWithRelations extends Deployment {
+  application: { id: string; name: string };
+  environment: { id: string; name: string; type: string; namespace: string };
+}
 
 const DEPLOYMENT_STATUS_FLOW: Record<string, string[]> = {
   pending: ['building', 'cancelled', 'failed'],
@@ -18,8 +25,7 @@ export function canTransition(from: string, to: string): boolean {
 }
 
 export const deploymentService = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async list(): Promise<any[]> {
+  async list(): Promise<Deployment[]> {
     return deploymentRepository.findAll();
   },
 
@@ -29,8 +35,7 @@ export const deploymentService = {
     return latest?.version ?? null;
   },
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async getById(id: string): Promise<any> {
+  async getById(id: string): Promise<Deployment> {
     const deployment = await deploymentRepository.findById(id);
     if (!deployment) throw new NotFoundError('Deployment', id);
     return deployment;
@@ -43,15 +48,12 @@ export const deploymentService = {
     commitSha: string;
     trigger?: string;
     status?: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }): Promise<any> {
+  }): Promise<Deployment> {
     return deploymentRepository.create(data);
   },
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async transitionStatus(id: string, newStatus: string): Promise<any> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const deployment: any = await deploymentRepository.findById(id);
+  async transitionStatus(id: string, newStatus: string): Promise<Deployment> {
+    const deployment = await deploymentRepository.findById(id);
     if (!deployment) throw new NotFoundError('Deployment', id);
 
     const current = deployment.status;
@@ -63,13 +65,36 @@ export const deploymentService = {
       ? new Date()
       : undefined;
 
-    return deploymentRepository.updateStatus(id, newStatus, completedAt);
+    const updated = await deploymentRepository.updateStatus(id, newStatus, completedAt);
+
+    const full = await db.deployment.findUnique({
+      where: { id },
+      include: { application: { select: { id: true, name: true } }, environment: { select: { id: true, name: true, type: true } } },
+    });
+
+    if (full) {
+      const eventMap: Record<string, 'started' | 'success' | 'failure' | 'rolled_back' | 'cancelled'> = {
+        healthy: 'success',
+        rolled_back: 'rolled_back',
+        failed: 'failure',
+        cancelled: 'cancelled',
+      };
+      webhookOutboundService.dispatch(eventMap[newStatus] ?? 'started', {
+        applicationId: full.application.id,
+        applicationName: full.application.name,
+        version: full.version,
+        environmentName: full.environment.name,
+        environmentType: full.environment.type,
+        commitSha: full.commitSha,
+        deploymentId: full.id,
+      }).catch(() => {});
+    }
+
+    return updated;
   },
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async approve(id: string, approvedById: string): Promise<any> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const deployment: any = await deploymentRepository.findById(id);
+  async approve(id: string, approvedById: string): Promise<Deployment> {
+    const deployment = await deploymentRepository.findById(id);
     if (!deployment) throw new NotFoundError('Deployment', id);
     if (deployment.status !== 'pending') {
       throw new InvalidTransitionError(deployment.status, 'deploying');
@@ -77,10 +102,8 @@ export const deploymentService = {
     return deploymentRepository.approve(id, approvedById);
   },
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async promote(id: string, targetEnvType: 'staging' | 'prod'): Promise<any> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const source: any = await deploymentRepository.findById(id);
+  async promote(id: string, targetEnvType: 'staging' | 'prod'): Promise<Deployment> {
+    const source = await deploymentRepository.findById(id);
     if (!source) throw new NotFoundError('Deployment', id);
     if (source.status !== 'healthy') {
       throw new InvalidTransitionError(source.status, 'promote');
@@ -103,16 +126,13 @@ export const deploymentService = {
     });
   },
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async recordViolations(id: string, violations: Record<string, unknown>[]): Promise<any> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const deployment: any = await deploymentRepository.findById(id);
+  async recordViolations(id: string, violations: Record<string, unknown>[]): Promise<Deployment> {
+    const deployment = await deploymentRepository.findById(id);
     if (!deployment) throw new NotFoundError('Deployment', id);
     return deploymentRepository.savePolicyViolations(id, violations);
   },
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async getVulnerabilities(id: string): Promise<any[]> {
+  async getVulnerabilities(id: string): Promise<DeploymentVulnerability[]> {
     return db.deploymentVulnerability.findMany({
       where: { deploymentId: id },
       orderBy: { detectedAt: 'desc' },
@@ -121,8 +141,8 @@ export const deploymentService = {
 
   async compare(fromId: string, toId: string): Promise<DeploymentDiff> {
     const [from, to] = await Promise.all([
-      this.getById(fromId),
-      this.getById(toId),
+      this.getById(fromId) as Promise<DeploymentWithRelations>,
+      this.getById(toId) as Promise<DeploymentWithRelations>,
     ]);
     if (from.applicationId !== to.applicationId) {
       throw new InvalidTransitionError(
@@ -143,7 +163,7 @@ export const deploymentService = {
         createdAt: from.createdAt,
         environmentId: from.environmentId,
         environmentType: from.environment.type,
-        violations: Array.isArray(from.policyViolations) ? from.policyViolations : undefined,
+        violations: Array.isArray(from.policyViolations) ? from.policyViolations as unknown[] : undefined,
       },
       {
         id: to.id,
@@ -157,7 +177,7 @@ export const deploymentService = {
         createdAt: to.createdAt,
         environmentId: to.environmentId,
         environmentType: to.environment.type,
-        violations: Array.isArray(to.policyViolations) ? to.policyViolations : undefined,
+        violations: Array.isArray(to.policyViolations) ? to.policyViolations as unknown[] : undefined,
       },
     );
   },

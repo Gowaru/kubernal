@@ -302,6 +302,35 @@ export interface K8sClusterContext {
 
 export type K8sServiceType = 'ClusterIP' | 'NodePort' | 'LoadBalancer' | 'ExternalName';
 
+// --- Webhook Outbound ---
+export type WebhookEvent = 'started' | 'success' | 'failure' | 'rolled_back' | 'cancelled' | 'approval_needed';
+
+export interface WebhookConfig {
+  id: string;
+  applicationId: string;
+  name: string;
+  url: string;
+  secret: string | null;
+  events: WebhookEvent[];
+  enabled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface WebhookDelivery {
+  id: string;
+  webhookConfigId: string;
+  event: string;
+  status: 'pending' | 'success' | 'failed';
+  requestBody: Record<string, unknown> | null;
+  responseStatus: number | null;
+  responseBody: string | null;
+  durationMs: number | null;
+  errorMessage: string | null;
+  retryCount: number;
+  createdAt: Date;
+}
+
 export interface K8sService {
   name: string;
   namespace: string;

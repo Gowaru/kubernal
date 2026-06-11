@@ -9,6 +9,7 @@ import { pipelineController } from '../../../modules/pipeline/pipeline.controlle
 import { policyController } from '../../../modules/policy/policy.controller.js';
 import { kubernetesController } from '../../../modules/kubernetes/kubernetes.controller.js';
 import { webhookController } from '../../../modules/webhook/webhook.controller.js';
+import { webhookOutboundController } from '../../../modules/webhook-outbound/webhook-outbound.controller.js';
 
 import { validate } from '../../../shared/middleware/validate.js';
 import { requireInternalApiKey } from '../../../shared/middleware/require-internal-api-key.js';
@@ -45,6 +46,7 @@ import {
   createPipelineFromTemplateSchema,
 } from '../../../modules/pipeline/pipeline.schema.js';
 import { createPolicySchema, updatePolicySchema } from '../../../modules/policy/policy.schema.js';
+import { createWebhookConfigSchema, updateWebhookConfigSchema } from '../../../modules/webhook-outbound/webhook-outbound.schema.js';
 
 export function createRouter(): Router {
   const router = Router();
@@ -190,6 +192,15 @@ export function createRouter(): Router {
     webhookController.regenerateSecret,
   );
   router.post('/webhooks/:appId/:provider', webhookController.ingest);
+
+  // ─── Webhooks Outbound ───────────────────────────────────────────────
+  router.get('/applications/:applicationId/webhooks-outbound', webhookOutboundController.listConfigs);
+  router.get('/webhooks-outbound/:id', webhookOutboundController.getConfig);
+  router.post('/webhooks-outbound', validate(createWebhookConfigSchema), webhookOutboundController.createConfig);
+  router.patch('/webhooks-outbound/:id', validate(updateWebhookConfigSchema), webhookOutboundController.updateConfig);
+  router.delete('/webhooks-outbound/:id', webhookOutboundController.deleteConfig);
+  router.post('/webhooks-outbound/:id/test', webhookOutboundController.testConfig);
+  router.get('/webhooks-outbound/:configId/deliveries', webhookOutboundController.listDeliveries);
 
   return router;
 }

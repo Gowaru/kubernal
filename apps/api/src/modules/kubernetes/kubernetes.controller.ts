@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import type { Deployment } from '@prisma/client';
 import { kubernetesService } from './kubernetes.service.js';
 import { deploymentService } from '../deployment/deployment.service.js';
 import { k8sResourceName } from '../../shared/k8s-utils.js';
@@ -107,7 +108,10 @@ export const kubernetesController = {
   async getDeploymentAccess(req: Request, res: Response): Promise<void> {
     const params = deploymentAccessParamsSchema.parse(req.params);
     const query = deploymentAccessQuerySchema.parse(req.query);
-    const deployment = await deploymentService.getById(params.id);
+    const deployment = await deploymentService.getById(params.id) as Deployment & {
+      application: { name: string };
+      environment: { type: string; namespace: string };
+    };
     const resourceName = k8sResourceName({
       application: deployment.application,
       environment: deployment.environment,
