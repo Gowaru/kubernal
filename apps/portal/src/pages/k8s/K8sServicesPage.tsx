@@ -5,6 +5,8 @@ import { K8sContextBar } from '@/components/k8s/K8sContextBar';
 import { useK8sServices } from '@/hooks/useK8sServices';
 import { MOCK_CLUSTER } from '@/mocks/k8s-data';
 import { cn } from '@/lib/utils';
+import { usePagination } from '@/hooks/usePagination';
+import { PaginationBar } from '@/components/ui/pagination-bar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -81,6 +83,8 @@ export default function K8sServicesPage(): JSX.Element {
     });
   }, [services, search, namespaceFilter]);
 
+  const svcPag = usePagination(filtered);
+
   const stats = useMemo(() => {
     const lb = services.filter((s) => s.type === 'LoadBalancer').length;
     const np = services.filter((s) => s.type === 'NodePort').length;
@@ -156,6 +160,7 @@ export default function K8sServicesPage(): JSX.Element {
               <p className="text-muted-foreground text-sm">Aucun service ne correspond à vos critères</p>
             </div>
           ) : (
+            <>
             <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -170,7 +175,7 @@ export default function K8sServicesPage(): JSX.Element {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((svc) => (
+                {svcPag.paginatedData.map((svc) => (
                   <TableRow key={`${svc.namespace}/${svc.name}`}>
                     <TableCell>
                       <div>
@@ -228,6 +233,14 @@ export default function K8sServicesPage(): JSX.Element {
               </TableBody>
             </Table>
             </div>
+            <div className="border-t border-border px-4 py-2">
+              <PaginationBar
+                pagination={svcPag}
+                onPageChange={svcPag.setPage}
+                onPageSizeChange={svcPag.setPageSize}
+              />
+            </div>
+            </>
           )}
         </CardContent>
       </Card>

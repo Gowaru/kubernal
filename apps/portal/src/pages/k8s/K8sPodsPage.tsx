@@ -5,6 +5,8 @@ import { K8sContextBar } from '@/components/k8s/K8sContextBar';
 import { PodTooltip } from '@/components/k8s/PodTooltip';
 import { PodLogDrawer } from '@/components/k8s/PodLogDrawer';
 import { useAllK8sPods } from '@/hooks/useAllK8sPods';
+import { usePagination } from '@/hooks/usePagination';
+import { PaginationBar } from '@/components/ui/pagination-bar';
 import { MOCK_CLUSTER } from '@/mocks/k8s-data';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,6 +80,8 @@ export default function K8sPodsPage(): JSX.Element {
       return matchNs && matchSearch;
     });
   }, [pods, search, namespaceFilter]);
+
+  const podsPag = usePagination(filtered);
 
   const stats = useMemo(() => {
     const running = pods.filter((p) => p.status === 'Running').length;
@@ -154,6 +158,7 @@ export default function K8sPodsPage(): JSX.Element {
               <p className="text-muted-foreground text-sm">Aucun pod ne correspond à vos critères</p>
             </div>
           ) : (
+            <>
             <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -167,7 +172,7 @@ export default function K8sPodsPage(): JSX.Element {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((pod) => (
+                {podsPag.paginatedData.map((pod) => (
                   <PodTooltip key={pod.id} pod={pod}>
                     <TableRow
                       className="cursor-pointer"
@@ -208,6 +213,14 @@ export default function K8sPodsPage(): JSX.Element {
               </TableBody>
             </Table>
             </div>
+            <div className="border-t border-border px-4 py-2">
+              <PaginationBar
+                pagination={podsPag}
+                onPageChange={podsPag.setPage}
+                onPageSizeChange={podsPag.setPageSize}
+              />
+            </div>
+            </>
           )}
         </CardContent>
       </Card>

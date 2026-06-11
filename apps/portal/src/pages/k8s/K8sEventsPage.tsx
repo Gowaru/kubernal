@@ -6,6 +6,8 @@ import { K8sEventFeed } from '@/components/k8s/K8sEventFeed';
 import { useK8sEvents } from '@/hooks/useK8sEvents';
 import { MOCK_CLUSTER } from '@/mocks/k8s-data';
 import { cn } from '@/lib/utils';
+import { usePagination } from '@/hooks/usePagination';
+import { PaginationBar } from '@/components/ui/pagination-bar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -60,6 +62,17 @@ export default function K8sEventsPage(): JSX.Element {
       return matchType && matchSearch;
     });
   }, [events, search, typeFilter]);
+
+  const sorted = useMemo(
+    () => [...filtered].sort(
+      (a, b) =>
+        new Date(b.lastTimestamp).getTime() -
+        new Date(a.lastTimestamp).getTime(),
+    ),
+    [filtered],
+  );
+
+  const eventsPag = usePagination(sorted);
 
   const stats = useMemo(() => {
     const warnings = events.filter((e) => e.type === 'Warning').length;
@@ -133,6 +146,7 @@ export default function K8sEventsPage(): JSX.Element {
                 <p className="text-muted-foreground text-sm">Aucun événement ne correspond à vos critères</p>
               </div>
             ) : (
+              <>
               <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -147,13 +161,7 @@ export default function K8sEventsPage(): JSX.Element {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered
-                    .sort(
-                      (a, b) =>
-                        new Date(b.lastTimestamp).getTime() -
-                        new Date(a.lastTimestamp).getTime(),
-                    )
-                    .map((event: K8sEvent) => (
+                  {eventsPag.paginatedData.map((event: K8sEvent) => (
                       <TableRow key={event.id}>
                         <TableCell>
                           <Badge
@@ -193,6 +201,14 @@ export default function K8sEventsPage(): JSX.Element {
                 </TableBody>
               </Table>
               </div>
+              <div className="border-t border-border px-4 py-2">
+                <PaginationBar
+                  pagination={eventsPag}
+                  onPageChange={eventsPag.setPage}
+                  onPageSizeChange={eventsPag.setPageSize}
+                />
+              </div>
+              </>
             )}
           </CardContent>
         </Card>

@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { usePagination } from '@/hooks/usePagination';
+import { PaginationBar } from '@/components/ui/pagination-bar';
 import {
   Table,
   TableBody,
@@ -58,6 +60,15 @@ export default function AppDetail(): JSX.Element {
     if (!allDeployments || !id) return [];
     return allDeployments.filter((d) => d.applicationId === id);
   }, [allDeployments, id]);
+
+  const sortedDeployments = useMemo(
+    () => [...appDeployments].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    ),
+    [appDeployments],
+  );
+
+  const depPag = usePagination(sortedDeployments);
 
   const [tab, setTab] = useState<'recent' | 'history'>('recent');
 
@@ -183,6 +194,7 @@ export default function AppDetail(): JSX.Element {
         </CardHeader>
         <CardContent className="p-0">
           {tab === 'recent' && (
+            <>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -203,47 +215,49 @@ export default function AppDetail(): JSX.Element {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    appDeployments
-                      .sort(
-                        (a, b) =>
-                          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-                      )
-                      .slice(0, 10)
-                      .map((dep) => (
-                        <TableRow key={dep.id}>
-                          <TableCell>
-                            <span className="font-mono text-sm">{dep.version}</span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm text-muted-foreground">{getEnvSlug(dep) ?? dep.environmentId}</span>
-                          </TableCell>
-                          <TableCell>
-                            <StatusBadge status={dep.status} />
-                          </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                            <DeploymentCommitLink
-                              repositoryUrl={application.repositoryUrl}
-                              commitSha={dep.commitSha}
-                              short
-                            />
-                          </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                            <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                              <Timer className="h-3.5 w-3.5" />
-                              {formatDuration(dep.startedAt, dep.completedAt)}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm text-muted-foreground">
-                              {formatRelativeTime(dep.createdAt)}
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                    depPag.paginatedData.map((dep) => (
+                      <TableRow key={dep.id}>
+                        <TableCell>
+                          <span className="font-mono text-sm">{dep.version}</span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-muted-foreground">{getEnvSlug(dep) ?? dep.environmentId}</span>
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={dep.status} />
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <DeploymentCommitLink
+                            repositoryUrl={application.repositoryUrl}
+                            commitSha={dep.commitSha}
+                            short
+                          />
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <Timer className="h-3.5 w-3.5" />
+                            {formatDuration(dep.startedAt, dep.completedAt)}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-muted-foreground">
+                            {formatRelativeTime(dep.createdAt)}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))
                   )}
                 </TableBody>
               </Table>
             </div>
+            <div className="border-t border-border px-4 py-2">
+              <PaginationBar
+                pagination={depPag}
+                onPageChange={depPag.setPage}
+                onPageSizeChange={depPag.setPageSize}
+              />
+            </div>
+            </>
           )}
           {tab === 'history' && (
             <div className="p-4 pt-0">
