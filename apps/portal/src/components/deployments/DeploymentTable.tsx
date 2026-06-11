@@ -20,11 +20,13 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  getPaginationRowModel,
   createColumnHelper,
   flexRender,
 } from '@tanstack/react-table';
 import { formatDate } from '@/lib/utils';
 import { StatusBadge } from './StatusBadge';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import type { Deployment } from '@kubernal/shared-types';
 
 const triggerLabels: Record<string, string> = {
@@ -184,11 +186,12 @@ export function DeploymentTable(): JSX.Element {
   const table = useReactTable({
     data: enrichedDeployments,
     columns,
-    state: { globalFilter: search },
+    state: { globalFilter: search, pagination: { pageIndex: 0, pageSize: 10 } },
     onGlobalFilterChange: setSearch,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   });
 
   useEffect(() => {
@@ -283,6 +286,8 @@ export function DeploymentTable(): JSX.Element {
           </TableBody>
         </Table>
       </div>
+
+      <DataTablePagination table={table} />
     </div>
   );
 }

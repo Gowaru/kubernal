@@ -19,11 +19,13 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  getPaginationRowModel,
   createColumnHelper,
   flexRender,
 } from '@tanstack/react-table';
 import { formatDate } from '@/lib/utils';
 import { getApplicationStatus } from '@/lib/status-config';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import type { Application } from '@kubernal/shared-types';
 
 export function ApplicationTable(): JSX.Element {
@@ -76,11 +78,12 @@ export function ApplicationTable(): JSX.Element {
   const table = useReactTable({
     data: applications ?? [],
     columns,
-    state: { globalFilter: search },
+    state: { globalFilter: search, pagination: { pageIndex: 0, pageSize: 10 } },
     onGlobalFilterChange: setSearch,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   });
 
   useEffect(() => {
@@ -147,6 +150,8 @@ export function ApplicationTable(): JSX.Element {
           </TableBody>
         </Table>
       </div>
+
+      <DataTablePagination table={table} />
     </div>
   );
 }
