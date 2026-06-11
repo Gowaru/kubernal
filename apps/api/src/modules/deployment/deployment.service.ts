@@ -23,6 +23,12 @@ export const deploymentService = {
     return deploymentRepository.findAll();
   },
 
+  async getLatestVersion(applicationId?: string): Promise<string | null> {
+    if (!applicationId) return null;
+    const latest = await deploymentRepository.findLatestByApplication(applicationId);
+    return latest?.version ?? null;
+  },
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getById(id: string): Promise<any> {
     const deployment = await deploymentRepository.findById(id);

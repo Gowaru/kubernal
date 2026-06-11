@@ -31,6 +31,14 @@ export const deploymentRepository = {
     });
   },
 
+  findLatestByApplication(applicationId: string): Promise<{ version: string } | null> {
+    return db.deployment.findFirst({
+      where: { applicationId },
+      orderBy: { createdAt: 'desc' },
+      select: { version: true },
+    });
+  },
+
   create(data: {
     applicationId: string;
     environmentId: string;

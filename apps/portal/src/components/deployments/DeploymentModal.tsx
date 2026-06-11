@@ -20,8 +20,9 @@ import {
 import { useApplications } from '@/hooks/useApplications';
 import { useCreateDeployment } from '@/hooks/useDeployments';
 import { useEnvironments } from '@/hooks/useEnvironments';
+import { useNextVersion, type BumpType } from '@/hooks/useNextVersion';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Rocket, CheckCircle2 } from 'lucide-react';
+import { Loader2, Rocket, CheckCircle2, GitBranch, Settings2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Application } from '@kubernal/shared-types';
 
@@ -30,6 +31,13 @@ const postDeployOptions = [
   { id: 'autoscaling', label: 'Activer l\'auto-scaling' },
   { id: 'notify', label: 'Notification Slack' },
   { id: 'healthcheck', label: 'Health check post-déploiement' },
+];
+
+const BUMP_OPTIONS: Array<{ value: BumpType; label: string; description: string }> = [
+  { value: 'auto', label: 'Auto (patch)', description: 'Incrémente le PATCH automatiquement' },
+  { value: 'patch', label: 'Patch', description: 'Correction de bug (1.2.3 → 1.2.4)' },
+  { value: 'minor', label: 'Minor', description: 'Nouvelle fonctionnalité (1.2.3 → 1.3.0)' },
+  { value: 'major', label: 'Major', description: 'Changement incompatible (1.2.3 → 2.0.0)' },
 ];
 
 interface DeploymentModalProps {
@@ -60,10 +68,30 @@ export function DeploymentModal({
 
   const [appId, setAppId] = useState(preselectedApp?.id ?? '');
   const [version, setVersion] = useState('');
+  const [bump, setBump] = useState<BumpType>('auto');
+  const [commitSha, setCommitSha] = useState('');
+  const [branch, setBranch] = useState('main');
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [environmentId, setEnvironmentId] = useState('');
   const [environmentSlug, setEnvironmentSlug] = useState('');
   const [notes, setNotes] = useState('');
   const [options, setOptions] = useState<string[]>([]);
+
+  const { data: nextVersion } = useNextVersion(
+    appId || undefined,
+    {
+      bump,
+      currentVersion: version.trim() || undefined,
+      commitSha: commitSha.trim() || undefined,
+      branch: branch.trim() || undefined,
+    },
+  );
+
+  useEffect(() => {
+    if (nextVersion && version.trim() === '') {
+      setVersion(nextVersion.version);
+    }
+  }, [nextVersion, version]);
 
   const appEnvironments = useMemo(() => {
     return (allEnvironments ?? []).filter((env) => env.applicationId === appId);
@@ -111,7 +139,7 @@ export function DeploymentModal({
         applicationId: appId,
         environmentId,
         version,
-        commitSha: `sha-${version}-${Date.now().toString(36)}`,
+        commitSha: commitSha.trim() || `sha-${version.replace(/[^a-z0-9]/gi, '')}-${Date.now().toString(36)}`,
       },
       {
         onSuccess: () => {
@@ -187,13 +215,90 @@ export function DeploymentModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="version">Version (tag git / image Docker)</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="version">Version</Label>
+                  {nextVersion && (
+                    <button
+                      type="button"
+                      className="flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      onClick={() => setVersion(nextVersion.version)}
+                      title="Cliquer pour appliquer cette version"
+                    >
+                      <Sparkles className="h-3 w-3 text-status-info" />
+                      <span>
+                        {nextVersion.isPrerelease ? 'Prerelease · ' : ''}
+                        next: <span className="font-mono text-foreground/80">{nextVersion.display}</span>
+                      </span>
+                    </button>
+                  )}
+                </div>
                 <Input
                   id="version"
-                  placeholder="v1.2.3 ou mon-app:latest"
+                  placeholder="1.2.3 ou mon-app:latest"
                   value={version}
                   onChange={(e) => setVersion(e.target.value)}
+                  className="font-mono"
                 />
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Select value={bump} onValueChange={(v) => setBump(v as BumpType)}>
+                    <SelectTrigger className="h-7 text-xs flex-1 min-w-[120px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BUMP_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium">{opt.label}</span>
+                            <span className="text-[10px] text-muted-foreground">{opt.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                  >
+                    <Settings2 className="h-3 w-3 mr-1" />
+                    {showAdvanced ? 'Masquer' : 'Avancé'}
+                  </Button>
+                </div>
+                {showAdvanced && (
+                  <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2 animate-in fade-in slide-in-from-top-1">
+                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+                      <GitBranch className="h-3 w-3" />
+                      Métadonnées Git (GitOps)
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="branch" className="text-[10px]">Branche</Label>
+                        <Input
+                          id="branch"
+                          placeholder="main"
+                          value={branch}
+                          onChange={(e) => setBranch(e.target.value)}
+                          className="h-7 text-xs font-mono"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="sha" className="text-[10px]">Commit SHA</Label>
+                        <Input
+                          id="sha"
+                          placeholder="b4f2a1c"
+                          value={commitSha}
+                          onChange={(e) => setCommitSha(e.target.value)}
+                          className="h-7 text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      Sera injecté en build metadata : <span className="font-mono">+sha.xxxxxxx.branch.main</span>
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">

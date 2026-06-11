@@ -32,6 +32,7 @@ import {
   approveDeploymentSchema,
   recordViolationsSchema,
   promoteDeploymentSchema,
+  bumpVersionSchema,
 } from '../../../modules/deployment/deployment.schema.js';
 import {
   scaleDeploymentSchema,
@@ -103,6 +104,7 @@ export function createRouter(): Router {
   // ─── Deployments ────────────────────────────────────────────────────────
   router.get('/deployments', deploymentController.list);
   router.get('/deployments/compare', deploymentController.compare);
+  router.post('/deployments/next-version', validate(bumpVersionSchema), deploymentController.previewNextVersion);
   router.get('/deployments/:id', deploymentController.getById);
   router.post('/deployments', validate(createDeploymentSchema), deploymentController.create);
   router.post(

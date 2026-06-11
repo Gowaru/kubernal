@@ -2,6 +2,8 @@ import type { Request, Response } from 'express';
 import { deploymentService } from './deployment.service.js';
 import { triggerReconcile } from './deployment.worker.js';
 import { compareDeploymentsQuerySchema } from '../kubernetes/kubernetes.schema.js';
+import { nextVersion, type BumpType } from './versioning.service.js';
+import { bumpVersionSchema } from './deployment.schema.js';
 
 export const deploymentController = {
   async list(_req: Request, res: Response): Promise<void> {
@@ -64,5 +66,23 @@ export const deploymentController = {
     const { from, to } = compareDeploymentsQuerySchema.parse(req.query);
     const diff = await deploymentService.compare(from, to);
     res.json({ data: diff });
+  },
+
+  async previewNextVersion(req: Request, res: Response): Promise<void> {
+    const params = bumpVersionSchema.parse(req.body ?? {});
+    let currentVersion: string | undefined;
+    if (params.currentVersion) {
+      currentVersion = params.currentVersion;
+    } else {
+      const latest = await deploymentService.getLatestVersion();
+      currentVersion = latest ?? undefined;
+    }
+    const result = nextVersion({
+      bump: params.bump as BumpType,
+      currentVersion,
+      commitSha: params.commitSha,
+      branch: params.branch,
+    });
+    res.json({ data: result });
   },
 };

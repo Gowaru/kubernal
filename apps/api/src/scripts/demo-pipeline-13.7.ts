@@ -339,7 +339,7 @@ async function main(): Promise<void> {
     const deployment = await findOrCreateDeployment({
       applicationId: app.id,
       environmentId: env.id,
-      version: 'v13.7.0',
+      version: `0.1.${Date.now() % 100}+sha.${commitSha.replace(/[^a-f0-9]/gi, '').slice(0, 7)}.branch.main`,
       commitSha,
     });
     return { template, app, env, deployment };
