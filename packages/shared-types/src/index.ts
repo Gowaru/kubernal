@@ -96,6 +96,7 @@ export type DeploymentTrigger = 'manual' | 'git_push' | 'scheduled' | 'rollback'
 export interface Artifact {
   name: string;
   size: string;
+  url?: string;
 }
 
 export interface Deployment {
@@ -201,7 +202,7 @@ export interface ApiError {
 export type ApiResult<T> = { success: true; data: T } | { success: false; error: ApiError };
 
 // --- K8s & Infrastructure ---
-export type K8sPodPhase = 'Running' | 'Pending' | 'Succeeded' | 'Failed' | 'CrashLoopBackOff' | 'Unknown';
+export type K8sPodPhase = 'Running' | 'Pending' | 'Succeeded' | 'Failed' | 'CrashLoopBackOff' | 'Terminating' | 'Unknown';
 
 export interface K8sContainerStatus {
   name: string;

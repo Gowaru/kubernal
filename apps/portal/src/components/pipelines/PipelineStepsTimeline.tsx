@@ -1,4 +1,5 @@
 import { useState, type JSX } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Circle,
   Loader2,
@@ -18,6 +19,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { usePipeline, usePipelineSteps } from '@/hooks/usePipelines';
 import { usePipelineStep } from '@/hooks/usePipelineStep';
+import { StepOutputView } from '@/components/pipelines/StepOutputView';
 import { formatRelativeTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
@@ -146,13 +148,17 @@ function StepLogPanel({ pipelineId, step }: { pipelineId: string; step: StepDef 
 
       {step.output && Object.keys(step.output).length > 0 && (
         <div>
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
             <Terminal className="h-3 w-3" />
             Sortie
           </div>
-          <pre className="mt-1 overflow-x-auto rounded-md bg-muted/60 border border-border px-3 py-2 text-[11px] font-mono leading-relaxed text-foreground/90">
-            {JSON.stringify(step.output, null, 2)}
-          </pre>
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+          >
+            <StepOutputView action={step.action} output={step.output} />
+          </motion.div>
         </div>
       )}
 
@@ -198,7 +204,12 @@ function StepTile({
   const criticalCount = isScan ? (step.output?.criticalCount ?? 0) : 0;
 
   return (
-    <div className="flex flex-col items-center min-w-0 flex-1">
+    <motion.div
+      className="flex flex-col items-center min-w-0 flex-1"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+    >
       <button
         type="button"
         onClick={onSelect}
@@ -210,15 +221,34 @@ function StepTile({
         aria-expanded={isSelected}
       >
         <div className="relative">
-          <div
+          <motion.div
             className={cn(
               'flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all',
               ring,
-              isRunning && 'animate-pulse',
             )}
+            animate={
+              isRunning
+                ? { scale: [0.95, 1.05, 0.95] }
+                : { scale: 1 }
+            }
+            transition={
+              isRunning
+                ? { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }
+                : { duration: 0.2 }
+            }
           >
-            <Icon className={cn('h-4 w-4', tone, isRunning && 'animate-spin')} />
-          </div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={step.status}
+                initial={{ scale: 0.4, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.4, opacity: 0 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+              >
+                <Icon className={cn('h-4 w-4', tone, isRunning && 'animate-spin')} />
+              </motion.div>
+            </AnimatePresence>
+          </motion.div>
           {ActionIcon && step.status === 'success' && (
             <ActionIcon className="h-3 w-3 absolute -bottom-0.5 -right-0.5 p-0.5 rounded-full bg-status-success text-status-success-foreground" />
           )}
@@ -258,14 +288,18 @@ function StepTile({
         )}
       </button>
       {!isLast && (
-        <div
+        <motion.div
           className={cn(
-            'h-0.5 w-full mt-1 -mb-1 transition-colors',
+            'h-0.5 w-full mt-1 -mb-1',
             step.status === 'success' ? 'bg-status-success/40' : 'bg-border',
           )}
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: step.status === 'success' ? 1 : 0.3 }}
+          style={{ originX: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
         />
       )}
-    </div>
+    </motion.div>
   );
 }
 

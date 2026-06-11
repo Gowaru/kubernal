@@ -19,6 +19,7 @@ const STATUS_LABELS: Record<K8sPodPhase, string> = {
   Failed: 'Échoué',
   CrashLoopBackOff: 'CrashLoopBackOff',
   Succeeded: 'Réussi',
+  Terminating: 'Terminé',
   Unknown: 'Inconnu',
 };
 
@@ -28,6 +29,7 @@ const STATUS_PILLS: Record<K8sPodPhase, string> = {
   Failed: 'bg-k8s-failed/20 text-k8s-failed',
   CrashLoopBackOff: 'bg-k8s-failed/20 text-k8s-failed',
   Succeeded: 'bg-k8s-succeeded/20 text-k8s-succeeded',
+  Terminating: 'bg-k8s-terminating/20 text-k8s-terminating',
   Unknown: 'bg-k8s-unknown/20 text-k8s-unknown',
 };
 

@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect, type JSX } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowUp, ExternalLink, GitBranch, User, Calendar, Timer, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowUp, GitBranch, User, Calendar, Timer, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +23,7 @@ import { CveDrawer } from '@/components/pipelines/CveDrawer';
 import { K8sContextBar } from '@/components/k8s/K8sContextBar';
 import { ArgoSyncBadge } from '@/components/k8s/ArgoSyncBadge';
 import { InfrastructureClaims } from '@/components/k8s/InfrastructureClaims';
+import { ArtifactList } from '@/components/deployments/ArtifactList';
 import { PodGrid } from '@/components/k8s/PodGrid';
 import { ResourceGauge } from '@/components/k8s/ResourceGauge';
 import { ScaleControl } from '@/components/k8s/ScaleControl';
@@ -381,16 +382,8 @@ export default function DeploymentDetail(): JSX.Element {
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Artefacts</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {deployment.artifacts.map((artifact, i) => (
-              <div key={i} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
-                <span className="text-sm font-mono truncate">{artifact.name}</span>
-                <span className="text-xs text-muted-foreground shrink-0">{artifact.size}</span>
-                <Button variant="ghost" size="sm" className="h-7 shrink-0">
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ))}
+          <CardContent className="pt-0">
+            <ArtifactList artifacts={deployment.artifacts} />
           </CardContent>
         </Card>
       )}
