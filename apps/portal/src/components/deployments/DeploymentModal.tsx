@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -21,23 +20,32 @@ import { useCreateDeployment } from '@/hooks/useDeployments';
 import { useEnvironments } from '@/hooks/useEnvironments';
 import { useNextVersion, type BumpType } from '@/hooks/useNextVersion';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Rocket, CheckCircle2, Sparkles } from 'lucide-react';
+import { Loader2, Rocket, CheckCircle2, Sparkles, Box, Globe, GitCommit, Puzzle } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Application } from '@kubernal/shared-types';
 
 const postDeployOptions = [
   { id: 'tests', label: 'Exécuter les tests' },
-  { id: 'autoscaling', label: 'Activer l\'auto-scaling' },
+  { id: 'autoscaling', label: "Activer l'auto-scaling" },
   { id: 'notify', label: 'Notification Slack' },
   { id: 'healthcheck', label: 'Health check post-déploiement' },
 ];
 
-const BUMP_OPTIONS: Array<{ value: BumpType; label: string; description: string }> = [
-  { value: 'auto', label: 'Auto (patch)', description: 'Incrémente le PATCH automatiquement' },
-  { value: 'patch', label: 'Patch', description: 'Correction de bug (1.2.3 → 1.2.4)' },
-  { value: 'minor', label: 'Minor', description: 'Nouvelle fonctionnalité (1.2.3 → 1.3.0)' },
-  { value: 'major', label: 'Major', description: 'Changement incompatible (1.2.3 → 2.0.0)' },
+const BUMP_OPTIONS: Array<{ value: BumpType; label: string }> = [
+  { value: 'auto', label: 'Auto (patch)' },
+  { value: 'patch', label: 'Patch' },
+  { value: 'minor', label: 'Minor' },
+  { value: 'major', label: 'Major' },
 ];
+
+function SectionHeading({ icon: Icon, label }: { icon: typeof Box; label: string }): JSX.Element {
+  return (
+    <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+      <Icon className="h-3 w-3" />
+      {label}
+    </div>
+  );
+}
 
 interface DeploymentModalProps {
   open: boolean;
@@ -174,15 +182,22 @@ export function DeploymentModal({
         {step === 'form' && (
           <>
             <DialogHeader>
-              <DialogTitle>Nouveau déploiement</DialogTitle>
-              <DialogDescription>
-                Configurez les paramètres de votre déploiement.
-              </DialogDescription>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20">
+                  <Rocket className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <DialogTitle>Nouveau déploiement</DialogTitle>
+                  <DialogDescription>
+                    Configurez les paramètres avant de lancer le déploiement
+                  </DialogDescription>
+                </div>
+              </div>
             </DialogHeader>
 
-            <div className="space-y-4 py-2">
+            <div className="space-y-5 py-1">
               <div className="space-y-2">
-                <Label htmlFor="app">Application</Label>
+                <SectionHeading icon={Box} label="Application" />
                 <Select value={appId} onValueChange={setAppId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner une application" />
@@ -198,41 +213,46 @@ export function DeploymentModal({
               </div>
 
               <div className="space-y-2">
-                <Label>Version</Label>
-                <div className="flex items-center gap-3 rounded-md border border-border bg-muted/30 px-3 py-2.5">
-                  <Sparkles className="h-4 w-4 shrink-0 text-status-info" />
-                  <span className="font-mono text-sm text-foreground/90">
-                    {version || (
-                      <span className="italic text-muted-foreground">
-                        {appId ? 'Calcul en cours…' : 'Sélectionnez une application'}
-                      </span>
-                    )}
-                  </span>
-                  {nextVersion?.isPrerelease && (
-                    <span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-500">
-                      prerelease
-                    </span>
-                  )}
-                </div>
-                <Select value={bump} onValueChange={(v) => setBump(v as BumpType)}>
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BUMP_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        <div className="flex flex-col">
-                          <span className="text-xs font-medium">{opt.label}</span>
-                          <span className="text-[10px] text-muted-foreground">{opt.description}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SectionHeading icon={GitCommit} label="Version" />
+                {appId ? (
+                  <div className="rounded-lg border border-border bg-muted/20 px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Sparkles className="h-4 w-4 shrink-0 text-status-info" />
+                        <span className="truncate font-mono text-sm text-foreground tracking-tight">
+                          {nextVersion ? version : 'Calcul en cours…'}
+                        </span>
+                        {nextVersion?.isPrerelease && (
+                          <span className="shrink-0 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
+                            prerelease
+                          </span>
+                        )}
+                      </div>
+                      <Select value={bump} onValueChange={(v) => setBump(v as BumpType)}>
+                        <SelectTrigger className="h-7 w-[130px] shrink-0 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent align="end">
+                          {BUMP_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              <span className="text-xs">{opt.label}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border/60 px-4 py-3">
+                    <p className="text-xs text-muted-foreground/60">
+                      Sélectionnez une application pour calculer la prochaine version
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="env">Environnement</Label>
+                <SectionHeading icon={Globe} label="Destination" />
                 <Select
                   value={environmentId}
                   onValueChange={(value) => {
@@ -262,23 +282,12 @@ export function DeploymentModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes">Notes de release</Label>
-                <textarea
-                  id="notes"
-                  className="flex min-h-20 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                  placeholder="Décrivez les changements de cette version..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Actions post-déploiement</Label>
-                <div className="grid grid-cols-2 gap-2">
+                <SectionHeading icon={Puzzle} label="Post-deploy" />
+                <div className="grid grid-cols-2 gap-1.5">
                   {postDeployOptions.map((opt) => (
                     <label
                       key={opt.id}
-                      className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm cursor-pointer hover:bg-accent transition-colors"
+                      className="flex items-center gap-2 rounded-md border border-border/60 px-2.5 py-2 text-xs cursor-pointer hover:bg-accent transition-colors has-[[data-state=checked]]:border-primary/40 has-[[data-state=checked]]:bg-primary/5"
                     >
                       <Checkbox
                         checked={options.includes(opt.id)}
@@ -295,14 +304,24 @@ export function DeploymentModal({
                   ))}
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <SectionHeading icon={Puzzle} label="Notes" />
+                <textarea
+                  className="flex min-h-[72px] w-full rounded-md border border-border/60 bg-transparent px-3 py-2 text-xs shadow-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                  placeholder="Décrivez les changements de cette version…"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </div>
             </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={handleClose}>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" size="sm" onClick={handleClose}>
                 Annuler
               </Button>
-              <Button onClick={handleSubmit} disabled={!isValid}>
-                <Rocket className="mr-2 h-4 w-4" />
+              <Button size="sm" onClick={handleSubmit} disabled={!isValid}>
+                <Rocket className="mr-1.5 h-3.5 w-3.5" />
                 Lancer le déploiement
               </Button>
             </DialogFooter>
@@ -314,7 +333,7 @@ export function DeploymentModal({
             <DialogHeader>
               <DialogTitle>Déploiement en cours</DialogTitle>
               <DialogDescription>
-                Veuillez patienter pendant le déploiement...
+                Veuillez patienter pendant le déploiement…
               </DialogDescription>
             </DialogHeader>
 
@@ -333,10 +352,10 @@ export function DeploymentModal({
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                {progress < 40 && 'Préparation de l\'environnement...'}
-                {progress >= 40 && progress < 70 && 'Déploiement des artefacts...'}
-                {progress >= 70 && progress < 90 && 'Exécution des health checks...'}
-                {progress >= 90 && 'Finalisation...'}
+                {progress < 40 && "Préparation de l'environnement…"}
+                {progress >= 40 && progress < 70 && 'Déploiement des artefacts…'}
+                {progress >= 70 && progress < 90 && 'Exécution des health checks…'}
+                {progress >= 90 && 'Finalisation…'}
               </p>
             </div>
           </>
@@ -345,20 +364,23 @@ export function DeploymentModal({
         {step === 'success' && (
           <>
             <DialogHeader>
-              <DialogTitle>Déploiement réussi !</DialogTitle>
+              <DialogTitle>Déploiement réussi</DialogTitle>
               <DialogDescription>
                 Le déploiement a été effectué avec succès.
               </DialogDescription>
             </DialogHeader>
 
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
-              <CheckCircle2 className="h-16 w-16 text-status-success" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-status-success/10">
+                <CheckCircle2 className="h-8 w-8 text-status-success" />
+              </div>
               <p className="text-sm text-muted-foreground text-center max-w-xs">
-                L'application a été déployée sur l'environnement{' '}
+                L'application a été déployée sur{' '}
                 <strong className="text-foreground">
                   {appEnvironments.find((e) => e.id === environmentId)?.name ?? environmentSlug}
                 </strong>{' '}
-                avec la version <strong className="text-foreground">{version}</strong>.
+                avec la version{' '}
+                <strong className="font-mono text-foreground">{version}</strong>.
               </p>
             </div>
 
