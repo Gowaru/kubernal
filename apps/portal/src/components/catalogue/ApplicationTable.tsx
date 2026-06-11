@@ -78,7 +78,7 @@ export function ApplicationTable(): JSX.Element {
   const table = useReactTable({
     data: applications ?? [],
     columns,
-    state: { globalFilter: search, pagination: { pageIndex: 0, pageSize: 10 } },
+    state: { globalFilter: search },
     onGlobalFilterChange: setSearch,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
