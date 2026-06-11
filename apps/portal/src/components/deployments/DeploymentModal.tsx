@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -22,7 +21,7 @@ import { useCreateDeployment } from '@/hooks/useDeployments';
 import { useEnvironments } from '@/hooks/useEnvironments';
 import { useNextVersion, type BumpType } from '@/hooks/useNextVersion';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Rocket, CheckCircle2, GitBranch, Settings2, Sparkles } from 'lucide-react';
+import { Loader2, Rocket, CheckCircle2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Application } from '@kubernal/shared-types';
 
@@ -67,11 +66,7 @@ export function DeploymentModal({
   const [progress, setProgress] = useState(0);
 
   const [appId, setAppId] = useState(preselectedApp?.id ?? '');
-  const [version, setVersion] = useState('');
   const [bump, setBump] = useState<BumpType>('auto');
-  const [commitSha, setCommitSha] = useState('');
-  const [branch, setBranch] = useState('main');
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [environmentId, setEnvironmentId] = useState('');
   const [environmentSlug, setEnvironmentSlug] = useState('');
   const [notes, setNotes] = useState('');
@@ -79,19 +74,10 @@ export function DeploymentModal({
 
   const { data: nextVersion } = useNextVersion(
     appId || undefined,
-    {
-      bump,
-      currentVersion: version.trim() || undefined,
-      commitSha: commitSha.trim() || undefined,
-      branch: branch.trim() || undefined,
-    },
+    { bump },
   );
 
-  useEffect(() => {
-    if (nextVersion && version.trim() === '') {
-      setVersion(nextVersion.version);
-    }
-  }, [nextVersion, version]);
+  const version = nextVersion?.version ?? '';
 
   const appEnvironments = useMemo(() => {
     return (allEnvironments ?? []).filter((env) => env.applicationId === appId);
@@ -113,7 +99,7 @@ export function DeploymentModal({
   const reset = useCallback(() => {
     setStep('form');
     setProgress(0);
-    setVersion('');
+    setBump('auto');
     setEnvironmentId('');
     setEnvironmentSlug('');
     setNotes('');
@@ -128,10 +114,7 @@ export function DeploymentModal({
     setProgress(0);
 
     const progressInterval = setInterval(() => {
-      setProgress((p) => {
-        const next = Math.min(p + Math.random() * 20, 90);
-        return next;
-      });
+      setProgress((p) => Math.min(p + Math.random() * 20, 90));
     }, 400);
 
     createDeployment.mutate(
@@ -139,7 +122,7 @@ export function DeploymentModal({
         applicationId: appId,
         environmentId,
         version,
-        commitSha: commitSha.trim() || `sha-${version.replace(/[^a-z0-9]/gi, '')}-${Date.now().toString(36)}`,
+        commitSha: `auto-${Date.now().toString(36)}`,
       },
       {
         onSuccess: () => {
@@ -215,90 +198,37 @@ export function DeploymentModal({
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="version">Version</Label>
-                  {nextVersion && (
-                    <button
-                      type="button"
-                      className="flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                      onClick={() => setVersion(nextVersion.version)}
-                      title="Cliquer pour appliquer cette version"
-                    >
-                      <Sparkles className="h-3 w-3 text-status-info" />
-                      <span>
-                        {nextVersion.isPrerelease ? 'Prerelease · ' : ''}
-                        next: <span className="font-mono text-foreground/80">{nextVersion.display}</span>
+                <Label>Version</Label>
+                <div className="flex items-center gap-3 rounded-md border border-border bg-muted/30 px-3 py-2.5">
+                  <Sparkles className="h-4 w-4 shrink-0 text-status-info" />
+                  <span className="font-mono text-sm text-foreground/90">
+                    {version || (
+                      <span className="italic text-muted-foreground">
+                        {appId ? 'Calcul en cours…' : 'Sélectionnez une application'}
                       </span>
-                    </button>
+                    )}
+                  </span>
+                  {nextVersion?.isPrerelease && (
+                    <span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-500">
+                      prerelease
+                    </span>
                   )}
                 </div>
-                <Input
-                  id="version"
-                  placeholder="1.2.3 ou mon-app:latest"
-                  value={version}
-                  onChange={(e) => setVersion(e.target.value)}
-                  className="font-mono"
-                />
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Select value={bump} onValueChange={(v) => setBump(v as BumpType)}>
-                    <SelectTrigger className="h-7 text-xs flex-1 min-w-[120px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BUMP_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          <div className="flex flex-col">
-                            <span className="text-xs font-medium">{opt.label}</span>
-                            <span className="text-[10px] text-muted-foreground">{opt.description}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => setShowAdvanced(!showAdvanced)}
-                  >
-                    <Settings2 className="h-3 w-3 mr-1" />
-                    {showAdvanced ? 'Masquer' : 'Avancé'}
-                  </Button>
-                </div>
-                {showAdvanced && (
-                  <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2 animate-in fade-in slide-in-from-top-1">
-                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-muted-foreground">
-                      <GitBranch className="h-3 w-3" />
-                      Métadonnées Git (GitOps)
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <Label htmlFor="branch" className="text-[10px]">Branche</Label>
-                        <Input
-                          id="branch"
-                          placeholder="main"
-                          value={branch}
-                          onChange={(e) => setBranch(e.target.value)}
-                          className="h-7 text-xs font-mono"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="sha" className="text-[10px]">Commit SHA</Label>
-                        <Input
-                          id="sha"
-                          placeholder="b4f2a1c"
-                          value={commitSha}
-                          onChange={(e) => setCommitSha(e.target.value)}
-                          className="h-7 text-xs font-mono"
-                        />
-                      </div>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">
-                      Sera injecté en build metadata : <span className="font-mono">+sha.xxxxxxx.branch.main</span>
-                    </p>
-                  </div>
-                )}
+                <Select value={bump} onValueChange={(v) => setBump(v as BumpType)}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BUMP_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-medium">{opt.label}</span>
+                          <span className="text-[10px] text-muted-foreground">{opt.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

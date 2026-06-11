@@ -11,19 +11,12 @@ export interface NextVersionResult {
   isPrerelease: boolean;
 }
 
-export interface NextVersionInput {
-  bump: BumpType;
-  currentVersion?: string;
-  commitSha?: string;
-  branch?: string;
-}
-
 export function useNextVersion(
   applicationId: string | undefined,
-  input: NextVersionInput,
+  input: { bump: BumpType },
 ): UseQueryResult<NextVersionResult, Error> {
   return useQuery<NextVersionResult>({
-    queryKey: ['deployments', 'next-version', applicationId, input],
+    queryKey: ['deployments', 'next-version', applicationId, input.bump],
     queryFn: async () => {
       const r = await apiClient.post<{ data: NextVersionResult }>(
         '/deployments/next-version',
