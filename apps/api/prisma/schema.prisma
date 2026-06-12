@@ -234,3 +234,22 @@ model WebhookDelivery {
   @@index([webhookConfigId])
   @@index([status])
 }
+
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  actorEmail String?
+  action     String   // CREATE | UPDATE | DELETE | LOGIN | TRANSITION | etc
+  resource   String   // "Application" | "Deployment" | "WebhookConfig" | etc
+  resourceId String?
+  details    Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([resource, resourceId])
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
+}

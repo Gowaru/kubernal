@@ -2,6 +2,7 @@ import type { Application } from '@prisma/client';
 import { NotFoundError } from '../../shared/errors.js';
 import { db } from '../../shared/database.js';
 import { applicationRepository } from './application.repository.js';
+import { auditService } from '../audit/audit.service.js';
 
 const DEFAULT_ENV_TYPES = [
   { type: 'dev', requiresApproval: false },
@@ -65,10 +66,17 @@ export const applicationService = {
         })),
       });
 
-      return tx.application.findUniqueOrThrow({
+      const created = await tx.application.findUniqueOrThrow({
         where: { id: app.id },
         include: { team: true, template: true, owner: true, environments: true },
       });
+      auditService.log({
+        action: 'CREATE',
+        resource: 'Application',
+        resourceId: app.id,
+        details: { name: data.name, templateId: data.templateId } as Record<string, unknown>,
+      }).catch(() => {});
+      return created;
     });
   },
 
@@ -83,12 +91,25 @@ export const applicationService = {
   ): Promise<Application> {
     const app = await applicationRepository.findById(id);
     if (!app) throw new NotFoundError('Application', id);
-    return applicationRepository.update(id, data);
+    const result = await applicationRepository.update(id, data);
+    auditService.log({
+      action: 'UPDATE',
+      resource: 'Application',
+      resourceId: id,
+      details: data as Record<string, unknown>,
+    }).catch(() => {});
+    return result;
   },
 
   async delete(id: string): Promise<Application> {
     const app = await applicationRepository.findById(id);
     if (!app) throw new NotFoundError('Application', id);
-    return applicationRepository.delete(id);
+    const result = await applicationRepository.delete(id);
+    auditService.log({
+      action: 'DELETE',
+      resource: 'Application',
+      resourceId: id,
+    }).catch(() => {});
+    return result;
   },
 };

@@ -3,6 +3,7 @@ import { db } from '../../shared/database.js';
 import { deploymentRepository } from './deployment.repository.js';
 import { summarizeDiff, type DeploymentDiff } from '../../shared/git-diff.js';
 import { webhookOutboundService } from '../webhook-outbound/webhook-outbound.service.js';
+import { auditService } from '../audit/audit.service.js';
 import type { Deployment, DeploymentVulnerability } from '@prisma/client';
 
 interface DeploymentWithRelations extends Deployment {
@@ -49,7 +50,14 @@ export const deploymentService = {
     trigger?: string;
     status?: string;
   }): Promise<Deployment> {
-    return deploymentRepository.create(data);
+    const result = await deploymentRepository.create(data);
+    auditService.log({
+      action: 'CREATE',
+      resource: 'Deployment',
+      resourceId: result.id,
+      details: { ...data, status: result.status } as Record<string, unknown>,
+    }).catch(() => {});
+    return result;
   },
 
   async transitionStatus(id: string, newStatus: string): Promise<Deployment> {
@@ -66,6 +74,13 @@ export const deploymentService = {
       : undefined;
 
     const updated = await deploymentRepository.updateStatus(id, newStatus, completedAt);
+
+    auditService.log({
+      action: 'TRANSITION',
+      resource: 'Deployment',
+      resourceId: id,
+      details: { from: current, to: newStatus } as Record<string, unknown>,
+    }).catch(() => {});
 
     const full = await db.deployment.findUnique({
       where: { id },
@@ -99,7 +114,14 @@ export const deploymentService = {
     if (deployment.status !== 'pending') {
       throw new InvalidTransitionError(deployment.status, 'deploying');
     }
-    return deploymentRepository.approve(id, approvedById);
+    const result = await deploymentRepository.approve(id, approvedById);
+    auditService.log({
+      action: 'APPROVE',
+      resource: 'Deployment',
+      resourceId: id,
+      details: { approvedById } as Record<string, unknown>,
+    }).catch(() => {});
+    return result;
   },
 
   async promote(id: string, targetEnvType: 'staging' | 'prod'): Promise<Deployment> {
@@ -116,7 +138,7 @@ export const deploymentService = {
       throw new NotFoundError(`Environment (type=${targetEnvType})`, source.applicationId);
     }
 
-    return deploymentRepository.create({
+    const result = await deploymentRepository.create({
       applicationId: source.applicationId,
       environmentId: target.id,
       version: source.version,
@@ -124,6 +146,13 @@ export const deploymentService = {
       trigger: 'manual',
       status: target.requiresApproval ? 'pending' : 'building',
     });
+    auditService.log({
+      action: 'PROMOTE',
+      resource: 'Deployment',
+      resourceId: result.id,
+      details: { sourceId: id, targetEnvType } as Record<string, unknown>,
+    }).catch(() => {});
+    return result;
   },
 
   async recordViolations(id: string, violations: Record<string, unknown>[]): Promise<Deployment> {

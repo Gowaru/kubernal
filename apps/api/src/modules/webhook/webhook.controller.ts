@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { db } from '../../shared/database.js';
 import { NotFoundError, ValidationError } from '../../shared/errors.js';
 import { logger } from '../../shared/logger.js';
+import { auditService } from '../audit/audit.service.js';
 import { triggerReconcile } from '../deployment/deployment.worker.js';
 import {
   detectProviderFromPath,
@@ -57,6 +58,13 @@ export const webhookController = {
       where: { id: appId },
       data: { webhookSecret: newSecret },
     });
+
+    auditService.log({
+      action: 'REGENERATE',
+      resource: 'Application',
+      resourceId: appId,
+      details: { field: 'webhookSecret' } as Record<string, unknown>,
+    }).catch(() => {});
 
     res.json({ data: { applicationId: appId, secret: newSecret } });
   },

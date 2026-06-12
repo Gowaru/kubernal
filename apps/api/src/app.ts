@@ -5,6 +5,7 @@ import { createRouter } from './modules/infrastructure/http/router.js';
 import { mountSwaggerUi } from './shared/swagger-ui.js';
 import { errorHandler } from './shared/middleware/error-handler.js';
 import { notFoundHandler } from './shared/middleware/not-found.js';
+import { auditContext } from './shared/middleware/audit-context.js';
 import { trackRequest, getMetrics } from './shared/metrics.js';
 import { startPipelineWorker } from './modules/pipeline/worker.js';
 
@@ -28,6 +29,8 @@ export function createApp(): express.Application {
   });
 
   app.use(express.json({ limit: '1mb' }));
+
+  app.use(auditContext);
 
   app.use((req, res, next) => {
     const start = Date.now();

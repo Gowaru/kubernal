@@ -1,5 +1,6 @@
 import { db } from '../../shared/database.js';
 import type { Prisma } from '@prisma/client';
+import { auditService } from '../audit/audit.service.js';
 
 type DeployEvent = 'started' | 'success' | 'failure' | 'rolled_back' | 'cancelled' | 'approval_needed';
 
@@ -207,7 +208,7 @@ export const webhookOutboundService = {
     if (count >= 10) {
       throw new Error('Maximum 10 webhook configs per application');
     }
-    return db.webhookConfig.create({
+    const result = await db.webhookConfig.create({
       data: {
         applicationId: data.applicationId,
         name: data.name ?? 'default',
@@ -216,19 +217,44 @@ export const webhookOutboundService = {
         events: data.events ?? ['started', 'success', 'failure'],
       },
     });
+    auditService.log({
+      action: 'CREATE',
+      resource: 'WebhookConfig',
+      resourceId: result.id,
+      details: { applicationId: data.applicationId, name: result.name } as Record<string, unknown>,
+    }).catch(() => {});
+    return result;
   },
 
   async updateConfig(id: string, data: { name?: string; url?: string; secret?: string; events?: string[]; enabled?: boolean }) {
-    return db.webhookConfig.update({ where: { id }, data });
+    const result = await db.webhookConfig.update({ where: { id }, data });
+    auditService.log({
+      action: 'UPDATE',
+      resource: 'WebhookConfig',
+      resourceId: id,
+      details: data as Record<string, unknown>,
+    }).catch(() => {});
+    return result;
   },
 
   async deleteConfig(id: string) {
-    return db.webhookConfig.delete({ where: { id } });
+    const result = await db.webhookConfig.delete({ where: { id } });
+    auditService.log({
+      action: 'DELETE',
+      resource: 'WebhookConfig',
+      resourceId: id,
+    }).catch(() => {});
+    return result;
   },
 
   async testConfig(id: string) {
     const config = await db.webhookConfig.findUnique({ where: { id } });
     if (!config) throw new Error(`WebhookConfig ${id} not found`);
+    auditService.log({
+      action: 'TEST',
+      resource: 'WebhookConfig',
+      resourceId: id,
+    }).catch(() => {});
     await this.dispatch('started', {
       applicationId: config.applicationId,
       applicationName: 'Test Webhook',

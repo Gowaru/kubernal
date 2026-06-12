@@ -10,6 +10,7 @@ import { policyController } from '../../../modules/policy/policy.controller.js';
 import { kubernetesController } from '../../../modules/kubernetes/kubernetes.controller.js';
 import { webhookController } from '../../../modules/webhook/webhook.controller.js';
 import { webhookOutboundController } from '../../../modules/webhook-outbound/webhook-outbound.controller.js';
+import { auditController } from '../../../modules/audit/audit.controller.js';
 
 import { validate } from '../../../shared/middleware/validate.js';
 import { requireInternalApiKey } from '../../../shared/middleware/require-internal-api-key.js';
@@ -201,6 +202,9 @@ export function createRouter(): Router {
   router.delete('/webhooks-outbound/:id', webhookOutboundController.deleteConfig);
   router.post('/webhooks-outbound/:id/test', webhookOutboundController.testConfig);
   router.get('/webhooks-outbound/:configId/deliveries', webhookOutboundController.listDeliveries);
+
+  // ─── Audit Logs ─────────────────────────────────────────────────────
+  router.get('/audit-logs', auditController.list);
 
   return router;
 }

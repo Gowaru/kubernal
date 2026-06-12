@@ -317,6 +317,27 @@ export interface WebhookConfig {
   updatedAt: Date;
 }
 
+// --- Audit Log ---
+export interface AuditLog {
+  id: string;
+  actorId: string | null;
+  actorEmail: string | null;
+  action: string;
+  resource: string;
+  resourceId: string | null;
+  details: Record<string, unknown> | null;
+  ip: string | null;
+  userAgent: string | null;
+  createdAt: Date;
+}
+
+export interface AuditLogPaginatedResponse {
+  data: AuditLog[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface WebhookDelivery {
   id: string;
   webhookConfigId: string;
