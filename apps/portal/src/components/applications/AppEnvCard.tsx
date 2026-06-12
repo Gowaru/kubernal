@@ -2,8 +2,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Cloud, GitBranch, Clock } from 'lucide-react';
 import { formatRelativeTime, getEnvSlug } from '@/lib/utils';
 import { StatusBadge } from '@/components/deployments/StatusBadge';
+import { ArgoSyncBadge } from '@/components/k8s/ArgoSyncBadge';
 import type { JSX } from 'react';
-import type { Deployment } from '@kubernal/shared-types';
+import type { Deployment, ArgoAppStatus } from '@kubernal/shared-types';
 
 const envLabels: Record<string, string> = {
   dev: 'Development',
@@ -20,9 +21,10 @@ const envColors: Record<string, string> = {
 interface AppEnvCardProps {
   envId: string;
   deployments: Deployment[];
+  argoStatus?: ArgoAppStatus | null;
 }
 
-export function AppEnvCard({ envId, deployments }: AppEnvCardProps): JSX.Element {
+export function AppEnvCard({ envId, deployments, argoStatus }: AppEnvCardProps): JSX.Element {
   const envDeployments = deployments.filter((d) => getEnvSlug(d) === envId);
   const lastDeploy = [...envDeployments].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -36,7 +38,10 @@ export function AppEnvCard({ envId, deployments }: AppEnvCardProps): JSX.Element
             <Cloud className={`h-4 w-4 ${envColors[envId] ?? 'text-muted-foreground'}`} />
             {envLabels[envId] ?? envId}
           </CardTitle>
-          {lastDeploy && <StatusBadge status={lastDeploy.status} />}
+          <div className="flex items-center gap-2">
+            {argoStatus && <ArgoSyncBadge sync={argoStatus.sync} health={argoStatus.health} />}
+            {lastDeploy && <StatusBadge status={lastDeploy.status} />}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-2">

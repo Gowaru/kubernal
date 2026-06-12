@@ -204,17 +204,57 @@ export const kubernetesService = {
         const source = (res.spec as { source?: { repoURL?: string; targetRevision?: string; path?: string } } | undefined)?.source;
         const conditions = (res.status as { conditions?: Array<{ type?: string; message?: string }> } | undefined)?.conditions ?? [];
         const degradedCondition = conditions.find((c) => c.type === 'Degraded');
+        const lastSyncAt = (res.status as { history?: Array<{ revision?: string; deployedAt?: string }> } | undefined)?.history;
+        const syncHistory = lastSyncAt?.[lastSyncAt.length - 1];
         return {
-          sync: (syncStatus === 'Synced' ? 'synced' : 'out-of-sync') as ArgoAppStatus['sync'],
-          health: (healthStatus === 'Healthy' ? 'healthy' : 'degraded') as ArgoAppStatus['health'],
+          sync: syncStatus as ArgoAppStatus['sync'],
+          health: healthStatus as ArgoAppStatus['health'],
           revision: source?.targetRevision ?? 'HEAD',
           branch: (source?.targetRevision ?? 'HEAD') as string,
-          lastSyncAt: new Date().toISOString(),
+          lastSyncAt: syncHistory?.deployedAt ?? new Date().toISOString(),
           message: degradedCondition?.message ?? null,
         };
       },
       MOCK_ARGO_STATUSES[application] ?? null,
       'getArgoStatus',
+    );
+  },
+
+  async syncArgo(application: string): Promise<{ success: boolean; message: string }> {
+    return tryK8s(
+      async () => {
+        await customObjectsApi.patchNamespacedCustomObject({
+          group: 'argoproj.io',
+          version: 'v1alpha1',
+          namespace: 'argocd',
+          plural: 'applications',
+          name: application,
+          body: [{ op: 'replace', path: '/spec/syncPolicy', value: { automated: { prune: true, selfHeal: true } } }],
+        });
+        return { success: true, message: `Sync déclenché pour ${application}` };
+      },
+      { success: true, message: `Sync déclenché pour ${application} (mock)` },
+      'syncArgo',
+    );
+  },
+
+  async setAutoSync(application: string, enabled: boolean): Promise<{ success: boolean; message: string; autoSync: boolean }> {
+    return tryK8s(
+      async () => {
+        await customObjectsApi.patchNamespacedCustomObject({
+          group: 'argoproj.io',
+          version: 'v1alpha1',
+          namespace: 'argocd',
+          plural: 'applications',
+          name: application,
+          body: enabled
+            ? [{ op: 'add', path: '/spec/syncPolicy', value: { automated: { prune: true, selfHeal: true } } }]
+            : [{ op: 'remove', path: '/spec/syncPolicy' }],
+        });
+        return { success: true, message: enabled ? 'Auto-sync activé' : 'Auto-sync désactivé', autoSync: enabled };
+      },
+      { success: true, message: enabled ? 'Auto-sync activé (mock)' : 'Auto-sync désactivé (mock)', autoSync: enabled },
+      'setAutoSync',
     );
   },
 

@@ -30,6 +30,7 @@ import { DeploymentHistoryTimeline } from '@/components/deployments/DeploymentHi
 import { DeploymentCommitLink } from '@/components/deployments/DeploymentCommitLink';
 import { WebhookConfigCard } from '@/components/webhooks/WebhookConfigCard';
 import { WebhookOutboundCard } from '@/components/webhooks/WebhookOutboundCard';
+import { useArgoSync } from '@/hooks/useArgoSync';
 import { formatRelativeTime, getEnvSlug } from '@/lib/utils';
 import { getApplicationStatus } from '@/lib/status-config';
 import type { Deployment } from '@kubernal/shared-types';
@@ -72,6 +73,11 @@ export default function AppDetail(): JSX.Element {
   const depPag = usePagination(sortedDeployments);
 
   const [tab, setTab] = useState<'recent' | 'history'>('recent');
+
+  function AppEnvCardWithArgo({ envId }: { envId: string }) {
+    const { data: argoStatus } = useArgoSync(id!, envId);
+    return <AppEnvCard key={envId} envId={envId} deployments={appDeployments} argoStatus={argoStatus} />;
+  }
 
   const handleDeploy = useCallback(() => {
     setShowDeployModal(false);
@@ -148,7 +154,7 @@ export default function AppDetail(): JSX.Element {
         <div className="lg:col-span-2">
           <div className="grid gap-4 sm:grid-cols-3">
             {ENVIRONMENT_IDS.map((envId) => (
-              <AppEnvCard key={envId} envId={envId} deployments={appDeployments} />
+              <AppEnvCardWithArgo key={envId} envId={envId} />
             ))}
           </div>
         </div>

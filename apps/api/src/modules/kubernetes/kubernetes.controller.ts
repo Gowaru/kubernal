@@ -8,6 +8,8 @@ import {
   listServicesSchema,
   listEventsSchema,
   getArgoStatusSchema,
+  syncArgoSchema,
+  setAutoSyncSchema,
   listHPASchema,
   listClaimsSchema,
   getPodLogsParamsSchema,
@@ -49,6 +51,18 @@ export const kubernetesController = {
     const q = getArgoStatusSchema.parse(req.query);
     const status = await kubernetesService.getArgoStatus(q.application);
     res.json({ data: status });
+  },
+
+  async syncArgo(req: Request, res: Response): Promise<void> {
+    const body = syncArgoSchema.parse(req.body);
+    const result = await kubernetesService.syncArgo(body.application);
+    res.json({ data: result });
+  },
+
+  async setAutoSync(req: Request, res: Response): Promise<void> {
+    const body = setAutoSyncSchema.parse(req.body);
+    const result = await kubernetesService.setAutoSync(body.application, body.enabled);
+    res.json({ data: result });
   },
 
   async listHPA(req: Request, res: Response): Promise<void> {

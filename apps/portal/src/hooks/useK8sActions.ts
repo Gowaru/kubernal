@@ -141,3 +141,24 @@ export function useK8sExec(namespace: string, podName: string): UseMutationResul
     },
   });
 }
+
+type ArgoSyncResult = { success: boolean; message: string };
+type ArgoAutoSyncResult = { success: boolean; message: string; autoSync: boolean };
+
+export function useArgoSync(): UseMutationResult<ArgoSyncResult, Error, string> {
+  return useMutation<ArgoSyncResult, Error, string>({
+    mutationFn: async (application) => {
+      const { data } = await apiClient.post<{ data: ArgoSyncResult }>('/kubernetes/argo/sync', { application });
+      return data.data;
+    },
+  });
+}
+
+export function useArgoAutoSync(): UseMutationResult<ArgoAutoSyncResult, Error, { application: string; enabled: boolean }> {
+  return useMutation<ArgoAutoSyncResult, Error, { application: string; enabled: boolean }>({
+    mutationFn: async (input) => {
+      const { data } = await apiClient.patch<{ data: ArgoAutoSyncResult }>('/kubernetes/argo/auto-sync', input);
+      return data.data;
+    },
+  });
+}

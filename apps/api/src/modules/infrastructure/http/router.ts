@@ -40,6 +40,8 @@ import {
   scaleDeploymentSchema,
   restartDeploymentSchema,
   execInPodSchema,
+  syncArgoSchema,
+  setAutoSyncSchema,
 } from '../../../modules/kubernetes/kubernetes.schema.js';
 import {
   createPipelineSchema,
@@ -165,6 +167,8 @@ export function createRouter(): Router {
   router.get('/kubernetes/events', kubernetesController.listEvents);
   router.get('/kubernetes/cluster', kubernetesController.getClusterInfo);
   router.get('/kubernetes/argo', kubernetesController.getArgoStatus);
+  router.post('/kubernetes/argo/sync', validate(syncArgoSchema), kubernetesController.syncArgo);
+  router.patch('/kubernetes/argo/auto-sync', validate(setAutoSyncSchema), kubernetesController.setAutoSync);
   router.get('/kubernetes/hpa', kubernetesController.listHPA);
   router.get('/kubernetes/crossplane/claims', kubernetesController.listClaims);
   router.get('/kubernetes/pods/:namespace/:name/logs', kubernetesController.getPodLogs);

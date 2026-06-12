@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useK8sRestart } from '@/hooks/useK8sActions';
+import { useK8sRestart, useArgoSync } from '@/hooks/useK8sActions';
 import type { ArgoAppStatus } from '@kubernal/shared-types';
 
 interface K8sActionsBarProps {
@@ -30,6 +30,7 @@ export function K8sActionsBar({
   clusterReady,
 }: K8sActionsBarProps): JSX.Element {
   const restart = useK8sRestart(namespace, deploymentName);
+  const argoSync = useArgoSync();
   const [showRestartDialog, setShowRestartDialog] = useState(false);
   const isOutOfSync = argoStatus.sync === 'OutOfSync';
 
@@ -43,7 +44,14 @@ export function K8sActionsBar({
       return;
     }
     if (key === 'sync') {
-      toast.warning('Sync Argo CD : non implémenté dans cette démo');
+      argoSync.mutate(deploymentName, {
+        onSuccess: (result) => {
+          toast.success(result.message);
+        },
+        onError: (err) => {
+          toast.error(`Échec du sync : ${err.message}`);
+        },
+      });
       return;
     }
     if (key === 'grafana') {
@@ -80,8 +88,7 @@ export function K8sActionsBar({
           const Icon = action.icon;
           const isSync = action.key === 'sync';
           const isRestart = action.key === 'restart';
-          const isImplemented = action.key === 'restart';
-          const disabled = !isImplemented || !clusterReady || restart.isPending;
+          const disabled = (isRestart && restart.isPending) || (isSync && argoSync.isPending) || !clusterReady;
 
           return (
             <motion.button
@@ -94,10 +101,10 @@ export function K8sActionsBar({
               title={
                 !clusterReady
                   ? 'Cluster K8s non branché'
-                  : !isImplemented
-                    ? `${action.label} : à brancher`
-                    : isRestart && restart.isPending
-                      ? 'Rollout en cours...'
+                  : isRestart && restart.isPending
+                    ? 'Rollout en cours...'
+                    : isSync && argoSync.isPending
+                      ? 'Sync en cours...'
                       : action.label
               }
               className={cn(

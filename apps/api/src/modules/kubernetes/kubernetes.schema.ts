@@ -83,6 +83,15 @@ export const deploymentAccessQuerySchema = z.object({
   cluster: z.string().optional().default('kubernal-prod'),
 });
 
+export const syncArgoSchema = z.object({
+  application: z.string().min(1),
+});
+
+export const setAutoSyncSchema = z.object({
+  application: z.string().min(1),
+  enabled: z.boolean(),
+});
+
 export const compareDeploymentsQuerySchema = z.object({
   from: z.string().uuid(),
   to: z.string().uuid(),
