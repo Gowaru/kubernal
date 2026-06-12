@@ -25,7 +25,7 @@ We assume **defense in depth**: even if one secret leaks, the others stay locked
 | Secret type             | Where it lives                                                       | Backed up? |
 |-------------------------|----------------------------------------------------------------------|------------|
 | Local dev secrets       | `apps/api/.env`, `infra/.env`, `infra/k8s/*/secret.yaml` (local)     | NO         |
-| CI / GitHub Actions     | Repository **Secrets** (Settings → Secrets → Actions)                | Encrypted  |
+| CI / GitHub Actions     | **OpenBao** (JWT/OIDC auth) → fallback **Repository Secrets**        | Encrypted  |
 | Cluster runtime         | K8s `Secret` resource (applied by hand or via Sealed Secrets)        | Backed up with cluster |
 | Operator password store | `pass`, 1Password, Bitwarden, or OS keyring (your call)              | User       |
 
@@ -49,12 +49,25 @@ We assume **defense in depth**: even if one secret leaks, the others stay locked
 
 ## 4. Per-secret recipes
 
-### 4.1 GitHub Personal Access Token (`GH_PERSONAL_ACCESS_TOKEN`)
+### 4.1 OpenBao vault (CI secrets store)
+
+OpenBao est le **primary secrets store** pour CI. Les workflows s'authentifient
+via JWT/OIDC (GitHub OIDC token) — aucun long-lived secret stocké dans GitHub.
+
+- **Déploiement local**: `docker compose --profile secrets up -d openbao`
+- **Init**: `bash scripts/init-openbao.sh`
+- **CI auth**: `hashicorp/vault-action@v3` avec `method: jwt`, `role: kubernal-ci`
+- **Politique**: `kubernal-ci` — accès read à `secret/ci/*`
+- **Rotation**: rotation du root token + regénération des secrets dans OpenBao
+- **Test**: `bao login -method=jwt role=kubernal-ci jwt=<oidc_token>`
+
+### 4.2 GitHub Personal Access Token (`GH_PERSONAL_ACCESS_TOKEN`)
 
 - **Source**: <https://github.com/settings/tokens> (fine-grained, expiry ≤ 90 days)
 - **Scopes**: `repo`, `read:org`, `write:packages`, `read:packages`
 - **Storage**:
-  - CI: `Settings → Secrets and variables → Actions → GH_PERSONAL_ACCESS_TOKEN`
+  - **OpenBao**: `secret/ci/github-token` (via bao CLI)
+  - Fallback: `Settings → Secrets and variables → Actions → GH_PERSONAL_ACCESS_TOKEN`
   - Local: `apps/api/.env` (`GITHUB_TOKEN=...`) **and** `~/.docker/config.json` (base64 of `user:token`)
 - **Rotation cadence**: every 90 days **or** on offboarding / suspected leak
 - **Test after rotation**: `npx tsx apps/api/src/scripts/demo-ghcr-trivy.ts` (E2E login + push + scan)
@@ -170,9 +183,10 @@ These are allowlisted in `.gitleaks.toml`. To add a new pattern, edit that file 
 ## 9. Future improvements (Standard Phase 14+)
 
 - **Sealed Secrets** (`bitnami-labs/sealed-secrets`) — encrypt secrets in git, decrypt on the cluster
-- **External Secrets Operator (ESO)** — sync from AWS/GCP/Vault secrets managers
+- **External Secrets Operator (ESO)** — sync from AWS/GCP/OpenBao secrets managers
 - **SOPS + age** — file-level encryption for `kustomize`-built overlays
-- **HashiCorp Vault** — dynamic DB credentials with auto-rotation
+- **OpenBao dynamic DB credentials** — auto-rotation for PostgreSQL in production
+- **OpenBao PKI** — internal TLS certificates for service mesh
 - **Workload Identity** — replace static `dockerconfigjson` with cloud IAM
 
 See [Phase 14+ roadmap in the main project memory] for timeline.

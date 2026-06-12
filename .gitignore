@@ -48,6 +48,9 @@ apps/backstage/.yarn/cache/
 # Docker
 docker-data/
 
+# OpenBao local data
+infra/openbao/data/
+
 # Kubernetes local
 .kubeconfig
 kustomize

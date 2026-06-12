@@ -2,6 +2,7 @@
 # =============================================================================
 # scripts/scan-secrets.sh
 # Run gitleaks manually against the working tree (entire repo + staged changes).
+# Optionally authenticate to OpenBao first to pull CI secrets config.
 # Install gitleaks first: https://github.com/gitleaks/gitleaks#installation
 #   - macOS:  brew install gitleaks
 #   - Linux:  see https://github.com/gitleaks/gitleaks/releases
@@ -18,6 +19,21 @@ if ! command -v gitleaks >/dev/null 2>&1; then
 fi
 
 MODE="${1:-detect}"
+
+# ── OpenBao login (optional, requires bao CLI + BAO_ADDR) ──────────────
+if command -v bao &>/dev/null && [ -n "${BAO_ADDR:-}" ]; then
+  if ! bao token lookup -format=json &>/dev/null; then
+    echo "🔑 Logging into OpenBao at ${BAO_ADDR}..."
+    # Try JWT first (GitHub Actions), fallback to token from env
+    if [ -n "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
+      JWT=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+        "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${GITHUB_REPOSITORY_OWNER:-kubernal}")
+      bao login -method=jwt role=kubernal-ci jwt="$JWT" || true
+    elif [ -n "${BAO_TOKEN:-}" ]; then
+      bao login "$BAO_TOKEN" &>/dev/null || true
+    fi
+  fi
+fi
 
 case "$MODE" in
   staged)
