@@ -52,6 +52,10 @@ path "secret/data/ci/*" {
 path "secret/metadata/ci/*" {
   capabilities = ["list"]
 }
+# Allow dynamic DB credentials
+path "database/creds/ci-role" {
+  capabilities = ["read"]
+}
 POLICY
 
 # ---------------------------------------------------------------------------
@@ -102,24 +106,24 @@ bao kv put secret/ci/slack-webhook \
 # ---------------------------------------------------------------------------
 # 6. (Optional) Enable Database secrets engine for dynamic PG creds
 # ---------------------------------------------------------------------------
-if command -v psql &>/dev/null && ping -c1 -W1 postgres &>/dev/null 2>&1; then
-  echo "==> Configuring Database secrets engine for PostgreSQL..."
-  bao secrets enable -path=database database 2>/dev/null || echo "    (already enabled)"
+echo "==> Configuring Database secrets engine for PostgreSQL..."
+# Try to configure; the postgres hostname resolves within Docker network.
+bao secrets enable -path=database database 2>/dev/null || echo "    (already enabled)"
 
-  bao write database/config/kubernal-pg \
-    plugin_name=postgresql-database-plugin \
-    allowed_roles="ci-role" \
-    connection_url="postgresql://{{username}}:{{password}}@postgres:5432/kubernal_idp?sslmode=disable" \
-    username="kubernal" \
-    password="kubernal_dev"
+if bao write database/config/kubernal-pg \
+  plugin_name=postgresql-database-plugin \
+  allowed_roles="ci-role" \
+  connection_url="postgresql://{{username}}:{{password}}@postgres:5432/kubernal_idp?sslmode=disable" \
+  username="kubernal" \
+  password="kubernal_dev" 2>/dev/null; then
 
   bao write database/roles/ci-role \
     db_name=kubernal-pg \
     creation_statements="CREATE USER \"{{name}}\" WITH PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT CONNECT ON DATABASE kubernal_idp TO \"{{name}}\"; GRANT USAGE ON SCHEMA public TO \"{{name}}\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO \"{{name}}\";" \
     default_ttl=30m \
-    max_ttl=1h
+    max_ttl=1h && echo "    Database engine configured (dynamic credentials ready)"
 else
-  echo "    Skipping database engine (PostgreSQL not reachable)"
+  echo "    Skipping database engine (PostgreSQL not reachable from OpenBao)"
 fi
 
 echo ""

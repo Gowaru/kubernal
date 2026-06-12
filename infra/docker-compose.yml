@@ -57,10 +57,8 @@ services:
       - IPC_LOCK
     volumes:
       - openbao-data:/bao/file
-      - ./openbao/config.hcl:/bao/config.hcl:ro
     networks:
       - kubernal-net
-    command: server -dev -dev-root-token-id=bao-root-token-dev -config=/bao/config.hcl
     profiles:
       - secrets
 
