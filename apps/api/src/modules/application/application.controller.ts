@@ -2,9 +2,19 @@ import type { Request, Response } from 'express';
 import { applicationService } from './application.service.js';
 
 export const applicationController = {
-  async list(_req: Request, res: Response): Promise<void> {
-    const apps = await applicationService.list();
-    res.json({ data: apps, total: apps.length });
+  async list(req: Request, res: Response): Promise<void> {
+    const { search, teamId, status, templateId, page, pageSize, sortBy, sortOrder } = req.query;
+    const result = await applicationService.list({
+      search: search as string | undefined,
+      teamId: teamId as string | undefined,
+      status: status as string | undefined,
+      templateId: templateId as string | undefined,
+      page: page ? Number(page) : undefined,
+      pageSize: pageSize ? Number(pageSize) : undefined,
+      sortBy: sortBy as string | undefined,
+      sortOrder: sortOrder as 'asc' | 'desc' | undefined,
+    });
+    res.json({ data: result.data, total: result.total });
   },
 
   async getById(req: Request, res: Response): Promise<void> {

@@ -66,6 +66,7 @@ export interface Application {
   updatedAt: Date;
   team?: Team;
   owner?: User;
+  template?: GoldenPathTemplate;
 }
 
 // --- Environment ---

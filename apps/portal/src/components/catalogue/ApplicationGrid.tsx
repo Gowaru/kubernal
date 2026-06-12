@@ -1,21 +1,24 @@
 import { useState, useEffect, type JSX } from 'react';
 import { toast } from 'sonner';
-import { Search } from 'lucide-react';
-import { useApplications } from '@/hooks/useApplications';
-import { Input } from '@/components/ui/input';
+import { useCatalogueApplications, type CatalogueFilters } from '@/hooks/useApplications';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PaginationBar } from '@/components/ui/pagination-bar';
 import { ApplicationCard } from './ApplicationCard';
 import { DeploymentModal } from '@/components/deployments/DeploymentModal';
 import type { Application } from '@kubernal/shared-types';
 
-export function ApplicationGrid(): JSX.Element {
-  const { data: applications, isLoading, error } = useApplications();
-  const [search, setSearch] = useState('');
+interface ApplicationGridProps {
+  filters: CatalogueFilters;
+  onFiltersChange: (filters: CatalogueFilters) => void;
+}
+
+export function ApplicationGrid({ filters, onFiltersChange }: ApplicationGridProps): JSX.Element {
+  const { data, isLoading, error } = useCatalogueApplications(filters);
   const [deployTarget, setDeployTarget] = useState<Application | null>(null);
 
-  const filtered = (applications ?? []).filter((app) =>
-    app.name.toLowerCase().includes(search.toLowerCase()),
-  );
+  const applications = data?.data ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / (filters.pageSize ?? 20)));
 
   useEffect(() => {
     if (error) toast.error('Erreur lors du chargement des applications');
@@ -24,16 +27,6 @@ export function ApplicationGrid(): JSX.Element {
   return (
     <>
       <div className="space-y-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher une application..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
         {isLoading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -48,22 +41,39 @@ export function ApplicationGrid(): JSX.Element {
               </div>
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : applications.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16">
             <p className="text-sm text-muted-foreground">
-              {search ? 'Aucune application trouvée' : 'Aucune application'}
+              {filters.search || filters.teamId || filters.status || filters.templateId
+                ? 'Aucune application trouvée avec ces filtres'
+                : 'Aucune application'}
             </p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((app) => (
-              <ApplicationCard
-                key={app.id}
-                application={app}
-                onDeploy={setDeployTarget}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {applications.map((app) => (
+                <ApplicationCard
+                  key={app.id}
+                  application={app}
+                  onDeploy={setDeployTarget}
+                />
+              ))}
+            </div>
+
+            <PaginationBar
+              pagination={{
+                page: filters.page ?? 0,
+                pageSize: filters.pageSize ?? 20,
+                totalPages,
+                total,
+                from: total === 0 ? 0 : ((filters.page ?? 0) * (filters.pageSize ?? 20)) + 1,
+                to: Math.min(((filters.page ?? 0) + 1) * (filters.pageSize ?? 20), total),
+              }}
+              onPageChange={(page) => onFiltersChange({ ...filters, page })}
+              onPageSizeChange={(pageSize) => onFiltersChange({ ...filters, pageSize, page: 0 })}
+            />
+          </>
         )}
       </div>
 

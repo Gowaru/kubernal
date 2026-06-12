@@ -1,11 +1,10 @@
-import { useState, useMemo, useEffect, type JSX } from 'react';
+import { useState, useEffect, useMemo, type JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Search } from 'lucide-react';
-import { useApplications } from '@/hooks/useApplications';
-import { Input } from '@/components/ui/input';
+import { useCatalogueApplications, type CatalogueFilters } from '@/hooks/useApplications';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PaginationBar } from '@/components/ui/pagination-bar';
 import {
   Table,
   TableBody,
@@ -17,27 +16,49 @@ import {
 import {
   useReactTable,
   getCoreRowModel,
-  getFilteredRowModel,
   getSortedRowModel,
-  getPaginationRowModel,
   createColumnHelper,
   flexRender,
+  type SortingState,
 } from '@tanstack/react-table';
+import { ArrowUpDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/utils';
 import { getApplicationStatus } from '@/lib/status-config';
-import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import type { Application } from '@kubernal/shared-types';
 
-export function ApplicationTable(): JSX.Element {
+interface ApplicationTableProps {
+  filters: CatalogueFilters;
+  onFiltersChange: (filters: CatalogueFilters) => void;
+}
+
+export function ApplicationTable({ filters, onFiltersChange }: ApplicationTableProps): JSX.Element {
   const navigate = useNavigate();
-  const { data: applications, isLoading, error } = useApplications();
-  const [search, setSearch] = useState('');
+  const { data, isLoading, error } = useCatalogueApplications(filters);
+  const [sorting, setSorting] = useState<SortingState>([]);
+
+  const applications = data?.data ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / (filters.pageSize ?? 20)));
 
   const columnHelper = createColumnHelper<Application>();
 
   const columns = useMemo(() => [
     columnHelper.accessor('name', {
-      header: 'Nom',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="-ml-3 h-8 gap-1"
+          onClick={() => {
+            const isAsc = column.getIsSorted() === 'asc';
+            onFiltersChange({ ...filters, sortBy: 'name', sortOrder: isAsc ? 'desc' : 'asc' });
+          }}
+        >
+          Nom
+          <ArrowUpDown className="h-3.5 w-3.5" />
+        </Button>
+      ),
       cell: (info) => (
         <span
           className="font-medium cursor-pointer hover:text-primary"
@@ -50,6 +71,11 @@ export function ApplicationTable(): JSX.Element {
     columnHelper.accessor('description', {
       header: 'Description',
       cell: (info) => info.getValue()?.slice(0, 60) ?? '-',
+    }),
+    columnHelper.accessor((row) => row.template?.name ?? '-', {
+      id: 'templateName',
+      header: 'Template',
+      cell: (info) => info.getValue(),
     }),
     columnHelper.accessor('status', {
       header: 'Statut',
@@ -70,20 +96,33 @@ export function ApplicationTable(): JSX.Element {
       cell: (info) => info.getValue() ?? '-',
     }),
     columnHelper.accessor('createdAt', {
-      header: 'Créé le',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="-ml-3 h-8 gap-1"
+          onClick={() => {
+            const isAsc = column.getIsSorted() === 'asc';
+            onFiltersChange({ ...filters, sortBy: 'createdAt', sortOrder: isAsc ? 'desc' : 'asc' });
+          }}
+        >
+          Créé le
+          <ArrowUpDown className="h-3.5 w-3.5" />
+        </Button>
+      ),
       cell: (info) => formatDate(info.getValue()),
     }),
-  ], [navigate]);
+  ], [navigate, filters]);
 
   const table = useReactTable({
-    data: applications ?? [],
+    data: applications,
     columns,
-    state: { globalFilter: search },
-    onGlobalFilterChange: setSearch,
+    state: { sorting },
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true,
+    pageCount: totalPages,
   });
 
   useEffect(() => {
@@ -92,16 +131,6 @@ export function ApplicationTable(): JSX.Element {
 
   return (
     <div className="space-y-4">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Rechercher une application..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
       <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
@@ -151,7 +180,18 @@ export function ApplicationTable(): JSX.Element {
         </Table>
       </div>
 
-      <DataTablePagination table={table} />
+      <PaginationBar
+        pagination={{
+          page: filters.page ?? 0,
+          pageSize: filters.pageSize ?? 20,
+          totalPages,
+          total,
+          from: total === 0 ? 0 : ((filters.page ?? 0) * (filters.pageSize ?? 20)) + 1,
+          to: Math.min(((filters.page ?? 0) + 1) * (filters.pageSize ?? 20), total),
+        }}
+        onPageChange={(page) => onFiltersChange({ ...filters, page })}
+        onPageSizeChange={(pageSize) => onFiltersChange({ ...filters, pageSize, page: 0 })}
+      />
     </div>
   );
 }

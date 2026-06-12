@@ -2,6 +2,7 @@ import type { Application } from '@prisma/client';
 import { NotFoundError } from '../../shared/errors.js';
 import { db } from '../../shared/database.js';
 import { applicationRepository } from './application.repository.js';
+import type { AppListQuery } from './application.repository.js';
 import { auditService } from '../audit/audit.service.js';
 
 const DEFAULT_ENV_TYPES = [
@@ -11,8 +12,12 @@ const DEFAULT_ENV_TYPES = [
 ] as const;
 
 export const applicationService = {
-  async list(): Promise<Application[]> {
-    return applicationRepository.findAll();
+  async list(q?: AppListQuery): Promise<{ data: Application[]; total: number }> {
+    if (q?.search || q?.teamId || q?.status || q?.templateId || q?.page) {
+      return applicationRepository.findAllPaginated(q);
+    }
+    const data = await applicationRepository.findAll();
+    return { data, total: data.length };
   },
 
   async getById(id: string): Promise<Application> {

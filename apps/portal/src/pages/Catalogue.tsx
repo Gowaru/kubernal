@@ -1,13 +1,16 @@
 import { useState, type JSX } from 'react';
 import { ApplicationTable } from '@/components/catalogue/ApplicationTable';
 import { ApplicationGrid } from '@/components/catalogue/ApplicationGrid';
+import { CatalogueFilters } from '@/components/catalogue/CatalogueFilters';
 import { CreateApplicationModal } from '@/components/applications/CreateApplicationModal';
 import { Button } from '@/components/ui/button';
 import { Plus, LayoutGrid, Table2 } from 'lucide-react';
+import type { CatalogueFilters as Filters } from '@/hooks/useApplications';
 
 export default function Catalogue(): JSX.Element {
   const [view, setView] = useState<'grid' | 'table'>('grid');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [filters, setFilters] = useState<Filters>({ page: 0, pageSize: 20 });
 
   return (
     <div className="space-y-6">
@@ -44,7 +47,13 @@ export default function Catalogue(): JSX.Element {
         </div>
       </div>
 
-      {view === 'grid' ? <ApplicationGrid /> : <ApplicationTable />}
+      <CatalogueFilters filters={filters} onChange={setFilters} />
+
+      {view === 'grid' ? (
+        <ApplicationGrid filters={filters} onFiltersChange={setFilters} />
+      ) : (
+        <ApplicationTable filters={filters} onFiltersChange={setFilters} />
+      )}
 
       <CreateApplicationModal
         open={showCreateModal}
