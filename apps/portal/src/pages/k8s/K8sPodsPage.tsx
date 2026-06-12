@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect, type JSX } from 'react';
 import { toast } from 'sonner';
-import { Box, Search, Filter } from 'lucide-react';
+import { Box, Search, Filter, Terminal } from 'lucide-react';
 import { K8sContextBar } from '@/components/k8s/K8sContextBar';
 import { PodTooltip } from '@/components/k8s/PodTooltip';
 import { PodLogDrawer } from '@/components/k8s/PodLogDrawer';
+import { PodTerminalDrawer } from '@/components/k8s/PodTerminalDrawer';
 import { useAllK8sPods } from '@/hooks/useAllK8sPods';
 import { usePagination } from '@/hooks/usePagination';
 import { PaginationBar } from '@/components/ui/pagination-bar';
@@ -12,6 +13,8 @@ import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
@@ -28,7 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { K8sPod, K8sPodPhase } from '@kubernal/shared-types';
+import type { K8sPod, K8sPodPhase, K8sContainerStatus } from '@kubernal/shared-types';
 
 const STATUS_LABELS: Record<K8sPodPhase, string> = {
   Running: 'En cours',
@@ -50,6 +53,12 @@ const STATUS_PILLS: Record<K8sPodPhase, string> = {
   Unknown: 'bg-k8s-unknown/20 text-k8s-unknown border-k8s-unknown/30',
 };
 
+interface TerminalDrawerState {
+  namespace: string;
+  podName: string;
+  containers: K8sContainerStatus[];
+}
+
 export default function K8sPodsPage(): JSX.Element {
   const { data: pods = [], isLoading, error } = useAllK8sPods();
 
@@ -63,6 +72,7 @@ export default function K8sPodsPage(): JSX.Element {
   const [search, setSearch] = useState('');
   const [namespaceFilter, setNamespaceFilter] = useState<string>('all');
   const [selectedPod, setSelectedPod] = useState<K8sPod | null>(null);
+  const [terminalState, setTerminalState] = useState<TerminalDrawerState | null>(null);
 
   const namespaces = useMemo(
     () => Array.from(new Set(pods.map((p) => p.namespace))).sort(),
@@ -169,6 +179,7 @@ export default function K8sPodsPage(): JSX.Element {
                   <TableHead className="text-center">Redémarrages</TableHead>
                   <TableHead>Noeud</TableHead>
                   <TableHead>Âge</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -207,6 +218,33 @@ export default function K8sPodsPage(): JSX.Element {
                         {pod.nodeName}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">{pod.age}</TableCell>
+                      <TableCell className="text-right">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                disabled={pod.status !== 'Running'}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTerminalState({
+                                    namespace: pod.namespace,
+                                    podName: pod.name,
+                                    containers: pod.containers,
+                                  });
+                                }}
+                              >
+                                <Terminal className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="left">
+                              {pod.status === 'Running' ? 'Terminal interactif' : 'Pod non disponible'}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
                     </TableRow>
                   </PodTooltip>
                 ))}
@@ -226,6 +264,16 @@ export default function K8sPodsPage(): JSX.Element {
       </Card>
 
       <PodLogDrawer pod={selectedPod} onClose={() => setSelectedPod(null)} />
+
+      {terminalState && (
+        <PodTerminalDrawer
+          open={!!terminalState}
+          onClose={() => setTerminalState(null)}
+          namespace={terminalState.namespace}
+          podName={terminalState.podName}
+          containers={terminalState.containers}
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { createApp } from './app.js';
+import { createWsExecServer } from './shared/ws-exec-server.js';
 import { logger } from './shared/logger.js';
 import { startDeploymentWorker, stopDeploymentWorker } from './modules/deployment/deployment.worker.js';
 
@@ -11,6 +12,8 @@ const server = app.listen(PORT, () => {
   logger.info(`Health check: http://localhost:${PORT}/health`);
   startDeploymentWorker();
 });
+
+createWsExecServer(server);
 
 const shutdown = (signal: string): void => {
   logger.info({ signal }, 'Shutting down...');

@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { KubeConfig, CoreV1Api, AppsV1Api, RbacAuthorizationV1Api, CustomObjectsApi } from '@kubernetes/client-node';
+import { KubeConfig, CoreV1Api, AppsV1Api, RbacAuthorizationV1Api, CustomObjectsApi, Exec } from '@kubernetes/client-node';
 import { logger } from './logger.js';
 
 const kc = new KubeConfig();
@@ -17,6 +17,8 @@ if (hasInClusterSA) {
 }
 
 export const kubeConfig = kc;
+export const k8sExec = new Exec(kc);
+export const getK8sConfig = (): KubeConfig => kc;
 export const coreApi = kc.makeApiClient(CoreV1Api);
 export const appsApi = kc.makeApiClient(AppsV1Api);
 export const rbacApi = kc.makeApiClient(RbacAuthorizationV1Api);
