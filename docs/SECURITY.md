@@ -25,7 +25,7 @@ We assume **defense in depth**: even if one secret leaks, the others stay locked
 | Secret type             | Where it lives                                                       | Backed up? |
 |-------------------------|----------------------------------------------------------------------|------------|
 | Local dev secrets       | `apps/api/.env`, `infra/.env`, `infra/k8s/*/secret.yaml` (local)     | NO         |
-| CI / GitHub Actions     | **OpenBao** (JWT/OIDC auth) → fallback **Repository Secrets**        | Encrypted  |
+| CI / GitHub Actions     | Repository **Secrets** (Settings → Secrets → Actions)                | Encrypted  |
 | Cluster runtime         | K8s `Secret` resource (applied by hand or via Sealed Secrets)        | Backed up with cluster |
 | Operator password store | `pass`, 1Password, Bitwarden, or OS keyring (your call)              | User       |
 
@@ -49,25 +49,12 @@ We assume **defense in depth**: even if one secret leaks, the others stay locked
 
 ## 4. Per-secret recipes
 
-### 4.1 OpenBao vault (CI secrets store)
-
-OpenBao est le **primary secrets store** pour CI. Les workflows s'authentifient
-via JWT/OIDC (GitHub OIDC token) — aucun long-lived secret stocké dans GitHub.
-
-- **Déploiement local**: `docker compose --profile secrets up -d openbao`
-- **Init**: `bash scripts/init-openbao.sh`
-- **CI auth**: `hashicorp/vault-action@v3` avec `method: jwt`, `role: kubernal-ci`
-- **Politique**: `kubernal-ci` — accès read à `secret/ci/*`
-- **Rotation**: rotation du root token + regénération des secrets dans OpenBao
-- **Test**: `bao login -method=jwt role=kubernal-ci jwt=<oidc_token>`
-
-### 4.2 GitHub Personal Access Token (`GH_PERSONAL_ACCESS_TOKEN`)
+### 4.1 GitHub Personal Access Token (`GH_PERSONAL_ACCESS_TOKEN`)
 
 - **Source**: <https://github.com/settings/tokens> (fine-grained, expiry ≤ 90 days)
 - **Scopes**: `repo`, `read:org`, `write:packages`, `read:packages`
 - **Storage**:
-  - **OpenBao**: `secret/ci/github-token` (via bao CLI)
-  - Fallback: `Settings → Secrets and variables → Actions → GH_PERSONAL_ACCESS_TOKEN`
+  - CI: `Settings → Secrets and variables → Actions → GH_PERSONAL_ACCESS_TOKEN`
   - Local: `apps/api/.env` (`GITHUB_TOKEN=...`) **and** `~/.docker/config.json` (base64 of `user:token`)
 - **Rotation cadence**: every 90 days **or** on offboarding / suspected leak
 - **Test after rotation**: `npx tsx apps/api/src/scripts/demo-ghcr-trivy.ts` (E2E login + push + scan)
@@ -180,20 +167,112 @@ These are allowlisted in `.gitleaks.toml`. To add a new pattern, edit that file 
 
 ---
 
-## 9. Future improvements (Standard Phase 14+)
+## 9. Sealed Secrets
 
-- **Sealed Secrets** (`bitnami-labs/sealed-secrets`) — encrypt secrets in git, decrypt on the cluster
-- **External Secrets Operator (ESO)** — sync from AWS/GCP/OpenBao secrets managers
+[Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets) lets us encrypt Kubernetes Secrets so they can be safely committed to git. The cluster-side controller decrypts them transparently at apply time.
+
+### 9.1 Why Sealed Secrets?
+
+| Problem                              | Sealed Secrets solution                                |
+|--------------------------------------|--------------------------------------------------------|
+| `secret.yaml` in `.gitignore` means no GitOps history | Encrypted `sealed-secret.yaml` is committed, full history |
+| CI/CD needs secrets to deploy        | `kubectl apply -f sealed-secret.yaml` just works       |
+| Team onboarding: "where's the secret?" | It's in git, encrypted — no extra vault setup needed  |
+
+### 9.2 Install the controller
+
+```bash
+helm install sealed-secrets \
+  -n kube-system \
+  --create-namespace \
+  https://github.com/bitnami-labs/sealed-secrets/releases/download/v1.16.0/sealed-secrets-helm-chart.tgz
+```
+
+Verify the controller is running:
+
+```bash
+kubectl get pods -n kube-system -l app.kubernetes.io/name=sealed-secrets
+```
+
+### 9.3 Encrypt a secret
+
+**Option A — CLI:**
+
+```bash
+kubeseal --format yaml < infra/k8s/api/secret.yaml > infra/k8s/api/sealed-secret.yaml
+```
+
+**Option B — helper script (recommended):**
+
+```bash
+./scripts/seal-secret.sh infra/k8s/api/secret.yaml
+# → infra/k8s/api/sealed-secret.yaml
+```
+
+The script auto-fetches the cluster's sealing cert via `kubectl` or uses a local copy in `scripts/sealed-secrets-cert.pem`.
+
+### 9.4 Workflow
+
+```
+1. Create plaintext secret     cp secret.yaml.example secret.yaml
+2. Edit with real values       vim secret.yaml
+3. Seal it                     ./scripts/seal-secret.sh secret.yaml
+4. Commit sealed-secret.yaml   git add sealed-secret.yaml && git commit
+5. Deploy                      kubectl apply -f sealed-secret.yaml
+6. Keep secret.yaml local      (stays in .gitignore, never committed)
+```
+
+### 9.5 Find the public cert
+
+The sealing certificate is managed by the controller. To inspect or share it:
+
+```bash
+kubectl get secret \
+  -n kube-system \
+  -l sealedsecrets.bitnami.com/sealed-secrets-key \
+  -o yaml
+```
+
+To export just the TLS cert for offline sealing:
+
+```bash
+kubectl get secret \
+  -n kube-system \
+  -l sealedsecrets.bitnami.com/sealed-secrets-key \
+  -o jsonpath='{.items[0].data.tls\.crt}' | base64 -d > sealed-secrets-cert.pem
+```
+
+### 9.6 Limitations
+
+| Limitation                    | Mitigation                                                     |
+|-------------------------------|----------------------------------------------------------------|
+| Offline encryption only       | Sealed secrets are not revocable — just delete the resource    |
+| No auto-rotation              | Re-seal with `kubeseal` when rotating (same workflow as before)|
+| Namespace-scoped by default   | Use `--scope cluster-wide` for cross-namespace secrets         |
+| Secret stays encrypted in git | Only the controller (with the private key) can decrypt         |
+
+### 9.7 Template files
+
+| File                                          | Purpose                              |
+|-----------------------------------------------|--------------------------------------|
+| `infra/k8s/api/sealed-secret.yaml.example`    | API secret template (SealedSecret)   |
+| `infra/k8s/postgres/sealed-secret.yaml.example` | Postgres secret template (SealedSecret) |
+| `scripts/seal-secret.sh`                      | Encryption helper script             |
+
+---
+
+## 10. Future improvements (Phase 14+)
+
+- **External Secrets Operator (ESO)** — sync from AWS/GCP/Vault secrets managers
 - **SOPS + age** — file-level encryption for `kustomize`-built overlays
-- **OpenBao dynamic DB credentials** — auto-rotation for PostgreSQL in production
-- **OpenBao PKI** — internal TLS certificates for service mesh
+- **HashiCorp Vault** — dynamic DB credentials with auto-rotation
 - **Workload Identity** — replace static `dockerconfigjson` with cloud IAM
 
 See [Phase 14+ roadmap in the main project memory] for timeline.
 
 ---
 
-## 10. Known false positives (GitHub Secret Scanning)
+## 11. Known false positives (GitHub Secret Scanning)
 
 GitHub's [secret scanner](https://docs.github.com/en/code-security/secret-scanning/about-secret-scanning)
 may flag values that match well-known third-party formats but are actually our own internal secrets.
@@ -209,5 +288,5 @@ public-facing scanner (and to our internal scanner on PRs from forks).
 
 **When closing a false-positive alert**, use this template:
 
-> False positive: this is our own webhook signing format (`apps/api/src/shared/webhook-verify.ts:62`), not a Stripe secret. The leaked value has been rotated via `POST /api/v1/applications/{id}/webhook/regenerate` and masked in the documentation. See `docs/SECURITY.md` § 10.
+> False positive: this is our own webhook signing format (`apps/api/src/shared/webhook-verify.ts:62`), not a Stripe secret. The leaked value has been rotated via `POST /api/v1/applications/{id}/webhook/regenerate` and masked in the documentation. See `docs/SECURITY.md` § 11.
 

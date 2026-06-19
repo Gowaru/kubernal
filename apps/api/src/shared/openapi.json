@@ -74,7 +74,7 @@
                   "name": { "type": "string" },
                   "role": {
                     "type": "string",
-                    "enum": ["developer", "platform_engineer", "security_admin"]
+                    "enum": ["viewer", "developer", "platform_engineer", "admin", "security_admin"]
                   },
                   "teamId": { "type": "string", "format": "uuid" }
                 }
@@ -152,7 +152,7 @@
                   "name": { "type": "string" },
                   "role": {
                     "type": "string",
-                    "enum": ["developer", "platform_engineer", "security_admin"]
+                    "enum": ["viewer", "developer", "platform_engineer", "admin", "security_admin"]
                   },
                   "teamId": { "type": "string", "format": "uuid", "nullable": true }
                 }
@@ -1434,7 +1434,7 @@
           "name": { "type": "string" },
           "role": {
             "type": "string",
-            "enum": ["developer", "platform_engineer", "security_admin"]
+            "enum": ["viewer", "developer", "platform_engineer", "admin", "security_admin"]
           },
           "teamId": { "type": "string", "format": "uuid", "nullable": true },
           "createdAt": { "type": "string", "format": "date-time" },

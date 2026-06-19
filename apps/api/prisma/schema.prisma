@@ -13,17 +13,36 @@ datasource db {
 
 // ─── Utilisateur ────────────────────────────────────────────────────────────
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  role      String   @default("developer") // developer | platform_engineer | security_admin
-  teamId    String?
-  team      Team?    @relation(fields: [teamId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String    @id @default(uuid())
+  email        String    @unique
+  name         String
+  role         String    @default("developer") // viewer | developer | platform_engineer | admin | security_admin
+  teamId       String?
+  team         Team?     @relation(fields: [teamId], references: [id])
+  passwordHash String?
+  lastLogin    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  ownedApplications Application[] @relation("Owner")
-  approvedDeployments Deployment[] @relation("Approver")
+  oidcProvider String?
+  oidcId       String?
+
+  ownedApplications   Application[]    @relation("Owner")
+  approvedDeployments  Deployment[]     @relation("Approver")
+  sessions             Session[]
+
+  @@unique([oidcProvider, oidcId])
+}
+
+model Session {
+  sid        String   @id @default(uuid())
+  data       Json     @default("{}")
+  expiresAt  DateTime?
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
 }
 
 // ─── Équipe ─────────────────────────────────────────────────────────────────

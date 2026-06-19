@@ -34,6 +34,16 @@ patches:
         path: /spec/rules/0/host
         value: api.staging.kubernal.local
   - target:
+      kind: ConfigMap
+      name: kubernal-api-config
+    patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: kubernal-api-config
+      data:
+        PORTAL_URL: 'https://backstage.staging.kubernal.local'
+  - target:
       kind: Ingress
       name: backstage
     patch: |-

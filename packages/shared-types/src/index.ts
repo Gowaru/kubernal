@@ -3,7 +3,19 @@
 // =============================================================================
 
 // --- User & Auth ---
-export type UserRole = 'developer' | 'platform_engineer' | 'security_admin';
+export type UserRole = 'viewer' | 'developer' | 'platform_engineer' | 'admin' | 'security_admin';
+
+export const ROLE_HIERARCHY: Record<UserRole, number> = {
+  viewer: 0,
+  developer: 1,
+  platform_engineer: 2,
+  admin: 3,
+  security_admin: 5,
+};
+
+export function hasRole(userRole: UserRole, requiredRole: UserRole): boolean {
+  return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
+}
 
 export interface User {
   id: string;
@@ -11,6 +23,8 @@ export interface User {
   name: string;
   role: UserRole;
   teamId: string | null;
+  passwordHash?: string | null;
+  lastLogin?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
