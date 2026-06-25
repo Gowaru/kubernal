@@ -16,7 +16,6 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME_API: ${{ github.repository_owner }}/kubernal-api
   IMAGE_NAME_BACKSTAGE: ${{ github.repository_owner }}/kubernal-backstage
-  BAO_ADDR: ${{ vars.BAO_ADDR }}
 
 jobs:
   lint-typecheck:
@@ -39,9 +38,6 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
     services:
       postgres:
         image: postgres:16-alpine
@@ -70,33 +66,12 @@ jobs:
           path: apps/api/node_modules/.prisma
           key: ${{ runner.os }}-prisma-${{ hashFiles('apps/api/prisma/schema.prisma') }}
 
-      - name: Authenticate to OpenBao (JWT/OIDC)
-        id: bao-auth
-        if: env.BAO_ADDR != ''
-        uses: hashicorp/vault-action@v3
-        with:
-          url: ${{ env.BAO_ADDR }}
-          method: jwt
-          role: kubernal-ci
-          exportEnv: false
-
-      - name: Fetch DB password from OpenBao
-        id: bao-db
-        if: steps.bao-auth.outcome == 'success'
-        run: |
-          BAO_TOKEN="${{ steps.bao-auth.outputs.token }}"
-          PASSWORD=$(curl -s -H "X-Vault-Token: ${BAO_TOKEN}" \
-            "${BAO_ADDR}/v1/secret/data/ci/postgres-password" | jq -r '.data.data.value')
-          echo "password=${PASSWORD}" >> "$GITHUB_OUTPUT"
-
       - name: Generate Prisma client
         run: npx prisma generate --schema=apps/api/prisma/schema.prisma
         env:
-          DATABASE_URL: postgresql://kubernal:${{ steps.bao-db.outputs.password || 'ci_test' }}@localhost:5432/kubernal_idp
+          DATABASE_URL: postgresql://kubernal:ci_test@localhost:5432/kubernal_idp
 
       - run: npm test
-        env:
-          DATABASE_URL: postgresql://kubernal:${{ steps.bao-db.outputs.password || 'ci_test' }}@localhost:5432/kubernal_idp
 
   format:
     name: Format Check
@@ -122,24 +97,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Authenticate to OpenBao (JWT/OIDC)
-        id: bao-auth
-        if: env.BAO_ADDR != ''
-        uses: hashicorp/vault-action@v3
-        with:
-          url: ${{ env.BAO_ADDR }}
-          method: jwt
-          role: kubernal-ci
-          secrets: |
-            secret/data/ci/dockerhub-token value | DOCKERHUB_TOKEN ;
-
-      - name: Log in to Docker Hub (if token available)
-        if: steps.bao-auth.outputs.token != '' && env.DOCKERHUB_TOKEN != ''
-        uses: docker/login-action@v3
-        with:
-          username: ${{ vars.DOCKERHUB_USERNAME || github.actor }}
-          password: ${{ env.DOCKERHUB_TOKEN }}
 
       - name: Log in to GHCR
         uses: docker/login-action@v3

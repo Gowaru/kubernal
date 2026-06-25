@@ -29,7 +29,7 @@ function sanitizeBody(body: unknown): unknown {
 export function auditContext(req: Request, _res: Response, next: NextFunction): void {
   const augmented = req as AuditedRequest;
   augmented.requestId = randomUUID();
-  augmented.actor = null;
+  augmented.actor = req.user ? { id: req.user.id, email: req.user.email } : null;
   augmented.realIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? 'unknown';
   _res.setHeader('X-Request-Id', augmented.requestId);
 

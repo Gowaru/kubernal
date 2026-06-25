@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCreateApplication } from '@/hooks/useApplications';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useAuth } from '@/hooks/useAuth';
 import { useTeams } from '@/hooks/useTeams';
 import { useTemplates } from '@/hooks/useTemplates';
 import { Loader2, CheckCircle2, ChevronLeft, ChevronRight, Github, GitBranch } from 'lucide-react';
@@ -37,8 +37,14 @@ interface ParamDefinition {
 
 type TemplateParameters = Record<string, ParamDefinition>;
 
+const APP_NAME_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-_]*$/;
+
 const formSchema = z.object({
-  name: z.string().min(1, 'Le nom est requis'),
+  name: z
+    .string()
+    .min(1, 'Le nom est requis')
+    .max(52, 'Maximum 52 caractères')
+    .regex(APP_NAME_REGEX, 'Lettres, chiffres et tirets uniquement (pas d\u0027espaces ni caractères spéciaux)'),
   description: z.string().optional(),
   repositoryUrl: z
     .string()
@@ -82,7 +88,7 @@ function hasParams(template: { parameters?: unknown } | undefined): boolean {
 }
 
 export function CreateApplicationModal({ open, onOpenChange }: CreateApplicationModalProps): JSX.Element {
-  const { data: currentUser } = useCurrentUser();
+  const { user: currentUser } = useAuth();
   const { data: teams } = useTeams();
   const { data: templates } = useTemplates();
   const createApplication = useCreateApplication();
@@ -210,7 +216,11 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
   };
 
   const selectedTeam = teams?.find((t) => t.id === form.teamId);
-  const totalSteps = hasParams(selectedTemplate) ? 3 : 2;
+  const anyTemplateHasParams = templates?.some((t) => {
+    if (!t.parameters || typeof t.parameters !== 'object') return false;
+    return Object.keys(t.parameters as TemplateParameters).length > 0;
+  }) ?? false;
+  const totalSteps = anyTemplateHasParams ? 3 : 2;
 
   const paramDefs = getParamDefs(selectedTemplate);
 
@@ -231,10 +241,11 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                 <Label htmlFor="name">Nom</Label>
                 <Input
                   id="name"
-                  placeholder="Mon application"
+                  placeholder="ex: payment-api"
                   value={form.name}
                   onChange={(e) => setField('name', e.target.value)}
                   required
+                  maxLength={52}
                 />
                 {errors.name && (
                   <p className="text-xs text-status-error">{errors.name}</p>

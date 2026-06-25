@@ -107,6 +107,7 @@ export function WebhookConfigCard({
               size="icon"
               className="h-8 w-8 shrink-0"
               onClick={() => copyToClipboard(data.url, 'URL')}
+              aria-label="Copier l'URL du webhook"
               title="Copier l'URL"
             >
               <Copy className="h-3.5 w-3.5" />
@@ -131,6 +132,7 @@ export function WebhookConfigCard({
                   size="icon"
                   className="h-8 w-8 shrink-0"
                   onClick={() => setShowSecret((s) => !s)}
+                  aria-label={showSecret ? 'Masquer le secret' : 'Afficher le secret'}
                   title={showSecret ? 'Masquer le secret' : 'Afficher le secret'}
                 >
                   {showSecret ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -140,6 +142,7 @@ export function WebhookConfigCard({
                   size="icon"
                   className="h-8 w-8 shrink-0"
                   onClick={() => copyToClipboard(lastSecret ?? 'secret-stocké', 'Secret')}
+                  aria-label="Copier le secret"
                   title="Copier le secret"
                   disabled={!lastSecret}
                 >

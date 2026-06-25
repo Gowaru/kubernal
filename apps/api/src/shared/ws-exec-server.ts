@@ -148,7 +148,7 @@ async function attemptExec(
   });
 }
 
-export function createWsExecServer(server: HttpServer): void {
+export function createWsExecServer(server: HttpServer): { close: () => void } {
   const wss = new WebSocketServer({ noServer: true });
 
   server.on('upgrade', (req, socket, head) => {
@@ -253,4 +253,10 @@ export function createWsExecServer(server: HttpServer): void {
   });
 
   logger.info('WebSocket exec server attached');
+
+  return {
+    close: () => {
+      wss.close();
+    },
+  };
 }

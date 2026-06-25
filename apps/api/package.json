@@ -16,9 +16,11 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
     "prisma:studio": "prisma studio",
-    "db:cleanup-sessions": "tsx src/scripts/cleanup-sessions.ts"
+    "db:cleanup-sessions": "tsx src/scripts/cleanup-sessions.ts",
+    "db:user-admin": "tsx src/scripts/user-admin.ts"
   },
   "dependencies": {
+    "@inquirer/prompts": "^8.5.2",
     "@kubernal/shared-types": "*",
     "@kubernetes/client-node": "^1.4.0",
     "@prisma/adapter-pg": "^7.8.0",

@@ -49,7 +49,7 @@ const STATUS_ICON: Record<string, { Icon: LucideIcon; tone: string; ring: string
   running: {
     Icon: Loader2,
     tone: 'text-status-info',
-    ring: 'border-status-info/50 bg-status-info/15 shadow-[0_0_18px_-2px_hsl(var(--status-info)/0.45)]',
+    ring: 'border-status-info/50 bg-status-info/15 shadow-[0_0_18px_-2px_color-mix(in_oklch,var(--status-info)_45%,transparent)]',
   },
   success: {
     Icon: CheckCircle2,

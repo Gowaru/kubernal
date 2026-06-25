@@ -46,7 +46,7 @@ export function PodTerminal({ namespace, podName, container, shell, onStatusChan
   const statusIcon = status === 'connecting' ? (
     <Loader2 className="h-3 w-3 animate-spin" />
   ) : status === 'fallback' ? (
-    <TriangleAlert className="h-3 w-3 text-yellow-400" />
+    <TriangleAlert className="h-3 w-3 text-status-warning" />
   ) : null;
 
   return (
@@ -56,7 +56,7 @@ export function PodTerminal({ namespace, podName, container, shell, onStatusChan
       status === 'error' && 'border-status-error/30',
     )}
     >
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#0B0F19] border-b border-border">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-terminal-bg border-b border-border">
         <div className="flex items-center gap-2 text-xs">
           <TerminalIcon className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="font-mono text-muted-foreground">{podName}</span>
@@ -67,7 +67,7 @@ export function PodTerminal({ namespace, podName, container, shell, onStatusChan
             status === 'connected' && 'bg-k8s-running/10 text-k8s-running',
             status === 'connecting' && 'bg-k8s-pending/10 text-k8s-pending',
             status === 'error' && 'bg-status-error/10 text-status-error',
-            status === 'fallback' && 'bg-yellow-500/10 text-yellow-400',
+            status === 'fallback' && 'bg-status-warning/10 text-status-warning',
             status === 'disconnected' && 'bg-muted text-muted-foreground',
           )}
           >
@@ -79,7 +79,7 @@ export function PodTerminal({ namespace, podName, container, shell, onStatusChan
           {status === 'connected' && (
             <button
               onClick={clear}
-              className="inline-flex items-center justify-center rounded p-1 text-muted-foreground/60 hover:text-foreground hover:bg-white/5 transition-colors"
+              className="inline-flex items-center justify-center rounded p-1 text-muted-foreground/60 hover:text-foreground hover:bg-accent/10 transition-colors"
               title="Effacer"
             >
               <Eraser className="h-3.5 w-3.5" />
@@ -104,7 +104,7 @@ export function PodTerminal({ namespace, podName, container, shell, onStatusChan
       </div>
       <div
         ref={terminalRef}
-        className="h-[55vh] bg-[#0B0F19] p-0"
+        className="h-[55vh] bg-terminal-bg p-0"
       />
     </div>
   );

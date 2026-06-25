@@ -140,7 +140,7 @@ export function WebhookOutboundModal({
             </div>
           </div>
 
-          {error && <p className="text-sm text-status-danger">{error}</p>}
+          {error && <p className="text-sm text-status-error">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
             <Button onClick={handleSubmit} disabled={create.isPending || update.isPending}>

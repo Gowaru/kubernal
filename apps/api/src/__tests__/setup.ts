@@ -62,6 +62,12 @@ vi.mock('../shared/database.js', () => {
       update: vi.fn(),
       delete: vi.fn(),
     },
+    auditLog: {
+      findMany: vi.fn().mockResolvedValue([]),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
+    },
     $connect: vi.fn(),
     $disconnect: vi.fn(),
   };

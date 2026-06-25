@@ -3,6 +3,25 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import type { RefObject } from 'react';
 
+function getCssVar(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function hexFromCssVar(varName: string, fallback: string): string {
+  const val = getCssVar(varName);
+  if (!val) return fallback;
+  if (val.startsWith('#')) return val;
+  const temp = document.createElement('div');
+  temp.style.color = `var(${varName})`;
+  document.body.appendChild(temp);
+  const rgb = getComputedStyle(temp).color;
+  document.body.removeChild(temp);
+  const m = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  if (!m) return fallback;
+  const hex = (n: string) => parseInt(n).toString(16).padStart(2, '0');
+  return `#${hex(m[1])}${hex(m[2])}${hex(m[3])}`;
+}
+
 export type TerminalStatus = 'disconnected' | 'connecting' | 'connected' | 'fallback' | 'error';
 
 export type TerminalMessage =
@@ -74,26 +93,26 @@ export function useTerminal(): UseTerminalReturn {
       fontSize: 13,
       fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace",
       theme: {
-        background: '#0B0F19',
-        foreground: '#E2E8F0',
-        cursor: '#4880FF',
-        selectionBackground: '#4880FF33',
-        black: '#1E293B',
-        red: '#EF4444',
-        green: '#22C55E',
-        yellow: '#EAB308',
-        blue: '#4880FF',
-        magenta: '#A855F7',
-        cyan: '#22D3EE',
-        white: '#E2E8F0',
-        brightBlack: '#475569',
-        brightRed: '#F87171',
-        brightGreen: '#4ADE80',
-        brightYellow: '#FDE047',
-        brightBlue: '#60A5FA',
-        brightMagenta: '#C084FC',
-        brightCyan: '#67E8F9',
-        brightWhite: '#F8FAFC',
+        background: hexFromCssVar('--panel-dark', '#0B0F19'),
+        foreground: hexFromCssVar('--foreground', '#E2E8F0'),
+        cursor: hexFromCssVar('--accent', '#4880FF'),
+        selectionBackground: hexFromCssVar('--accent', '#4880FF') + '33',
+        black: hexFromCssVar('--muted', '#1E293B'),
+        red: hexFromCssVar('--status-error', '#EF4444'),
+        green: hexFromCssVar('--status-success', '#22C55E'),
+        yellow: hexFromCssVar('--status-warning', '#EAB308'),
+        blue: hexFromCssVar('--status-info', '#4880FF'),
+        magenta: hexFromCssVar('--accent', '#A855F7'),
+        cyan: hexFromCssVar('--status-info', '#22D3EE'),
+        white: hexFromCssVar('--foreground', '#E2E8F0'),
+        brightBlack: hexFromCssVar('--muted-foreground', '#475569'),
+        brightRed: hexFromCssVar('--status-error', '#F87171'),
+        brightGreen: hexFromCssVar('--status-success', '#4ADE80'),
+        brightYellow: hexFromCssVar('--status-warning', '#FDE047'),
+        brightBlue: hexFromCssVar('--status-info', '#60A5FA'),
+        brightMagenta: hexFromCssVar('--accent', '#C084FC'),
+        brightCyan: hexFromCssVar('--status-info', '#67E8F9'),
+        brightWhite: hexFromCssVar('--foreground', '#F8FAFC'),
       },
       allowTransparency: false,
     });

@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import { NAV_SECTIONS, PLATFORM_VERSION } from '@/lib/constants';
 import { useSidebar } from './SidebarStore';
+import { useAuth } from '@/hooks/useAuth';
 import { useDeployments } from '@/hooks/useDeployments';
 import { useK8sEvents } from '@/hooks/useK8sEvents';
 import { MOCK_CLUSTER } from '@/mocks/k8s-data';
@@ -32,6 +33,12 @@ import {
 const iconMap: Record<string, typeof LayoutDashboard> = {
   LayoutDashboard, LayoutGrid, Rocket, Eye, Cloud, Users, FileJson, Shield, Settings, Box, Network, AlertTriangle,
 };
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(' ');
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
 
 const SHORTCUT_MAP: Record<string, string> = {
   '1': '/',
@@ -47,7 +54,8 @@ const SHORTCUT_MAP: Record<string, string> = {
 };
 
 export function Sidebar(): JSX.Element {
-  const { collapsed, mobileOpen, toggle, setMobileOpen, pendingApprovals, user, setPendingApprovals } = useSidebar();
+  const { collapsed, mobileOpen, toggle, setMobileOpen, pendingApprovals, setPendingApprovals } = useSidebar();
+  const { user, logout, hasRole } = useAuth();
   const { data: deployments } = useDeployments();
   const { data: k8sEvents = [] } = useK8sEvents(MOCK_CLUSTER.namespace);
   const navigate = useNavigate();
@@ -128,7 +136,7 @@ export function Sidebar(): JSX.Element {
               </p>
             )}
             <div className="space-y-0.5">
-              {section.items.map((item) => {
+              {section.items.filter(item => !item.requiredRole || hasRole(item.requiredRole)).map((item) => {
                 const Icon = iconMap[item.icon];
                 const showBadge = item.badge === 'pending' && pendingApprovals > 0;
                 return (
@@ -170,7 +178,7 @@ export function Sidebar(): JSX.Element {
                                 collapsed && 'p-2',
                               )}
                             >
-                              <Icon className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-0.5" />
+                              <Icon className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden="true" />
                             </div>
 
                             {!collapsed && (
@@ -226,34 +234,34 @@ export function Sidebar(): JSX.Element {
             <TooltipTrigger asChild>
               <button className="flex w-full items-center justify-center">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-accent to-accent/60 text-xs font-bold text-white shadow-lg shadow-accent/20">
-                  {user.initials}
+                  {user ? getInitials(user.name) : '??'}
                 </div>
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">
-              <p>{user.name}</p>
-              <p className="text-xs text-muted-foreground">{user.role}</p>
+              <p>{user?.name ?? '...'}</p>
+              <p className="text-xs text-muted-foreground">{user?.role ?? '...'}</p>
             </TooltipContent>
           </Tooltip>
         ) : (
           <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent/50 p-2.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-accent to-accent/60 text-xs font-bold text-white shadow-sm">
-              {user.initials}
+              {user ? getInitials(user.name) : '??'}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate text-sidebar-accent-foreground">
-                {user.name}
+                {user?.name ?? '...'}
               </p>
               <p className="text-[11px] text-muted-foreground truncate">
-                {user.role}
+                {user?.role ?? '...'}
               </p>
             </div>
             <button
               className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
               aria-label="Déconnexion"
-              title="Fonctionnalité à venir"
+              onClick={async () => { await logout(); navigate('/login'); }}
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         )}
@@ -265,9 +273,9 @@ export function Sidebar(): JSX.Element {
           aria-label={collapsed ? 'Étendre la barre latérale' : 'Réduire la barre latérale'}
         >
           {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
           ) : (
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           )}
         </button>
       </div>
@@ -276,17 +284,17 @@ export function Sidebar(): JSX.Element {
 
   return (
     <>
-      <aside className="hidden md:block h-full">
+      <aside aria-label="Barre latérale de navigation" className="hidden md:block h-full">
         {sidebarContent}
       </aside>
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-overlay/60 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="relative h-full w-64 shadow-xl">
+          <aside aria-label="Barre latérale de navigation" className="relative h-full w-64 shadow-xl">
             {sidebarContent}
           </aside>
         </div>

@@ -1,8 +1,14 @@
 import { z } from 'zod';
 import { REPO_URL_REGEX } from '../../shared/repo-utils.js';
 
+const APP_NAME_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-_]*$/;
+
 export const createApplicationSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .max(52, 'Maximum 52 characters')
+    .regex(APP_NAME_REGEX, 'Letters, numbers and hyphens only (no spaces or special characters)'),
   description: z.string().max(500).optional(),
   templateId: z.string().uuid(),
   teamId: z.string().uuid(),
@@ -19,7 +25,12 @@ export const createApplicationSchema = z.object({
 });
 
 export const updateApplicationSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .max(52, 'Maximum 52 characters')
+    .regex(APP_NAME_REGEX, 'Letters, numbers and hyphens only (no spaces or special characters)')
+    .optional(),
   description: z.string().max(500).nullable().optional(),
   repositoryUrl: z
     .string()

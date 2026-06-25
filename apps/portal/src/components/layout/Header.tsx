@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, Search, Bell, Server, Box, CornerDownLeft } from 'lucide-react';
 import { useSidebar } from './SidebarStore';
+import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggle } from './ThemeToggle';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -22,9 +23,9 @@ const NAMESPACES = [
 const MAX_RESULTS = 8;
 
 export function Header(): JSX.Element {
+  const { user } = useAuth();
   const {
     setMobileOpen,
-    user,
     currentCluster,
     currentNamespace,
     notificationCount,
@@ -36,6 +37,15 @@ export function Header(): JSX.Element {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const userInitials = user?.name
+    ? ((): string => {
+        const parts = user.name.trim().split(' ');
+        return parts.length >= 2
+          ? (parts[0][0] + parts[1][0]).toUpperCase()
+          : user.name.slice(0, 2).toUpperCase();
+      })()
+    : '??';
 
   const { data: applications } = useApplications();
 
@@ -110,7 +120,7 @@ export function Header(): JSX.Element {
         onClick={() => setMobileOpen(true)}
         aria-label="Ouvrir la barre latérale"
       >
-        <Menu className="h-5 w-5" />
+        <Menu className="h-5 w-5" aria-hidden="true" />
       </Button>
 
       {/* Search trigger */}
@@ -120,7 +130,7 @@ export function Header(): JSX.Element {
         className="hidden md:flex items-center gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-1.5 text-sm text-muted-foreground w-64 hover:border-muted-foreground/30 transition-colors text-left"
         aria-label="Ouvrir la recherche"
       >
-        <Search className="h-4 w-4 shrink-0" />
+        <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
         <span>Rechercher...</span>
         <kbd className="ml-auto rounded bg-secondary px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
           ⌘K
@@ -134,7 +144,7 @@ export function Header(): JSX.Element {
             Tapez le nom d'une application pour la rechercher.
           </DialogDescription>
           <div className="flex items-center gap-2 border-b border-border px-4">
-            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Search className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
             <input
               ref={inputRef}
               type="text"
@@ -153,7 +163,7 @@ export function Header(): JSX.Element {
           <div className="max-h-80 overflow-y-auto p-2">
             {results.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-center">
-                <Search className="h-8 w-8 text-muted-foreground/40 mb-2" />
+                <Search className="h-8 w-8 text-muted-foreground/40 mb-2" aria-hidden="true" />
                 <p className="text-sm text-muted-foreground">
                   {query ? 'Aucune application trouvée' : 'Commencez à taper pour rechercher'}
                 </p>
@@ -175,7 +185,7 @@ export function Header(): JSX.Element {
                         }`}
                       >
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
-                          <Box className="h-4 w-4" />
+                          <Box className="h-4 w-4" aria-hidden="true" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-medium">{app.name}</p>
@@ -184,7 +194,7 @@ export function Header(): JSX.Element {
                           </p>
                         </div>
                         {isActive && (
-                          <CornerDownLeft className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <CornerDownLeft className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
                         )}
                       </button>
                     </li>
@@ -215,7 +225,9 @@ export function Header(): JSX.Element {
       {/* Cluster selector */}
       <div className="hidden lg:flex items-center gap-2">
         <span className="h-2 w-2 rounded-full bg-k8s-running shrink-0" />
+        <label htmlFor="cluster-select" className="sr-only">Cluster</label>
         <select
+          id="cluster-select"
           value={currentCluster}
           onChange={(e) => setCurrentCluster(e.target.value)}
           className="bg-card text-foreground border-border text-xs font-mono focus:ring-0 cursor-pointer hover:text-foreground transition-colors rounded px-1 py-0.5"
@@ -231,8 +243,10 @@ export function Header(): JSX.Element {
 
       {/* Namespace picker */}
       <div className="hidden lg:flex items-center gap-1.5">
-        <Server className="h-3.5 w-3.5 text-muted-foreground" />
+        <Server className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+        <label htmlFor="namespace-select" className="sr-only">Namespace</label>
         <select
+          id="namespace-select"
           value={currentNamespace}
           onChange={(e) => setCurrentNamespace(e.target.value)}
           className="bg-card text-foreground border-border text-xs font-mono focus:ring-0 cursor-pointer hover:text-foreground transition-colors rounded px-1 py-0.5"
@@ -247,8 +261,8 @@ export function Header(): JSX.Element {
       <span className="hidden lg:block text-muted-foreground/30">·</span>
 
       {/* Notifications */}
-      <Button variant="ghost" size="icon" className="relative h-8 w-8 shrink-0">
-        <Bell className="h-4 w-4 text-muted-foreground" />
+      <Button variant="ghost" size="icon" className="relative h-8 w-8 shrink-0" aria-label="Notifications">
+        <Bell className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
         {notificationCount > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-k8s-failed px-1 text-[9px] font-bold text-white">
             {notificationCount > 9 ? '9+' : notificationCount}
@@ -260,7 +274,7 @@ export function Header(): JSX.Element {
 
       <Avatar className="h-8 w-8 shrink-0">
         <AvatarFallback className="bg-linear-to-br from-accent to-accent/60 text-white text-xs">
-          {user.initials}
+          {userInitials}
         </AvatarFallback>
       </Avatar>
     </header>

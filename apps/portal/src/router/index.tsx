@@ -1,7 +1,8 @@
-import { lazy, Suspense, type JSX } from 'react';
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import AppShell from '@/components/layout/AppShell';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
+import PageLoader from '@/components/ui/page-loader';
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Catalogue = lazy(() => import('@/pages/Catalogue'));
@@ -20,14 +21,6 @@ const K8sEventsPage = lazy(() => import('@/pages/k8s/K8sEventsPage'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const LoginPage = lazy(() => import('@/pages/Login'));
 const AuthCallback = lazy(() => import('@/pages/AuthCallback'));
-
-function PageLoader(): JSX.Element {
-  return (
-    <div className="flex items-center justify-center h-64">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-    </div>
-  );
-}
 
 const router = createBrowserRouter([
   {

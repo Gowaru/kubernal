@@ -28,6 +28,12 @@ export class ConflictError extends AppError {
   }
 }
 
+export class UnauthorizedError extends AppError {
+  constructor(message = 'Unauthorized') {
+    super(401, 'UNAUTHORIZED', message);
+  }
+}
+
 export class ForbiddenError extends AppError {
   constructor(message = 'Access denied') {
     super(403, 'FORBIDDEN', message);

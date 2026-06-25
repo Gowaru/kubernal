@@ -25,7 +25,7 @@ const EVENT_LABELS: Record<string, string> = {
 
 function DeliveryIcon({ status }: { status: WebhookDelivery['status'] }) {
   if (status === 'success') return <CheckCircle2 className="h-3.5 w-3.5 text-status-success" />;
-  if (status === 'failed') return <XCircle className="h-3.5 w-3.5 text-status-danger" />;
+  if (status === 'failed') return <XCircle className="h-3.5 w-3.5 text-status-error" />;
   return <Clock className="h-3.5 w-3.5 text-muted-foreground animate-pulse" />;
 }
 
@@ -78,7 +78,7 @@ function ConfigRow({
           <Button variant="ghost" size="icon" className="h-7 w-7" title="Modifier" onClick={() => onEdit(config)}>
             <ExternalLink className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-status-danger" title="Supprimer" onClick={() => {
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-status-error" title="Supprimer" onClick={() => {
             if (window.confirm('Supprimer ce webhook ?')) {
               del.mutate(config.id, {
                 onSuccess: () => toast.success('Webhook supprimé'),

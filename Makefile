@@ -256,6 +256,11 @@ prisma-migrate: ## Applique les migrations Prisma
 	@echo "$(BLUE)→ Migration Prisma...$(RESET)"
 	npm run prisma:migrate -w apps/api
 
+.PHONY: db-user-admin
+db-user-admin: ## CLI interactif — gestion des utilisateurs (création, modification, suppression)
+	@echo "$(BLUE)→ Gestion des utilisateurs...$(RESET)"
+	npm run db:user-admin -w apps/api
+
 # ─── Kyverno ────────────────────────────────────────────────────────────────
 .PHONY: kyverno-install
 kyverno-install: ## Installe Kyverno dans le cluster Kind

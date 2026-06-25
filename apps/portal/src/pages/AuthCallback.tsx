@@ -1,6 +1,6 @@
 import { useEffect, type JSX } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 
 export default function AuthCallbackPage(): JSX.Element {

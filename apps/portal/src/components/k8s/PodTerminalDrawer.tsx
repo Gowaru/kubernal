@@ -44,7 +44,7 @@ export function PodTerminalDrawer({ open, onClose, namespace, podName, container
       {open && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-40 bg-overlay/50 backdrop-blur-sm"
             onClick={handleClose}
           />
           <motion.div
@@ -69,7 +69,7 @@ export function PodTerminalDrawer({ open, onClose, namespace, podName, container
               </button>
             </div>
 
-            <div className="flex-1 overflow-hidden bg-[#0B0F19]">
+            <div className="flex-1 overflow-hidden bg-terminal-bg">
               {connected ? (
                 <PodTerminal
                   key={sessionKey}

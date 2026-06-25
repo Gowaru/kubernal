@@ -9,7 +9,8 @@ export function useAllK8sPods(): UseQueryResult<K8sPod[], Error> {
       const { data } = await apiClient.get<{ data: K8sPod[] }>('/kubernetes/pods', { params: { namespace: '' } });
       return data.data;
     },
-    staleTime: 5_000,
-    refetchInterval: 10_000,
+    staleTime: 30_000,
+    refetchInterval: false,
+    refetchOnWindowFocus: true,
   });
 }

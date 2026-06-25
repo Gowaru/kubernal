@@ -1,17 +1,9 @@
 import { create } from 'zustand';
 
-interface UserInfo {
-  name: string;
-  email: string;
-  role: string;
-  initials: string;
-}
-
 interface SidebarState {
   collapsed: boolean;
   mobileOpen: boolean;
   pendingApprovals: number;
-  user: UserInfo;
   currentCluster: string;
   currentNamespace: string;
   notificationCount: number;
@@ -26,13 +18,7 @@ interface SidebarState {
 export const useSidebar = create<SidebarState>((set) => ({
   collapsed: false,
   mobileOpen: false,
-  pendingApprovals: 3,
-  user: {
-    name: 'Alex D.',
-    email: 'alex@kubernal.io',
-    role: 'Platform Engineer',
-    initials: 'AD',
-  },
+  pendingApprovals: 0,
   currentCluster: 'kubernal-prod',
   currentNamespace: 'prod',
   notificationCount: 0,

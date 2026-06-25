@@ -13,7 +13,8 @@ export function useK8sEvents(
       const { data } = await apiClient.get<{ data: K8sEvent[] }>('/kubernetes/events', { params: { namespace: namespace ?? '', cluster, limit } });
       return data.data;
     },
-    staleTime: 8_000,
-    refetchInterval: 8_000,
+    staleTime: 30_000,
+    refetchInterval: false,
+    refetchOnWindowFocus: true,
   });
 }

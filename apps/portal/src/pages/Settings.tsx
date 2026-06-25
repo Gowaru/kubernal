@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTheme } from '@/hooks/use-theme';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useAuth } from '@/hooks/useAuth';
 import { useUsers } from '@/hooks/useUsers';
 import { useTeams } from '@/hooks/useTeams';
 import { GenerateApiKeyModal, type ApiKey } from '@/components/settings/GenerateApiKeyModal';
@@ -45,16 +45,11 @@ const initialKeys: ApiKey[] = [
 
 export default function Settings(): JSX.Element {
   const { isDark, toggle: toggleTheme } = useTheme();
-  const { data: currentUser, isLoading: userLoading, error: userError } = useCurrentUser();
+  const { user: currentUser, isLoading: userLoading } = useAuth();
   const { data: users, error: usersError } = useUsers();
   const { data: teams, error: teamsError } = useTeams();
 
   useEffect(() => {
-    if (userError) {
-      toast.error('Erreur lors du chargement des données', {
-        description: (userError as Error)?.message || 'Veuillez réessayer',
-      });
-    }
     if (usersError) {
       toast.error('Erreur lors du chargement des données', {
         description: (usersError as Error)?.message || 'Veuillez réessayer',
@@ -65,7 +60,7 @@ export default function Settings(): JSX.Element {
         description: (teamsError as Error)?.message || 'Veuillez réessayer',
       });
     }
-  }, [userError, usersError, teamsError]);
+  }, [usersError, teamsError]);
   const [notifications, setNotifications] = useState<string[]>(['deploy_failure', 'policy_violation']);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [copiedKey, setCopiedKey] = useState<string | null>(null);

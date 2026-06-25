@@ -1,9 +1,13 @@
+import bcrypt from 'bcrypt';
 import { createPrismaClient } from '../src/shared/database.js';
 
 const db = createPrismaClient(process.env['DATABASE_URL'] ?? '');
 
 async function main(): Promise<void> {
   console.log('Seeding database...\n');
+
+  // ─── Shared password hash ───────────────────────────────────────────────
+  const defaultPasswordHash = await bcrypt.hash('changeme', 10);
 
   // ─── Teams ──────────────────────────────────────────────────────────────
   const teams = {
@@ -50,7 +54,7 @@ async function main(): Promise<void> {
       update: {},
       create: {
         email: 'admin@kubernal.io', name: 'Platform Admin', role: 'platform_engineer',
-        teamId: teams.platform.id,
+        teamId: teams.platform.id, passwordHash: defaultPasswordHash,
       },
     }),
     alice: await db.user.upsert({
@@ -58,7 +62,7 @@ async function main(): Promise<void> {
       update: {},
       create: {
         email: 'alice@kubernal.io', name: 'Alice Martin', role: 'developer',
-        teamId: teams.rocket.id,
+        teamId: teams.rocket.id, passwordHash: defaultPasswordHash,
       },
     }),
     bob: await db.user.upsert({
@@ -66,7 +70,7 @@ async function main(): Promise<void> {
       update: {},
       create: {
         email: 'bob@kubernal.io', name: 'Bob Dubois', role: 'developer',
-        teamId: teams.rocket.id,
+        teamId: teams.rocket.id, passwordHash: defaultPasswordHash,
       },
     }),
     carole: await db.user.upsert({
@@ -74,7 +78,7 @@ async function main(): Promise<void> {
       update: {},
       create: {
         email: 'carole@kubernal.io', name: 'Carole Petit', role: 'developer',
-        teamId: teams.photon.id,
+        teamId: teams.photon.id, passwordHash: defaultPasswordHash,
       },
     }),
     david: await db.user.upsert({
@@ -82,7 +86,7 @@ async function main(): Promise<void> {
       update: {},
       create: {
         email: 'david@kubernal.io', name: 'David Bernard', role: 'developer',
-        teamId: teams.photon.id,
+        teamId: teams.photon.id, passwordHash: defaultPasswordHash,
       },
     }),
     security: await db.user.upsert({
@@ -90,7 +94,7 @@ async function main(): Promise<void> {
       update: {},
       create: {
         email: 'security@kubernal.io', name: 'Sarah O\'Connor', role: 'security_admin',
-        teamId: teams.platform.id,
+        teamId: teams.platform.id, passwordHash: defaultPasswordHash,
       },
     }),
   };

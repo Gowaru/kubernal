@@ -45,7 +45,7 @@ export function GitHubBadge({ config, isLoading }: GitHubBadgeProps): JSX.Elemen
     return (
       <Badge variant="outline" className="border-status-warning/30 bg-status-warning/10 text-status-warning">
         <Icon className="mr-1 h-3 w-3" />
-        {label} · secret manquant
+        {label} · secret non configuré
       </Badge>
     );
   }

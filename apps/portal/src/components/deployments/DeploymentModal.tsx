@@ -223,7 +223,7 @@ export function DeploymentModal({
                           {nextVersion ? version : 'Calcul en cours…'}
                         </span>
                         {nextVersion?.isPrerelease && (
-                          <span className="shrink-0 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
+                          <span className="shrink-0 rounded-full bg-status-warning/10 px-2 py-0.5 text-[10px] font-semibold text-status-warning">
                             prerelease
                           </span>
                         )}
@@ -320,7 +320,8 @@ export function DeploymentModal({
               <Button variant="outline" size="sm" onClick={handleClose}>
                 Annuler
               </Button>
-              <Button size="sm" onClick={handleSubmit} disabled={!isValid}>
+              <Button size="sm" onClick={handleSubmit} disabled={!isValid || createDeployment.isPending}>
+                {createDeployment.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
                 <Rocket className="mr-1.5 h-3.5 w-3.5" />
                 Lancer le déploiement
               </Button>
