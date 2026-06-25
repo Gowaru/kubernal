@@ -1,6 +1,10 @@
+import 'dotenv/config';
 import { createApp } from './app.js';
 import { createWsExecServer } from './shared/ws-exec-server.js';
+import { createWsLogServer } from './shared/ws-log-server.js';
+import { disconnectDatabase } from './shared/database.js';
 import { logger } from './shared/logger.js';
+import { Pool } from 'pg';
 import { startDeploymentWorker, stopDeploymentWorker } from './modules/deployment/deployment.worker.js';
 
 const PORT = parseInt(process.env.PORT ?? '4000', 10);
@@ -13,14 +17,36 @@ const server = app.listen(PORT, () => {
   startDeploymentWorker();
 });
 
-createWsExecServer(server);
+const wsExecServer = createWsExecServer(server);
+const wsLogServer = createWsLogServer(server);
 
-const shutdown = (signal: string): void => {
+const shutdown = async (signal: string): Promise<void> => {
   logger.info({ signal }, 'Shutting down...');
+
   stopDeploymentWorker();
-  server.close(() => process.exit(0));
+  (globalThis as { __pipelineWorker?: { stop: () => void } }).__pipelineWorker?.stop();
+  wsExecServer.close();
+  wsLogServer.close();
+
+  const forceExit = setTimeout(() => {
+    logger.error('Forced exit after shutdown timeout');
+    process.exit(1);
+  }, 5000);
+
+  server.close(async () => {
+    clearTimeout(forceExit);
+    try {
+      await disconnectDatabase();
+      const pgPool = (globalThis as { __sessionPgPool?: Pool }).__sessionPgPool;
+      if (pgPool) await pgPool.end();
+    } catch (err) {
+      logger.error({ err }, 'Error during database disconnect');
+    }
+    process.exit(0);
+  });
 };
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+
+process.on('SIGTERM', () => { void shutdown('SIGTERM'); });
+process.on('SIGINT', () => { void shutdown('SIGINT'); });
 
 export default app;

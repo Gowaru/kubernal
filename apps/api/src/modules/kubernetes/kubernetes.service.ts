@@ -271,24 +271,40 @@ export const kubernetesService = {
           const meta = (item.metadata ?? {}) as Record<string, unknown>;
           const spec = (item.spec ?? {}) as Record<string, unknown>;
           const status = (item.status ?? {}) as Record<string, unknown>;
-          const metrics = (spec.metrics as Array<Record<string, unknown>>) ?? [];
-          const cpuMetric = metrics.find(
+          const specMetrics = (spec.metrics as Array<Record<string, unknown>>) ?? [];
+          const currentMetrics = (status.currentMetrics as Array<Record<string, unknown>>) ?? [];
+          const cpuSpec = specMetrics.find(
             (m) => (m.resource as Record<string, unknown>)?.name === 'cpu',
           );
+          const cpuCurrent = currentMetrics.find(
+            (m) => m.type === 'Resource' && (m.resource as Record<string, unknown>)?.name === 'cpu',
+          );
+          const memSpec = specMetrics.find(
+            (m) => (m.resource as Record<string, unknown>)?.name === 'memory',
+          );
+          const memCurrent = currentMetrics.find(
+            (m) => m.type === 'Resource' && (m.resource as Record<string, unknown>)?.name === 'memory',
+          );
+          const getTarget = (m: Record<string, unknown> | undefined): number | null => {
+            if (!m) return null;
+            const target = (m.resource as Record<string, unknown>)?.target as Record<string, unknown> | undefined;
+            return (target?.averageUtilization as number) ?? null;
+          };
+          const getCurrent = (m: Record<string, unknown> | undefined): number | null => {
+            if (!m) return null;
+            const current = (m.resource as Record<string, unknown>)?.current as Record<string, unknown> | undefined;
+            return (current?.averageUtilization as number) ?? null;
+          };
           return {
             name: (meta.name as string) ?? 'unknown',
             minReplicas: (spec.minReplicas as number) ?? 1,
             maxReplicas: (spec.maxReplicas as number) ?? 1,
             currentReplicas: (status.currentReplicas as number) ?? 0,
             desiredReplicas: (status.desiredReplicas as number) ?? 0,
-            cpuTarget: cpuMetric
-              ? ((cpuMetric.resource as Record<string, unknown>)?.target as Record<string, unknown>)?.averageUtilization as number ?? null
-              : null,
-            cpuCurrent: cpuMetric
-              ? (status.currentCPUUtilizationPercentage as number) ?? null
-              : null,
-            memoryTarget: null,
-            memoryCurrent: null,
+            cpuTarget: getTarget(cpuSpec),
+            cpuCurrent: getCurrent(cpuCurrent),
+            memoryTarget: getTarget(memSpec),
+            memoryCurrent: getCurrent(memCurrent),
           };
         });
       },
