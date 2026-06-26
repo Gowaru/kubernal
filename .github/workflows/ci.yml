@@ -3,8 +3,26 @@ name: CI - Build & GitOps Sync
 on:
   push:
     branches: [develop, main]
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+      - '.github/workflows/pr-checks.yml'
+      - '.github/workflows/secret-scan.yml'
+      - '.github/workflows/trufflehog-scan.yml'
+      - '.gitignore'
+      - '.gitleaks.toml'
+      - 'LICENSE'
   pull_request:
     branches: [develop, main]
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+      - '.github/workflows/pr-checks.yml'
+      - '.github/workflows/secret-scan.yml'
+      - '.github/workflows/trufflehog-scan.yml'
+      - '.gitignore'
+      - '.gitleaks.toml'
+      - 'LICENSE'
   workflow_dispatch:
 
 concurrency:
@@ -202,6 +220,9 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add infra/overlays/
+            git stash
+            git pull --rebase origin ${{ github.ref_name }}
+            git stash pop
             git commit -m "chore(gitops): update overlay images to sha-${GITHUB_SHA:0:7}"
             git push
             echo "Overlay images updated and pushed"

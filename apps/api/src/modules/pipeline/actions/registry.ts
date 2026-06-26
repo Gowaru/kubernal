@@ -8,6 +8,17 @@ import { scaffoldProjectAction } from './scaffold-project.js';
 import { scanImageAction } from './scan-image.js';
 import type { PipelineAction } from './types.js';
 
+const RETRY_CONFIG: Record<string, number> = {
+  [buildImageAction.name]: 0,
+  [pushImageAction.name]: 3,
+  [scanImageAction.name]: 1,
+  [deployManifestAction.name]: 2,
+  [provisionInfrastructureAction.name]: 2,
+  [runScriptAction.name]: 0,
+  [fetchTemplateAction.name]: 1,
+  [scaffoldProjectAction.name]: 0,
+};
+
 const REGISTRY: Record<string, PipelineAction> = {
   [fetchTemplateAction.name]: fetchTemplateAction,
   [provisionInfrastructureAction.name]: provisionInfrastructureAction,
@@ -26,7 +37,8 @@ export function getAction(name: string): PipelineAction {
       `Unknown action: ${name}. Known: ${Object.keys(REGISTRY).join(', ')}`,
     );
   }
-  return action;
+  const maxRetries = RETRY_CONFIG[name] ?? 0;
+  return { ...action, maxRetries };
 }
 
 export function listActions(): string[] {

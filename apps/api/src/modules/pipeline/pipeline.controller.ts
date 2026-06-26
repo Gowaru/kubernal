@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { db } from '../../shared/database.js';
-import { NotFoundError, ValidationError } from '../../shared/errors.js';
+import { ConflictError, NotFoundError, ValidationError } from '../../shared/errors.js';
 import { listActions } from './actions/registry.js';
 import { pipelineRepository } from './pipeline.repository.js';
 import { pipelineService } from './pipeline.service.js';
@@ -55,6 +55,18 @@ export const pipelineController = {
 
     if (!isTemplateStepArray(template.steps) || template.steps.length === 0) {
       throw new ValidationError(`Template '${template.name}' has no steps defined`);
+    }
+
+    const activePipeline = await db.pipeline.findFirst({
+      where: {
+        deploymentId,
+        status: { in: ['pending', 'running'] },
+      },
+    });
+    if (activePipeline) {
+      throw new ConflictError(
+        `A pipeline is already active for this deployment (${activePipeline.id})`,
+      );
     }
 
     const application = await db.application.findUnique({

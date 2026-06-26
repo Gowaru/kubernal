@@ -31,6 +31,7 @@ export interface ActionResult {
 
 export interface PipelineAction {
   readonly name: string;
+  readonly maxRetries?: number;
   validate(params: Record<string, unknown>): void;
   execute(context: ActionContext): Promise<ActionResult>;
 }

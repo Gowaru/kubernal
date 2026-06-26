@@ -129,27 +129,50 @@ export async function executePipeline(pipelineId: string): Promise<void> {
       return;
     }
 
-    logger.info(`Step ${step.order} (${step.name}) running action '${action.name}'`);
-    try {
-      const result = await action.execute(context);
-      await db.pipelineStep.update({
-        where: { id: step.id },
-        data: {
-          status: 'success',
-          output: toJsonValue(result.output),
-          completedAt: new Date(),
-        },
-      });
-      if (result.artifacts && result.artifacts.length > 0) {
-        await appendDeploymentArtifacts(pipeline.deploymentId, result.artifacts);
-        logger.info(
-          `Step ${step.order} attached ${result.artifacts.length} artifact(s) to deployment`,
-        );
+    logger.info(`Step ${step.order} (${step.name}) running action '${action.name}' (attempt 1/${(action.maxRetries ?? 0) + 1})`);
+    const maxAttempts = (action.maxRetries ?? 0) + 1;
+    let lastError: unknown = null;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        if (attempt > 1) {
+          const delayMs = Math.min(1000 * Math.pow(2, attempt - 2), 30_000);
+          logger.warn(`Step ${step.order} retry ${attempt}/${maxAttempts} after ${delayMs}ms`);
+          await new Promise((r) => setTimeout(r, delayMs));
+          await db.pipelineStep.update({
+            where: { id: step.id },
+            data: { status: 'running', startedAt: new Date(), errorMessage: null },
+          });
+        }
+        const result = await action.execute(context);
+        await db.pipelineStep.update({
+          where: { id: step.id },
+          data: {
+            status: 'success',
+            output: toJsonValue(result.output),
+            completedAt: new Date(),
+          },
+        });
+        if (result.artifacts && result.artifacts.length > 0) {
+          await appendDeploymentArtifacts(pipeline.deploymentId, result.artifacts);
+          logger.info(
+            `Step ${step.order} attached ${result.artifacts.length} artifact(s) to deployment`,
+          );
+        }
+        logger.info(`Step ${step.order} (${step.name}) succeeded`);
+        lastError = null;
+        break;
+      } catch (err) {
+        lastError = err;
+        if (attempt < maxAttempts) {
+          logger.warn(`Step ${step.order} (${step.name}) attempt ${attempt} failed: ${errorMessageOf(err)}`);
+        }
       }
-      logger.info(`Step ${step.order} (${step.name}) succeeded`);
-    } catch (err) {
-      const message = errorMessageOf(err);
-      logger.error(`Step ${step.order} (${step.name}) failed: ${message}`);
+    }
+
+    if (lastError) {
+      const message = errorMessageOf(lastError);
+      logger.error(`Step ${step.order} (${step.name}) failed after ${maxAttempts} attempt(s): ${message}`);
       await db.pipelineStep.update({
         where: { id: step.id },
         data: {

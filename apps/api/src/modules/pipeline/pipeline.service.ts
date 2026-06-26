@@ -1,5 +1,6 @@
 import type { Pipeline } from '@prisma/client';
-import { NotFoundError } from '../../shared/errors.js';
+import { db } from '../../shared/database.js';
+import { ConflictError, NotFoundError } from '../../shared/errors.js';
 import { pipelineRepository } from './pipeline.repository.js';
 
 export const pipelineService = {
@@ -14,6 +15,17 @@ export const pipelineService = {
   },
 
   async create(data: { deploymentId: string; name: string; logsUrl?: string }): Promise<Pipeline> {
+    const activePipeline = await db.pipeline.findFirst({
+      where: {
+        deploymentId: data.deploymentId,
+        status: { in: ['pending', 'running'] },
+      },
+    });
+    if (activePipeline) {
+      throw new ConflictError(
+        `A pipeline is already active for this deployment (${activePipeline.id})`,
+      );
+    }
     return pipelineRepository.create({ ...data, status: 'running' });
   },
 
