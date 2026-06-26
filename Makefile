@@ -88,8 +88,14 @@ up: ## Démarre PostgreSQL et les services locaux (Docker Compose)
 .PHONY: down
 down: ## Arrête les services Docker
 	@echo "$(YELLOW)→ Arrêt des services Docker...$(RESET)"
-	docker compose -f infra/docker-compose.yml down
+	docker compose -f infra/docker-compose.yml --profile ui down
 	@echo "$(GREEN)✓ Services arrêtés$(RESET)"
+
+.PHONY: up-ui
+up-ui: ## Démarre tous les services (PostgreSQL + pgAdmin UI + exporter)
+	@echo "$(BLUE)→ Démarrage de tous les services (incl. pgAdmin)...$(RESET)"
+	docker compose -f infra/docker-compose.yml --profile ui up -d
+	@echo "$(GREEN)✓ Tous les services démarrés — pgAdmin: http://localhost:5050$(RESET)"
 
 .PHONY: logs
 logs: ## Affiche les logs des services Docker
@@ -124,11 +130,93 @@ kind-ingress: ## Installe NGINX Ingress Controller dans Kind
 .PHONY: kind-namespaces
 kind-namespaces: ## Crée les namespaces K8s
 	@echo "$(BLUE)→ Création des namespaces...$(RESET)"
-	kubectl apply -f infra/kubernetes/namespaces/
+	kubectl apply -f infra/k8s/namespaces/
 	@echo "$(GREEN)✓ Namespaces créés$(RESET)"
 
 .PHONY: kind-setup
-kind-setup: kind-up kind-ingress kind-namespaces ## Setup complet du cluster Kind
+kind-setup: kind-up kind-ingress kind-namespaces ## Setup complet du cluster Kind (cluster + ingress + namespaces)
+
+.PHONY: kind-setup-full
+kind-setup-full: kind-setup kyverno-setup monitoring-install k8s-deploy-dev argocd-setup ## Setup complet du cluster Kind (tout : cluster + ingress + namespaces + kyverno + monitoring + deploy + argocd)
+
+# ─── Déploiement K8s local ─────────────────────────────────────────────────
+.PHONY: k8s-deploy-dev
+k8s-deploy-dev: ## Déploie l'API + Portal + PostgreSQL dans kubernal-dev
+	@echo "$(BLUE)→ Déploiement sur kubernal-dev...$(RESET)"
+	kubectl apply -k infra/overlays/dev
+	@echo "$(GREEN)✓ Déploiement effectué sur kubernal-dev$(RESET)"
+
+.PHONY: k8s-deploy-staging
+k8s-deploy-staging: ## Déploie l'API + Portal + PostgreSQL dans kubernal-staging
+	@echo "$(BLUE)→ Déploiement sur kubernal-staging...$(RESET)"
+	kubectl apply -k infra/overlays/staging
+	@echo "$(GREEN)✓ Déploiement effectué sur kubernal-staging$(RESET)"
+
+.PHONY: k8s-deploy-prod
+k8s-deploy-prod: ## Déploie l'API + Portal + PostgreSQL dans kubernal-prod
+	@echo "$(BLUE)→ Déploiement sur kubernal-prod...$(RESET)"
+	kubectl apply -k infra/overlays/prod
+	@echo "$(GREEN)✓ Déploiement effectué sur kubernal-prod$(RESET)"
+
+.PHONY: k8s-deploy
+k8s-deploy: k8s-deploy-dev ## Déploie tout sur l'environnement dev (par défaut)
+
+.PHONY: k8s-deploy-all
+k8s-deploy-all: k8s-deploy-dev k8s-deploy-staging k8s-deploy-prod ## Déploie sur tous les environnements
+
+.PHONY: k8s-status
+k8s-status: ## Affiche l'état des déploiements K8s
+	@echo "$(BLUE)→ Pods:$(RESET)"
+	kubectl get pods --all-namespaces | grep -E "kubernal|postgres"
+	@echo "$(BLUE)→ Services:$(RESET)"
+	kubectl get services --all-namespaces | grep -E "kubernal|postgres"
+	@echo "$(BLUE)→ Ingress:$(RESET)"
+	kubectl get ingress --all-namespaces | grep -E "kubernal"
+
+# ─── ArgoCD ─────────────────────────────────────────────────────────────────
+.PHONY: argocd-install
+argocd-install: ## Installe ArgoCD dans le cluster Kind
+	@echo "$(BLUE)→ Installation d'ArgoCD...$(RESET)"
+	kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+	kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+	@echo "$(GREEN)✓ ArgoCD installé$(RESET)"
+
+.PHONY: argocd-password
+argocd-password: ## Récupère le mot de passe admin ArgoCD
+	@echo "$(BLUE)→ Mot de passe admin ArgoCD:$(RESET)"
+	kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+	@echo ""
+
+.PHONY: argocd-port-forward
+argocd-port-forward: ## Expose ArgoCD sur http://localhost:8080
+	@echo "$(BLUE)→ ArgoCD UI: http://localhost:8080$(RESET)"
+	kubectl port-forward -n argocd svc/argocd-server 8080:80
+
+.PHONY: argocd-login
+argocd-login: ## Login à ArgoCD via CLI
+	@echo "$(BLUE)→ Connexion à ArgoCD...$(RESET)"
+	argocd login localhost:8080 --insecure --username admin --password $$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+
+.PHONY: argocd-apply-project
+argocd-apply-project: ## Apply l'AppProject Kubernal
+	@echo "$(BLUE)→ Application du projet ArgoCD...$(RESET)"
+	kubectl apply -f infra/argocd/projects/
+	@echo "$(GREEN)✓ Projet ArgoCD appliqué$(RESET)"
+
+.PHONY: argocd-apply-apps
+argocd-apply-apps: ## Apply les Applications ArgoCD
+	@echo "$(BLUE)→ Application des Applications ArgoCD...$(RESET)"
+	kubectl apply -f infra/argocd/applications/
+	@echo "$(GREEN)✓ Applications ArgoCD appliquées$(RESET)"
+
+.PHONY: argocd-ingress
+argocd-ingress: ## Crée l'Ingress ArgoCD (argo.kubernal.local)
+	@echo "$(BLUE)→ Création de l'Ingress ArgoCD...$(RESET)"
+	kubectl apply -f infra/k8s/argocd/ingress.yaml
+	@echo "$(GREEN)✓ Ingress ArgoCD créé — http://argocd.kubernal.local$(RESET)"
+
+.PHONY: argocd-setup
+argocd-setup: argocd-install argocd-ingress argocd-apply-project argocd-apply-apps ## Setup complet ArgoCD (install + ingress + project + apps)
 
 # ─── Développement local ───────────────────────────────────────────────────
 .PHONY: dev-api
@@ -136,24 +224,78 @@ dev-api: ## Lance l'API en mode développement
 	@echo "$(BLUE)→ Démarrage de l'API...$(RESET)"
 	npm run dev -w apps/api
 
-.PHONY: dev-backstage
-dev-backstage: ## Lance Backstage en mode développement
-	@echo "$(BLUE)→ Démarrage de Backstage...$(RESET)"
-	cd apps/backstage && yarn dev
+.PHONY: dev-portal
+dev-portal: ## Lance le portail développeur en mode développement
+	@echo "$(BLUE)→ Démarrage du portail développeur...$(RESET)"
+	npm run dev -w apps/portal
 
 .PHONY: dev
-dev: up dev-api ## Lance la stack de développement (Docker + API)
+dev: up dev-api dev-portal ## Lance la stack de développement (Docker + API + Portal)
+
+# ─── Docker Build ───────────────────────────────────────────────────────────
+.PHONY: docker-build-api
+docker-build-api: ## Build l'image Docker de l'API (tag: kubernal/api:latest)
+	@echo "$(BLUE)→ Build de l'image API...$(RESET)"
+	docker build -t kubernal/api:latest -f apps/api/Dockerfile .
+	@echo "$(GREEN)✓ Image kubernal/api:latest créée$(RESET)"
+
+.PHONY: docker-build-portal
+docker-build-portal: ## Build l'image Docker du portail développeur (tag: kubernal/portal:latest)
+	@echo "$(BLUE)→ Build de l'image du portail...$(RESET)"
+	docker build -t kubernal/portal:latest -f apps/portal/Dockerfile .
+	@echo "$(GREEN)✓ Image kubernal/portal:latest créée$(RESET)"
 
 # ─── Migration Prisma ──────────────────────────────────────────────────────
 .PHONY: prisma-generate
 prisma-generate: ## Génère le client Prisma
 	@echo "$(BLUE)→ Génération du client Prisma...$(RESET)"
-	npm run prisma:generate -w apps/api
+	npx prisma generate --schema=apps/api/prisma/schema.prisma
 
 .PHONY: prisma-migrate
 prisma-migrate: ## Applique les migrations Prisma
 	@echo "$(BLUE)→ Migration Prisma...$(RESET)"
 	npm run prisma:migrate -w apps/api
+
+.PHONY: db-user-admin
+db-user-admin: ## CLI interactif — gestion des utilisateurs (création, modification, suppression)
+	@echo "$(BLUE)→ Gestion des utilisateurs...$(RESET)"
+	npm run db:user-admin -w apps/api
+
+# ─── Kyverno ────────────────────────────────────────────────────────────────
+.PHONY: kyverno-install
+kyverno-install: ## Installe Kyverno dans le cluster Kind
+	@echo "$(BLUE)→ Installation de Kyverno...$(RESET)"
+	kubectl create -f https://raw.githubusercontent.com/kyverno/kyverno/main/config/install.yaml
+	@echo "$(GREEN)✓ Kyverno installé$(RESET)"
+
+.PHONY: kyverno-policies
+kyverno-policies: ## Applique les politiques Kyverno
+	@echo "$(BLUE)→ Application des politiques Kyverno...$(RESET)"
+	kubectl apply -f infra/kyverno/
+	@echo "$(GREEN)✓ Politiques Kyverno appliquées$(RESET)"
+
+.PHONY: kyverno-setup
+kyverno-setup: kyverno-install kyverno-policies ## Setup complet Kyverno
+
+# ─── Monitoring (Prometheus + Grafana) ─────────────────────────────────────
+.PHONY: monitoring-install
+monitoring-install: ## Déploie Prometheus et Grafana dans kubernal-dev
+	@echo "$(BLUE)→ Déploiement de Prometheus & Grafana...$(RESET)"
+	kubectl apply -f infra/monitoring/
+	@echo "$(GREEN)✓ Monitoring déployé$(RESET)"
+
+.PHONY: monitoring-port-forward-grafana
+monitoring-port-forward-grafana: ## Expose Grafana sur http://localhost:3001
+	@echo "$(BLUE)→ Grafana: http://localhost:3001$(RESET)"
+	kubectl port-forward -n kubernal-dev svc/grafana 3001:3000
+
+.PHONY: monitoring-port-forward-prometheus
+monitoring-port-forward-prometheus: ## Expose Prometheus sur http://localhost:9091
+	@echo "$(BLUE)→ Prometheus: http://localhost:9091$(RESET)"
+	kubectl port-forward -n kubernal-dev svc/prometheus 9091:9090
+
+.PHONY: monitoring-setup
+monitoring-setup: monitoring-install ## Setup complet Monitoring
 
 # ─── Healthcheck ────────────────────────────────────────────────────────────
 .PHONY: health

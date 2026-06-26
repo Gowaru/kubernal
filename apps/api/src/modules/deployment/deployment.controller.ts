@@ -1,41 +1,88 @@
-import type { Request, Response } from "express";
-import { deploymentService } from "./deployment.service.js";
+import type { Request, Response } from 'express';
+import { deploymentService } from './deployment.service.js';
+import { triggerReconcile } from './deployment.worker.js';
+import { compareDeploymentsQuerySchema } from '../kubernetes/kubernetes.schema.js';
+import { nextVersion, type BumpType } from './versioning.service.js';
+import { bumpVersionSchema } from './deployment.schema.js';
 
 export const deploymentController = {
-  async list(_req: Request, res: Response) {
+  async list(_req: Request, res: Response): Promise<void> {
     const deployments = await deploymentService.list();
     res.json({ data: deployments, total: deployments.length });
   },
 
-  async getById(req: Request, res: Response) {
+  async getById(req: Request, res: Response): Promise<void> {
     const id = req.params.id as string;
     const deployment = await deploymentService.getById(id);
     res.json({ data: deployment });
   },
 
-  async create(req: Request, res: Response) {
+  async create(req: Request, res: Response): Promise<void> {
     const deployment = await deploymentService.create(req.body);
+    void triggerReconcile(deployment.id);
     res.status(201).json({ data: deployment });
   },
 
-  async transitionStatus(req: Request, res: Response) {
+  async transitionStatus(req: Request, res: Response): Promise<void> {
     const { status } = req.body;
     const id = req.params.id as string;
     const deployment = await deploymentService.transitionStatus(id, status);
+    void triggerReconcile(id);
     res.json({ data: deployment });
   },
 
-  async approve(req: Request, res: Response) {
+  async approve(req: Request, res: Response): Promise<void> {
     const { approvedById } = req.body;
     const id = req.params.id as string;
     const deployment = await deploymentService.approve(id, approvedById);
+    void triggerReconcile(id);
     res.json({ data: deployment });
   },
 
-  async recordViolations(req: Request, res: Response) {
+  async promote(req: Request, res: Response): Promise<void> {
+    const { targetEnv } = req.body as { targetEnv: 'staging' | 'prod' };
+    const id = req.params.id as string;
+    const deployment = await deploymentService.promote(id, targetEnv);
+    if (deployment.status === 'building') {
+      void triggerReconcile(deployment.id);
+    }
+    res.status(201).json({ data: deployment });
+  },
+
+  async recordViolations(req: Request, res: Response): Promise<void> {
     const { violations } = req.body;
     const id = req.params.id as string;
     const deployment = await deploymentService.recordViolations(id, violations);
     res.json({ data: deployment });
+  },
+
+  async getVulnerabilities(req: Request, res: Response): Promise<void> {
+    const id = req.params.id as string;
+    const vulnerabilities = await deploymentService.getVulnerabilities(id);
+    res.json({ data: vulnerabilities, total: vulnerabilities.length });
+  },
+
+  async compare(req: Request, res: Response): Promise<void> {
+    const { from, to } = compareDeploymentsQuerySchema.parse(req.query);
+    const diff = await deploymentService.compare(from, to);
+    res.json({ data: diff });
+  },
+
+  async previewNextVersion(req: Request, res: Response): Promise<void> {
+    const params = bumpVersionSchema.parse(req.body ?? {});
+    let currentVersion: string | undefined;
+    if (params.currentVersion) {
+      currentVersion = params.currentVersion;
+    } else {
+      const latest = await deploymentService.getLatestVersion();
+      currentVersion = latest ?? undefined;
+    }
+    const result = nextVersion({
+      bump: params.bump as BumpType,
+      currentVersion,
+      commitSha: params.commitSha,
+      branch: params.branch,
+    });
+    res.json({ data: result });
   },
 };

@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+    kubernal.io/managed-by: kubernal
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            runAsNonRoot: false
+            capabilities:
+              add:
+                - CHOWN
+                - FOWNER
+                - DAC_OVERRIDE
+                - SETUID
+                - SETGID
+                - SYS_CHROOT
+              drop:
+                - ALL
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: kubernal
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              value: kubernal_idp
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          livenessProbe:
+            exec:
+              command: [pg_isready, -U, kubernal]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: [pg_isready, -U, kubernal]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: '100m'
+              memory: '256Mi'
+            limits:
+              cpu: '500m'
+              memory: '1Gi'
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: postgres-data

@@ -1,0 +1,18 @@
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: disallow-latest-tag-exception
+  namespace: kubernal-dev
+spec:
+  exceptions:
+    - policyName: disallow-latest-tag
+      ruleNames:
+        - require-image-tag
+        - autogen-require-image-tag
+  match:
+    any:
+      - resources:
+          kinds:
+            - Pod
+          namespaces:
+            - kubernal-dev

@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubernal-api-staging
+  namespace: argocd
+  labels:
+    kubernal.io/component: api
+    kubernal.io/environment: staging
+    kubernal.io/managed-by: kubernal
+spec:
+  project: kubernal
+  source:
+    repoURL: 'https://github.com/Gowaru/kubernal'
+    targetRevision: develop
+    path: infra/overlays/staging
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: kubernal-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

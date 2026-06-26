@@ -14,7 +14,7 @@ metadata:
     - prisma
     - postgresql
   annotations:
-    github.com/project-slug: <PLACEHOLDER_ORG>/kubernal
+    github.com/project-slug: ${GITHUB_REPO_SLUG}
     backstage.io/techdocs-ref: dir:.
 spec:
   type: service

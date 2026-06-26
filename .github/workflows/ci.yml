@@ -1,17 +1,39 @@
-name: CI
+name: CI - Build & GitOps Sync
 
 on:
   push:
-    branches: [main]
+    branches: [develop, main]
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+      - '.github/workflows/pr-checks.yml'
+      - '.github/workflows/secret-scan.yml'
+      - '.github/workflows/trufflehog-scan.yml'
+      - '.gitignore'
+      - '.gitleaks.toml'
+      - 'LICENSE'
   pull_request:
-    branches: [main]
+    branches: [develop, main]
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+      - '.github/workflows/pr-checks.yml'
+      - '.github/workflows/secret-scan.yml'
+      - '.github/workflows/trufflehog-scan.yml'
+      - '.gitignore'
+      - '.gitleaks.toml'
+      - 'LICENSE'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '22'
+  REGISTRY: ghcr.io
+  IMAGE_NAME_API: ${{ github.repository_owner }}/kubernal-api
+  IMAGE_NAME_BACKSTAGE: ${{ github.repository_owner }}/kubernal-backstage
 
 jobs:
   lint-typecheck:
@@ -24,6 +46,10 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate --schema=apps/api/prisma/schema.prisma
+
       - run: npm run lint
       - run: npm run typecheck
 
@@ -51,10 +77,18 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - run: npm ci
+
+      - name: Cache Prisma generated client
+        uses: actions/cache@v4
+        with:
+          path: apps/api/node_modules/.prisma
+          key: ${{ runner.os }}-prisma-${{ hashFiles('apps/api/prisma/schema.prisma') }}
+
       - name: Generate Prisma client
-        run: npm run prisma:generate -w apps/api
+        run: npx prisma generate --schema=apps/api/prisma/schema.prisma
         env:
           DATABASE_URL: postgresql://kubernal:ci_test@localhost:5432/kubernal_idp
+
       - run: npm test
 
   format:
@@ -68,3 +102,130 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run format
+
+  build-api:
+    name: Build & Push API
+    if: github.event_name == 'push' && (github.ref_name == 'develop' || github.ref_name == 'main')
+    needs: [lint-typecheck, test, format]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      id-token: write
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}
+          tags: |
+            type=sha,prefix=,suffix=,format=short
+            type=raw,value=latest,enable=${{ github.ref_name == 'develop' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v6
+        id: build-push
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Run Trivy vulnerability scanner
+        id: trivy
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}@${{ steps.build-push.outputs.digest }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          timeout: '10m'
+
+      - name: Upload Trivy results to GitHub Security tab
+        if: always() && steps.trivy.outcome == 'success'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign image with Cosign (keyless)
+        if: github.ref_name == 'main'
+        run: |
+          cosign sign --yes \
+            --oidc-issuer https://token.actions.githubusercontent.com \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}@${{ steps.build-push.outputs.digest }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  gitops-sync:
+    name: GitOps Sync – Kustomize overlay
+    if: github.event_name == 'push' && (github.ref_name == 'develop' || github.ref_name == 'main')
+    needs: [build-api]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine overlays to update
+        id: overlays
+        run: |
+          if [ "${{ github.ref_name }}" = "develop" ]; then
+            echo "targets=dev" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_name }}" = "main" ]; then
+            echo "targets=staging prod" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Update overlay images with SHA tag
+        run: |
+          SHA7="${GITHUB_SHA:0:7}"
+          TAG="sha-${SHA7}"
+
+          for overlay in ${{ steps.overlays.outputs.targets }}; do
+            KFILE="infra/overlays/$overlay/kustomization.yaml"
+            echo "Updating $KFILE → tag: ${TAG}"
+            yq eval '(.images[] | select(.name == "ghcr.io/gowaru/kubernal-api")).newTag = "'"${TAG}"'"' -i "$KFILE"
+          done
+
+          echo "Updated images to tag: ${TAG}"
+
+      - name: Commit and push overlay changes
+        run: |
+          if ! git diff --quiet infra/overlays/; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add infra/overlays/
+            git stash
+            git pull --rebase origin ${{ github.ref_name }}
+            git stash pop
+            git commit -m "chore(gitops): update overlay images to sha-${GITHUB_SHA:0:7}"
+            git push
+            echo "Overlay images updated and pushed"
+          else
+            echo "No changes to overlays"
+          fi

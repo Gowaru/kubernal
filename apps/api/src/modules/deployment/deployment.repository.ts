@@ -1,33 +1,42 @@
-import { db } from "../../shared/database.js";
-import { toJsonArray } from "../../shared/json.js";
+import type { Deployment } from '@prisma/client';
+import { db } from '../../shared/database.js';
+import { toJsonArray } from '../../shared/json.js';
 
 export const deploymentRepository = {
-  findAll() {
+  findAll(): Promise<Deployment[]> {
     return db.deployment.findMany({
       include: { application: true, environment: true, approvedBy: true, pipelines: true },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
   },
 
-  findById(id: string) {
+  findById(id: string): Promise<Deployment | null> {
     return db.deployment.findUnique({
       where: { id },
       include: { application: true, environment: true, approvedBy: true, pipelines: true },
     });
   },
 
-  findByApplication(applicationId: string) {
+  findByApplication(applicationId: string): Promise<Deployment[]> {
     return db.deployment.findMany({
       where: { applicationId },
       include: { environment: true, approvedBy: true },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
   },
 
-  findByEnvironment(environmentId: string) {
+  findByEnvironment(environmentId: string): Promise<Deployment[]> {
     return db.deployment.findMany({
       where: { environmentId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
+    });
+  },
+
+  findLatestByApplication(applicationId: string): Promise<{ version: string } | null> {
+    return db.deployment.findFirst({
+      where: { applicationId },
+      orderBy: { createdAt: 'desc' },
+      select: { version: true },
     });
   },
 
@@ -38,35 +47,35 @@ export const deploymentRepository = {
     commitSha: string;
     trigger?: string;
     status?: string;
-  }) {
+  }): Promise<Deployment> {
     return db.deployment.create({
       data,
       include: { application: true, environment: true, pipelines: true },
     });
   },
 
-  updateStatus(id: string, status: string, completedAt?: Date) {
+  updateStatus(id: string, status: string, completedAt?: Date): Promise<Deployment> {
     return db.deployment.update({
       where: { id },
       data: { status, ...(completedAt ? { completedAt } : {}) },
     });
   },
 
-  approve(id: string, approvedById: string) {
+  approve(id: string, approvedById: string): Promise<Deployment> {
     return db.deployment.update({
       where: { id },
-      data: { approvedById, status: "deploying" },
+      data: { approvedById, status: 'deploying' },
     });
   },
 
-  savePolicyViolations(id: string, violations: Record<string, unknown>[]) {
+  savePolicyViolations(id: string, violations: Record<string, unknown>[]): Promise<Deployment> {
     return db.deployment.update({
       where: { id },
       data: { policyViolations: toJsonArray(violations) },
     });
   },
 
-  delete(id: string) {
+  delete(id: string): Promise<Deployment> {
     return db.deployment.delete({ where: { id } });
   },
 };

@@ -1,0 +1,30 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Disallow Latest Tag
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      The ':latest' tag is mutable and can lead to inconsistent
+      deployments. This policy enforces the use of immutable tags.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: require-image-tag
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaceSelector:
+                matchLabels:
+                  kubernal.io/managed-by: kubernal
+      validate:
+        message: "Using 'latest' tag is not allowed. Use an immutable tag or digest."
+        pattern:
+          spec:
+            containers:
+              - image: '!*:latest'

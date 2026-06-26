@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{name}}
+  labels:
+    app: {{name}}
+    env: {{env}}
+    managed-by: kubernal-idp
+spec:
+  replicas: {{replicas}}
+  selector:
+    matchLabels:
+      app: {{name}}
+  template:
+    metadata:
+      labels:
+        app: {{name}}
+        env: {{env}}
+    spec:
+      containers:
+        - name: {{name}}
+          image: {{image}}
+          ports:
+            - containerPort: {{port}}
+          env:
+            - name: PORT
+              value: "{{port}}"
+            - name: NODE_ENV
+              value: "production"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi

@@ -3,7 +3,7 @@ import tsParser from '@typescript-eslint/parser';
 
 export default [
   {
-    ignores: ['**/dist/**', '**/node_modules/**', '**/*.generated.ts'],
+    ignores: ['**/dist/**', '**/node_modules/**', '**/*.generated.ts', '**/.yarn/**', 'apps/backstage/**', 'templates/**'],
   },
   {
     files: ['**/*.ts', '**/*.tsx'],
@@ -26,6 +26,14 @@ export default [
       'prefer-const': 'error',
       'no-var': 'error',
       eqeqeq: ['error', 'always'],
+    },
+  },
+  {
+    files: ['**/*.test.ts', '**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      'no-console': 'off',
     },
   },
 ];

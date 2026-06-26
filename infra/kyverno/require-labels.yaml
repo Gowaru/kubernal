@@ -1,0 +1,51 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-kubernal-labels
+  annotations:
+    policies.kyverno.io/title: Require Kubernal Labels
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Ensures all resources in kubernal namespaces have the required
+      kubernal.io/managed-by and kubernal.io/environment labels.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: check-managed-by-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - Service
+                - Pod
+                - ConfigMap
+                - Secret
+              namespaceSelector:
+                matchLabels:
+                  kubernal.io/managed-by: kubernal
+      validate:
+        message: "The label 'kubernal.io/managed-by' is required."
+        pattern:
+          metadata:
+            labels:
+              kubernal.io/managed-by: '?*'
+    - name: check-environment-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - Service
+                - Pod
+              namespaceSelector:
+                matchLabels:
+                  kubernal.io/managed-by: kubernal
+      validate:
+        message: "The label 'kubernal.io/environment' is required for workloads."
+        pattern:
+          metadata:
+            labels:
+              kubernal.io/environment: '?*'

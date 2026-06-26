@@ -1,12 +1,10 @@
-version: '3.9'
-
 services:
   postgres:
     image: postgres:16-alpine
     container_name: kubernal-postgres
     environment:
       POSTGRES_USER: kubernal
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: kubernal_dev
       POSTGRES_DB: kubernal_idp
     ports:
       - '5432:5432'
@@ -21,12 +19,32 @@ services:
     networks:
       - kubernal-net
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: kubernal-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@kubernal.io
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - '5050:80'
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+      - ./pgadmin-servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - kubernal-net
+    profiles:
+      - ui
+
   postgres-exporter:
     image: prometheuscommunity/postgres-exporter:latest
     container_name: kubernal-pg-exporter
     environment:
       DATA_SOURCE_USER: kubernal
-      DATA_SOURCE_PASS: ${DB_PASSWORD}
+      DATA_SOURCE_PASS: kubernal_dev
       DATA_SOURCE_SERVER: postgres:5432
       DATA_SOURCE_DBNAME: kubernal_idp
       DATA_SOURCE_SSLMODE: disable
@@ -40,6 +58,7 @@ services:
 
 volumes:
   postgres-data:
+  pgadmin-data:
 
 networks:
   kubernal-net:

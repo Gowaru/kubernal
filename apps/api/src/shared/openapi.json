@@ -72,7 +72,10 @@
                 "properties": {
                   "email": { "type": "string", "format": "email" },
                   "name": { "type": "string" },
-                  "role": { "type": "string", "enum": ["developer", "platform_engineer", "security_admin"] },
+                  "role": {
+                    "type": "string",
+                    "enum": ["viewer", "developer", "platform_engineer", "admin", "security_admin"]
+                  },
                   "teamId": { "type": "string", "format": "uuid" }
                 }
               }
@@ -104,7 +107,12 @@
         "summary": "Get user by ID",
         "operationId": "getUser",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "responses": {
           "200": {
@@ -128,7 +136,12 @@
         "summary": "Update a user",
         "operationId": "updateUser",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "requestBody": {
           "content": {
@@ -137,7 +150,10 @@
                 "type": "object",
                 "properties": {
                   "name": { "type": "string" },
-                  "role": { "type": "string", "enum": ["developer", "platform_engineer", "security_admin"] },
+                  "role": {
+                    "type": "string",
+                    "enum": ["viewer", "developer", "platform_engineer", "admin", "security_admin"]
+                  },
                   "teamId": { "type": "string", "format": "uuid", "nullable": true }
                 }
               }
@@ -167,7 +183,12 @@
         "summary": "Delete a user",
         "operationId": "deleteUser",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "responses": {
           "204": { "description": "User deleted" },
@@ -239,7 +260,12 @@
         "summary": "Get team by ID",
         "operationId": "getTeam",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "responses": {
           "200": {
@@ -263,7 +289,12 @@
         "summary": "Update a team",
         "operationId": "updateTeam",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "requestBody": {
           "content": {
@@ -304,7 +335,12 @@
         "summary": "Delete a team",
         "operationId": "deleteTeam",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "responses": {
           "204": { "description": "Team deleted" },
@@ -343,7 +379,10 @@
                 "required": ["name", "category", "description", "repository"],
                 "properties": {
                   "name": { "type": "string" },
-                  "category": { "type": "string", "enum": ["backend", "frontend", "fullstack", "library", "function"] },
+                  "category": {
+                    "type": "string",
+                    "enum": ["backend", "frontend", "fullstack", "library", "function"]
+                  },
                   "description": { "type": "string" },
                   "repository": { "type": "string", "format": "uri" },
                   "version": { "type": "string", "default": "1.0.0" }
@@ -376,7 +415,12 @@
         "summary": "Get template by ID",
         "operationId": "getTemplate",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "responses": {
           "200": {
@@ -400,7 +444,12 @@
         "summary": "Update a template",
         "operationId": "updateTemplate",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "requestBody": {
           "content": {
@@ -409,7 +458,10 @@
                 "type": "object",
                 "properties": {
                   "name": { "type": "string" },
-                  "category": { "type": "string", "enum": ["backend", "frontend", "fullstack", "library", "function"] },
+                  "category": {
+                    "type": "string",
+                    "enum": ["backend", "frontend", "fullstack", "library", "function"]
+                  },
                   "description": { "type": "string" },
                   "repository": { "type": "string", "format": "uri" },
                   "version": { "type": "string" }
@@ -441,7 +493,12 @@
         "summary": "Delete a template",
         "operationId": "deleteTemplate",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "responses": {
           "204": { "description": "Template deleted" },
@@ -514,7 +571,12 @@
         "summary": "Get application by ID",
         "operationId": "getApplication",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "responses": {
           "200": {
@@ -538,7 +600,12 @@
         "summary": "Update an application",
         "operationId": "updateApplication",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "requestBody": {
           "content": {
@@ -580,7 +647,12 @@
         "summary": "Delete an application",
         "operationId": "deleteApplication",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "responses": {
           "204": { "description": "Application deleted" },
@@ -653,7 +725,12 @@
         "summary": "Get environment by ID",
         "operationId": "getEnvironment",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "responses": {
           "200": {
@@ -677,7 +754,12 @@
         "summary": "Update an environment",
         "operationId": "updateEnvironment",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "requestBody": {
           "content": {
@@ -719,7 +801,12 @@
         "summary": "Delete an environment",
         "operationId": "deleteEnvironment",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "responses": {
           "204": { "description": "Environment deleted" },
@@ -761,7 +848,11 @@
                   "environmentId": { "type": "string", "format": "uuid" },
                   "version": { "type": "string" },
                   "commitSha": { "type": "string" },
-                  "trigger": { "type": "string", "enum": ["manual", "git_push", "scheduled", "rollback"], "default": "manual" }
+                  "trigger": {
+                    "type": "string",
+                    "enum": ["manual", "git_push", "scheduled", "rollback"],
+                    "default": "manual"
+                  }
                 }
               }
             }
@@ -791,7 +882,12 @@
         "summary": "Get deployment by ID",
         "operationId": "getDeployment",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "responses": {
           "200": {
@@ -818,7 +914,12 @@
         "description": "Valid transitions: pending->building/cancelled/failed, building->deploying/failed/cancelled, deploying->healthy/failed/cancelled, healthy->rolled_back",
         "operationId": "transitionDeployment",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "requestBody": {
           "required": true,
@@ -830,7 +931,14 @@
                 "properties": {
                   "status": {
                     "type": "string",
-                    "enum": ["building", "deploying", "healthy", "failed", "rolled_back", "cancelled"]
+                    "enum": [
+                      "building",
+                      "deploying",
+                      "healthy",
+                      "failed",
+                      "rolled_back",
+                      "cancelled"
+                    ]
                   }
                 }
               }
@@ -862,7 +970,12 @@
         "summary": "Approve a pending deployment for prod",
         "operationId": "approveDeployment",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "requestBody": {
           "required": true,
@@ -903,7 +1016,12 @@
         "summary": "Record policy violations for a deployment",
         "operationId": "recordViolations",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "requestBody": {
           "required": true,
@@ -920,7 +1038,10 @@
                       "properties": {
                         "policyId": { "type": "string", "format": "uuid" },
                         "policyName": { "type": "string" },
-                        "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+                        "severity": {
+                          "type": "string",
+                          "enum": ["critical", "high", "medium", "low"]
+                        },
                         "message": { "type": "string" },
                         "resource": { "type": "string" }
                       }
@@ -1011,7 +1132,12 @@
         "summary": "Get pipeline by ID",
         "operationId": "getPipeline",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "responses": {
           "200": {
@@ -1037,7 +1163,12 @@
         "summary": "Update pipeline status",
         "operationId": "updatePipelineStatus",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "requestBody": {
           "required": true,
@@ -1106,7 +1237,10 @@
                 "properties": {
                   "name": { "type": "string" },
                   "description": { "type": "string" },
-                  "category": { "type": "string", "enum": ["security", "compliance", "cost", "operations"] },
+                  "category": {
+                    "type": "string",
+                    "enum": ["security", "compliance", "cost", "operations"]
+                  },
                   "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
                   "engine": { "type": "string", "enum": ["kyverno", "opa", "custom"] },
                   "rules": { "type": "object" },
@@ -1140,7 +1274,12 @@
         "summary": "Get policy by ID",
         "operationId": "getPolicy",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "responses": {
           "200": {
@@ -1164,7 +1303,12 @@
         "summary": "Update a policy",
         "operationId": "updatePolicy",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "requestBody": {
           "content": {
@@ -1174,7 +1318,10 @@
                 "properties": {
                   "name": { "type": "string" },
                   "description": { "type": "string" },
-                  "category": { "type": "string", "enum": ["security", "compliance", "cost", "operations"] },
+                  "category": {
+                    "type": "string",
+                    "enum": ["security", "compliance", "cost", "operations"]
+                  },
                   "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
                   "engine": { "type": "string", "enum": ["kyverno", "opa", "custom"] },
                   "rules": { "type": "object" },
@@ -1207,7 +1354,12 @@
         "summary": "Delete a policy",
         "operationId": "deletePolicy",
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string", "format": "uuid" } }
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
         ],
         "responses": {
           "204": { "description": "Policy deleted" },
@@ -1280,7 +1432,10 @@
           "id": { "type": "string", "format": "uuid" },
           "email": { "type": "string", "format": "email" },
           "name": { "type": "string" },
-          "role": { "type": "string", "enum": ["developer", "platform_engineer", "security_admin"] },
+          "role": {
+            "type": "string",
+            "enum": ["viewer", "developer", "platform_engineer", "admin", "security_admin"]
+          },
           "teamId": { "type": "string", "format": "uuid", "nullable": true },
           "createdAt": { "type": "string", "format": "date-time" },
           "updatedAt": { "type": "string", "format": "date-time" }
@@ -1299,7 +1454,15 @@
           "createdAt": { "type": "string", "format": "date-time" },
           "updatedAt": { "type": "string", "format": "date-time" }
         },
-        "required": ["id", "name", "quotaCpu", "quotaMemory", "namespacePrefix", "createdAt", "updatedAt"]
+        "required": [
+          "id",
+          "name",
+          "quotaCpu",
+          "quotaMemory",
+          "namespacePrefix",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "GoldenPathTemplate": {
         "type": "object",
@@ -1307,7 +1470,10 @@
           "id": { "type": "string", "format": "uuid" },
           "name": { "type": "string" },
           "version": { "type": "string" },
-          "category": { "type": "string", "enum": ["backend", "frontend", "fullstack", "library", "function"] },
+          "category": {
+            "type": "string",
+            "enum": ["backend", "frontend", "fullstack", "library", "function"]
+          },
           "description": { "type": "string" },
           "repository": { "type": "string", "format": "uri" },
           "createdAt": { "type": "string", "format": "date-time" }
@@ -1328,7 +1494,16 @@
           "createdAt": { "type": "string", "format": "date-time" },
           "updatedAt": { "type": "string", "format": "date-time" }
         },
-        "required": ["id", "name", "templateId", "teamId", "ownerId", "status", "createdAt", "updatedAt"]
+        "required": [
+          "id",
+          "name",
+          "templateId",
+          "teamId",
+          "ownerId",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "Environment": {
         "type": "object",
@@ -1342,7 +1517,16 @@
           "requiresApproval": { "type": "boolean" },
           "createdAt": { "type": "string", "format": "date-time" }
         },
-        "required": ["id", "name", "type", "applicationId", "namespace", "clusterName", "requiresApproval", "createdAt"]
+        "required": [
+          "id",
+          "name",
+          "type",
+          "applicationId",
+          "namespace",
+          "clusterName",
+          "requiresApproval",
+          "createdAt"
+        ]
       },
       "Deployment": {
         "type": "object",
@@ -1352,7 +1536,18 @@
           "environmentId": { "type": "string", "format": "uuid" },
           "version": { "type": "string" },
           "commitSha": { "type": "string" },
-          "status": { "type": "string", "enum": ["pending", "building", "deploying", "healthy", "failed", "rolled_back", "cancelled"] },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "building",
+              "deploying",
+              "healthy",
+              "failed",
+              "rolled_back",
+              "cancelled"
+            ]
+          },
           "trigger": { "type": "string", "enum": ["manual", "git_push", "scheduled", "rollback"] },
           "approvedById": { "type": "string", "format": "uuid", "nullable": true },
           "policyViolations": { "type": "array", "items": { "type": "object" } },
@@ -1360,7 +1555,17 @@
           "completedAt": { "type": "string", "format": "date-time", "nullable": true },
           "createdAt": { "type": "string", "format": "date-time" }
         },
-        "required": ["id", "applicationId", "environmentId", "version", "commitSha", "status", "trigger", "startedAt", "createdAt"]
+        "required": [
+          "id",
+          "applicationId",
+          "environmentId",
+          "version",
+          "commitSha",
+          "status",
+          "trigger",
+          "startedAt",
+          "createdAt"
+        ]
       },
       "Pipeline": {
         "type": "object",
@@ -1382,14 +1587,26 @@
           "id": { "type": "string", "format": "uuid" },
           "name": { "type": "string" },
           "description": { "type": "string" },
-          "category": { "type": "string", "enum": ["security", "compliance", "cost", "operations"] },
+          "category": {
+            "type": "string",
+            "enum": ["security", "compliance", "cost", "operations"]
+          },
           "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
           "engine": { "type": "string", "enum": ["kyverno", "opa", "custom"] },
           "rules": { "type": "object" },
           "enabled": { "type": "boolean" },
           "createdAt": { "type": "string", "format": "date-time" }
         },
-        "required": ["id", "name", "description", "category", "severity", "engine", "enabled", "createdAt"]
+        "required": [
+          "id",
+          "name",
+          "description",
+          "category",
+          "severity",
+          "engine",
+          "enabled",
+          "createdAt"
+        ]
       }
     }
   },

@@ -1,0 +1,140 @@
+import type { Request, Response } from 'express';
+import type { Deployment } from '@prisma/client';
+import { kubernetesService } from './kubernetes.service.js';
+import { deploymentService } from '../deployment/deployment.service.js';
+import { k8sResourceName } from '../../shared/k8s-utils.js';
+import {
+  listPodsSchema,
+  listServicesSchema,
+  listEventsSchema,
+  getArgoStatusSchema,
+  syncArgoSchema,
+  setAutoSyncSchema,
+  listHPASchema,
+  listClaimsSchema,
+  getPodLogsParamsSchema,
+  getPodLogsQuerySchema,
+  scaleDeploymentParamsSchema,
+  restartDeploymentParamsSchema,
+  deleteDeploymentParamsSchema,
+  deleteDeploymentQuerySchema,
+  execInPodParamsSchema,
+  deploymentAccessParamsSchema,
+  deploymentAccessQuerySchema,
+} from './kubernetes.schema.js';
+
+export const kubernetesController = {
+  async listPods(req: Request, res: Response): Promise<void> {
+    const q = listPodsSchema.parse(req.query);
+    const pods = await kubernetesService.listPods(q.namespace, q.labelSelector);
+    res.json({ data: pods, total: pods.length, cluster: q.cluster });
+  },
+
+  async listServices(req: Request, res: Response): Promise<void> {
+    const q = listServicesSchema.parse(req.query);
+    const services = await kubernetesService.listServices(q.namespace);
+    res.json({ data: services, total: services.length, cluster: q.cluster });
+  },
+
+  async listEvents(req: Request, res: Response): Promise<void> {
+    const q = listEventsSchema.parse(req.query);
+    const events = await kubernetesService.listEvents(q.namespace, q.limit);
+    res.json({ data: events, total: events.length, cluster: q.cluster });
+  },
+
+  async getClusterInfo(_req: Request, res: Response): Promise<void> {
+    const info = await kubernetesService.getClusterInfo();
+    res.json({ data: info });
+  },
+
+  async getArgoStatus(req: Request, res: Response): Promise<void> {
+    const q = getArgoStatusSchema.parse(req.query);
+    const status = await kubernetesService.getArgoStatus(q.application);
+    res.json({ data: status });
+  },
+
+  async syncArgo(req: Request, res: Response): Promise<void> {
+    const body = syncArgoSchema.parse(req.body);
+    const result = await kubernetesService.syncArgo(body.application);
+    res.json({ data: result });
+  },
+
+  async setAutoSync(req: Request, res: Response): Promise<void> {
+    const body = setAutoSyncSchema.parse(req.body);
+    const result = await kubernetesService.setAutoSync(body.application, body.enabled);
+    res.json({ data: result });
+  },
+
+  async listHPA(req: Request, res: Response): Promise<void> {
+    const q = listHPASchema.parse(req.query);
+    const hpas = await kubernetesService.listHPA(q.namespace);
+    res.json({ data: hpas, total: hpas.length });
+  },
+
+  async listClaims(req: Request, res: Response): Promise<void> {
+    const q = listClaimsSchema.parse(req.query);
+    const claims = await kubernetesService.listClaims(q.namespace);
+    res.json({ data: claims, total: claims.length });
+  },
+
+  async getPodLogs(req: Request, res: Response): Promise<void> {
+    const params = getPodLogsParamsSchema.parse(req.params);
+    const query = getPodLogsQuerySchema.parse(req.query);
+    const logs = await kubernetesService.getPodLogs(params.namespace, params.name, {
+      tailLines: query.tailLines,
+      container: query.container,
+    });
+    res.json(logs);
+  },
+
+  async scaleDeployment(req: Request, res: Response): Promise<void> {
+    const params = scaleDeploymentParamsSchema.parse(req.params);
+    const body = req.body as { replicas: number };
+    const result = await kubernetesService.scaleDeployment(params.namespace, params.name, body.replicas);
+    res.json({ data: result });
+  },
+
+  async restartDeployment(req: Request, res: Response): Promise<void> {
+    const params = restartDeploymentParamsSchema.parse(req.params);
+    const result = await kubernetesService.restartDeployment(params.namespace, params.name);
+    res.json({ data: result });
+  },
+
+  async deleteDeployment(req: Request, res: Response): Promise<void> {
+    const params = deleteDeploymentParamsSchema.parse(req.params);
+    const query = deleteDeploymentQuerySchema.parse(req.query);
+    const result = await kubernetesService.deleteDeployment(params.namespace, params.name, {
+      deleteService: query.deleteService,
+    });
+    res.json({ data: result });
+  },
+
+  async execInPod(req: Request, res: Response): Promise<void> {
+    const params = execInPodParamsSchema.parse(req.params);
+    const body = req.body as { command?: string[]; container?: string };
+    const result = await kubernetesService.execInPod(params.namespace, params.name, {
+      command: body.command,
+      container: body.container,
+    });
+    res.json({ data: result });
+  },
+
+  async getDeploymentAccess(req: Request, res: Response): Promise<void> {
+    const params = deploymentAccessParamsSchema.parse(req.params);
+    const query = deploymentAccessQuerySchema.parse(req.query);
+    const deployment = await deploymentService.getById(params.id) as Deployment & {
+      application: { name: string };
+      environment: { type: string; namespace: string };
+    };
+    const resourceName = k8sResourceName({
+      application: deployment.application,
+      environment: deployment.environment,
+    });
+    const access = await kubernetesService.getAccessInfo(
+      deployment.environment.namespace,
+      resourceName,
+      query.cluster,
+    );
+    res.json({ data: access });
+  },
+};

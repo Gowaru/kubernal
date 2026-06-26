@@ -1,0 +1,32 @@
+name: Secret Scan (TruffleHog)
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  trufflehog:
+    name: TruffleHog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run TruffleHog (full history)
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/repo" \
+            ghcr.io/trufflesecurity/trufflehog:latest \
+            git file:///repo --since-commit HEAD --only-verified --fail

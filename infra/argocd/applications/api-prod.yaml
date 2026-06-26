@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubernal-api-prod
+  namespace: argocd
+  labels:
+    kubernal.io/component: api
+    kubernal.io/environment: prod
+    kubernal.io/managed-by: kubernal
+spec:
+  project: kubernal
+  source:
+    repoURL: 'https://github.com/Gowaru/kubernal'
+    targetRevision: develop
+    path: infra/overlays/prod
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: kubernal-prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

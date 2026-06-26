@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - api/deployment.yaml
+  - api/service.yaml
+  - api/ingress.yaml
+  - api/service-account.yaml
+  - api/cluster-role.yaml
+  - api/cluster-role-binding.yaml
+  - postgres/deployment.yaml
+  - postgres/service.yaml
+  - postgres/pvc.yaml
+configMapGenerator:
+  - name: kubernal-api-config
+    literals:
+      - PORT=4000

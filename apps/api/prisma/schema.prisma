@@ -13,17 +13,36 @@ datasource db {
 
 // ─── Utilisateur ────────────────────────────────────────────────────────────
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  role      String   @default("developer") // developer | platform_engineer | security_admin
-  teamId    String?
-  team      Team?    @relation(fields: [teamId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String    @id @default(uuid())
+  email        String    @unique
+  name         String
+  role         String    @default("developer") // viewer | developer | platform_engineer | admin | security_admin
+  teamId       String?
+  team         Team?     @relation(fields: [teamId], references: [id])
+  passwordHash String?
+  lastLogin    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  ownedApplications Application[] @relation("Owner")
-  approvedDeployments Deployment[] @relation("Approver")
+  oidcProvider String?
+  oidcId       String?
+
+  ownedApplications   Application[]    @relation("Owner")
+  approvedDeployments  Deployment[]     @relation("Approver")
+  sessions             Session[]
+
+  @@unique([oidcProvider, oidcId])
+}
+
+model Session {
+  sid        String   @id @default(uuid())
+  data       Json     @default("{}")
+  expiresAt  DateTime?
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
 }
 
 // ─── Équipe ─────────────────────────────────────────────────────────────────
@@ -44,7 +63,7 @@ model Team {
 // ─── Template (Golden Path) ─────────────────────────────────────────────────
 model GoldenPathTemplate {
   id          String   @id @default(uuid())
-  name        String
+  name        String   @unique
   version     String   @default("1.0.0")
   category    String   // backend | frontend | fullstack | library | function
   description String
@@ -67,13 +86,16 @@ model Application {
   team          Team     @relation(fields: [teamId], references: [id])
   ownerId       String
   owner         User     @relation("Owner", fields: [ownerId], references: [id])
-  repositoryUrl String?
-  status        String   @default("creating") // creating | active | failed | archived
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  repositoryUrl  String?
+  webhookSecret  String?
+  status         String   @default("creating") // creating | active | failed | archived
+  config         Json     @default("{}")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   environments  Environment[]
   deployments   Deployment[]
+  webhookConfigs WebhookConfig[]
 }
 
 // ─── Environnement ──────────────────────────────────────────────────────────
@@ -111,6 +133,7 @@ model Deployment {
   createdAt        DateTime  @default(now())
 
   pipelines Pipeline[]
+  vulnerabilities DeploymentVulnerability[]
 }
 
 // ─── Pipeline ───────────────────────────────────────────────────────────────
@@ -125,6 +148,49 @@ model Pipeline {
   startedAt    DateTime  @default(now())
   completedAt  DateTime?
   createdAt    DateTime  @default(now())
+
+  steps PipelineStep[]
+}
+
+// ─── Pipeline Step ──────────────────────────────────────────────────────────
+model PipelineStep {
+  id           String   @id @default(uuid())
+  pipelineId   String
+  pipeline     Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  name         String
+  order        Int
+  status       String   @default("pending") // pending | running | success | failed | skipped
+  action       String
+  params       Json     @default("{}")
+  output       Json?
+  errorMessage String?  @db.Text
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+
+  @@index([pipelineId])
+  @@index([status])
+}
+
+// ─── Deployment Vulnerability (Trivy / Snyk / Grype) ────────────────────────
+model DeploymentVulnerability {
+  id             String   @id @default(uuid())
+  deploymentId   String
+  deployment     Deployment @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+  cveId          String
+  severity       String   // critical | high | medium | low
+  packageName    String
+  packageVersion String
+  fixedVersion   String?
+  title          String
+  description    String?  @db.Text
+  scanSource     String   @default("trivy")
+  rawReport      Json     @default("{}")
+  detectedAt     DateTime @default(now())
+
+  @@index([deploymentId])
+  @@index([severity])
+  @@index([cveId])
 }
 
 // ─── Politique de Sécurité ─────────────────────────────────────────────────
@@ -150,4 +216,59 @@ model ObservabilityConfig {
   logRetentionDays Int    @default(30)
   tracingSampleRate Float @default(0.1)
   createdAt       DateTime @default(now())
+}
+
+// ─── Webhook Outbound ────────────────────────────────────────────────────────
+model WebhookConfig {
+  id            String   @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  name          String   @default("default")
+  url           String
+  secret        String?
+  events        String[] @default(["started", "success", "failure"])
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  deliveries WebhookDelivery[]
+
+  @@index([applicationId])
+}
+
+model WebhookDelivery {
+  id              String   @id @default(uuid())
+  webhookConfigId String
+  webhookConfig   WebhookConfig @relation(fields: [webhookConfigId], references: [id], onDelete: Cascade)
+  event           String
+  status          String   @default("pending") // pending | success | failed
+  requestBody     Json?
+  responseStatus  Int?
+  responseBody    String?  @db.Text
+  durationMs      Int?
+  errorMessage    String?  @db.Text
+  retryCount      Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  @@index([webhookConfigId])
+  @@index([status])
+}
+
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  actorEmail String?
+  action     String   // CREATE | UPDATE | DELETE | LOGIN | TRANSITION | etc
+  resource   String   // "Application" | "Deployment" | "WebhookConfig" | etc
+  resourceId String?
+  details    Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([resource, resourceId])
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
 }

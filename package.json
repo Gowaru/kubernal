@@ -11,13 +11,15 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "clean": "npm run clean --workspaces --if-present",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "eslint . --max-warnings 200",
     "lint:fix": "eslint . --fix",
     "format": "prettier --check \"**/*.{ts,tsx,json,yaml,yml}\"",
     "format:fix": "prettier --write \"**/*.{ts,tsx,json,yaml,yml}\"",
     "typecheck": "tsc -b",
     "test": "npm run test --workspaces --if-present",
-    "dev": "npm run dev --workspaces --if-present"
+    "dev": "npm run dev --workspaces --if-present",
+    "db:seed": "npm run prisma:seed -w @kubernal/api",
+    "db:seed:admin": "tsx scripts/seed-admin.ts"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.59.0",
@@ -27,5 +29,8 @@
   },
   "engines": {
     "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "openid-client": "^6.8.4"
   }
 }

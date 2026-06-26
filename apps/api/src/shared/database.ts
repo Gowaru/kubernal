@@ -14,3 +14,7 @@ if (!databaseUrl) {
 }
 
 export const db = createPrismaClient(databaseUrl);
+
+export async function disconnectDatabase(): Promise<void> {
+  await db.$disconnect();
+}

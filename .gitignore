@@ -10,9 +10,18 @@ build/
 .env
 .env.local
 .env.*.local
+**/.env
+**/.env.local
+**/.env.*.local
 
 # IDE
 .vscode/
+.agents/
+.claude/
+.expect/
+.opencode/
+.playwright/
+.playwright-cli/
 .idea/
 *.swp
 *.swo
@@ -28,16 +37,67 @@ logs/
 
 # Test coverage
 coverage/
+playwright-tests/
+test-results/
+
 
 # Prisma
 apps/api/prisma/*.generated.ts
+apps/api/prisma/migrations/
 
 # Backstage
 apps/backstage/.cache/
 apps/backstage/dist-types/
+apps/backstage/.yarn/cache/
 
 # Docker
 docker-data/
 
 # Kubernetes local
 .kubeconfig
+kustomize
+
+# TLS certificates (regenerated on demand)
+infra/k8s/tls/*.key
+infra/k8s/tls/*.crt
+
+# Kubernetes secrets (real values live in *.yaml.example templates)
+# Overlay plaintext secrets (NEVER commit — used as input to kubeseal)
+infra/k8s/overlays/*/secret*.yaml
+# Legacy patterns for any secret*.yaml under infra/k8s
+infra/k8s/**/secret.yaml
+*.secret.yaml
+**/secrets/
+# Allow sealed secret templates
+!**/sealed-secret*.yaml
+
+# Generic credentials & key material
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+*.asc
+.gpg/
+
+# Docker registry credentials
+.docker/config.json
+config.json
+config.json.bak
+
+# Service-account tokens / cloud creds
+**/gcp-credentials.json
+**/aws-credentials
+**/azure-credentials
+**/kubeconfig*
+!**/kubeconfig.example
+
+skills-lock.json
+opencode.json
+AGENTS.md
+SKILLS.md
