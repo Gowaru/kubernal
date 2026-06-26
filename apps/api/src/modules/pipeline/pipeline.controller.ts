@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { db } from '../../shared/database.js';
 import { ConflictError, NotFoundError, ValidationError } from '../../shared/errors.js';
 import { listActions } from './actions/registry.js';
+import { pipelineMetrics } from './pipeline-metrics.js';
 import { pipelineRepository } from './pipeline.repository.js';
 import { pipelineService } from './pipeline.service.js';
 
@@ -166,5 +167,18 @@ export const pipelineController = {
 
   async listAvailableActions(_req: Request, res: Response): Promise<void> {
     res.json({ data: listActions() });
+  },
+
+  async workerStatus(_req: Request, res: Response): Promise<void> {
+    const metrics = pipelineMetrics.snapshot();
+    const runningCount = await db.pipeline.count({
+      where: { status: 'running' },
+    });
+    res.json({
+      data: {
+        ...metrics,
+        pipelinesRunning: runningCount,
+      },
+    });
   },
 };

@@ -112,6 +112,7 @@ export function createRouter(): Router {
   router.get('/deployments/:id/vulnerabilities', requireAuth(), deploymentController.getVulnerabilities);
 
   // ─── Pipelines ──────────────────────────────────────────────────────────
+  router.get('/pipelines/worker/status', requireAuth(), pipelineController.workerStatus);
   router.get('/pipelines', requireAuth(), pipelineController.list);
   router.post('/pipelines/execute', requireAuth(), requireRole('platform_engineer'), validate(createPipelineFromTemplateSchema), pipelineController.executeFromTemplate);
   router.get('/pipelines/actions', requireAuth(), pipelineController.listAvailableActions);

@@ -140,7 +140,7 @@ function StepLogPanel({ pipelineId, step }: { pipelineId: string; step: StepDef 
             <AlertTriangle className="h-3 w-3" />
             Erreur
           </div>
-          <p className="mt-1 text-xs text-status-error/90 font-mono whitespace-pre-wrap break-words">
+          <p className="mt-1 text-xs text-status-error/90 font-mono whitespace-pre-wrap wrap-break-word">
             {step.errorMessage}
           </p>
         </div>
