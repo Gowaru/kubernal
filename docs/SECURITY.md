@@ -182,81 +182,110 @@ These are allowlisted in `.gitleaks.toml`. To add a new pattern, edit that file 
 ### 9.2 Install the controller
 
 ```bash
-helm install sealed-secrets \
-  -n kube-system \
-  --create-namespace \
-  https://github.com/bitnami-labs/sealed-secrets/releases/download/v1.16.0/sealed-secrets-helm-chart.tgz
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+helm upgrade --install sealed-secrets bitnami/sealed-secrets \
+  --namespace kube-system \
+  --wait
 ```
 
-Verify the controller is running:
+Verify:
 
 ```bash
 kubectl get pods -n kube-system -l app.kubernetes.io/name=sealed-secrets
 ```
 
-### 9.3 Encrypt a secret
-
-**Option A — CLI:**
+### 9.3 Install kubeseal
 
 ```bash
-kubeseal --format yaml < infra/k8s/api/secret.yaml > infra/k8s/api/sealed-secret.yaml
+curl -LO https://github.com/bitnami/sealed-secrets/releases/download/v0.38.1/kubeseal-0.38.1-linux-amd64.tar.gz
+tar xzf kubeseal-0.38.1-linux-amd64.tar.gz
+sudo install -m 755 kubeseal /usr/local/bin/kubeseal
 ```
 
-**Option B — helper script (recommended):**
+### 9.4 Export the sealing certificate
 
 ```bash
-./scripts/seal-secret.sh infra/k8s/api/secret.yaml
-# → infra/k8s/api/sealed-secret.yaml
+./scripts/seal-secret.sh --env dev --service api  # auto-fetches cert
+# Or manually:
+kubeseal --fetch-cert --controller-namespace kube-system > scripts/sealed-secrets-cert.pem
 ```
 
-The script auto-fetches the cluster's sealing cert via `kubectl` or uses a local copy in `scripts/sealed-secrets-cert.pem`.
-
-### 9.4 Workflow
-
-```
-1. Create plaintext secret     cp secret.yaml.example secret.yaml
-2. Edit with real values       vim secret.yaml
-3. Seal it                     ./scripts/seal-secret.sh secret.yaml
-4. Commit sealed-secret.yaml   git add sealed-secret.yaml && git commit
-5. Deploy                      kubectl apply -f sealed-secret.yaml
-6. Keep secret.yaml local      (stays in .gitignore, never committed)
-```
-
-### 9.5 Find the public cert
-
-The sealing certificate is managed by the controller. To inspect or share it:
+### 9.5 Encrypt a secret per environment
 
 ```bash
-kubectl get secret \
-  -n kube-system \
+# Seal for dev
+./scripts/seal-secret.sh --env dev --service api
+./scripts/seal-secret.sh --env dev --service postgres
+
+# Seal for staging
+./scripts/seal-secret.sh --env staging --service api
+./scripts/seal-secret.sh --env staging --service postgres
+
+# Seal for prod
+./scripts/seal-secret.sh --env prod --service api
+./scripts/seal-secret.sh --env prod --service postgres
+```
+
+### 9.6 Deploy
+
+```bash
+kubectl apply -k infra/k8s/overlays/dev
+kubectl apply -k infra/k8s/overlays/staging
+kubectl apply -k infra/k8s/overlays/prod
+```
+
+### 9.7 Workflow
+
+```
+1. Edit plaintext secret     vim infra/k8s/overlays/<env>/secret-<service>.yaml
+2. Seal it                   ./scripts/seal-secret.sh --env <env> --service <service>
+3. Commit sealed secret      git add infra/k8s/overlays/<env>/sealed-*.yaml && git commit
+4. Deploy                    kubectl apply -k infra/k8s/overlays/<env>
+5. Plaintext stays local     (in .gitignore, never committed)
+```
+
+### 9.8 Find the public cert
+
+```bash
+# Using kubeseal
+kubeseal --fetch-cert --controller-namespace kube-system --controller-name sealed-secrets \
+  > scripts/sealed-secrets-cert.pem
+
+# Or via kubectl
+kubectl get secret -n kube-system \
   -l sealedsecrets.bitnami.com/sealed-secrets-key \
-  -o yaml
+  -o jsonpath='{.items[0].data.tls\.crt}' | base64 -d > scripts/sealed-secrets-cert.pem
 ```
 
-To export just the TLS cert for offline sealing:
-
-```bash
-kubectl get secret \
-  -n kube-system \
-  -l sealedsecrets.bitnami.com/sealed-secrets-key \
-  -o jsonpath='{.items[0].data.tls\.crt}' | base64 -d > sealed-secrets-cert.pem
-```
-
-### 9.6 Limitations
+### 9.9 Limitations
 
 | Limitation                    | Mitigation                                                     |
 |-------------------------------|----------------------------------------------------------------|
 | Offline encryption only       | Sealed secrets are not revocable — just delete the resource    |
-| No auto-rotation              | Re-seal with `kubeseal` when rotating (same workflow as before)|
-| Namespace-scoped by default   | Use `--scope cluster-wide` for cross-namespace secrets         |
+| No auto-rotation              | Re-seal with `kubeseal` when rotating                         |
+| Namespace-scoped by default   | `--scope namespace-wide` prevents cross-env decryption        |
+| Same cert on same cluster     | Staging secrets sealed on dev cluster are dev-only            |
 | Secret stays encrypted in git | Only the controller (with the private key) can decrypt         |
 
-### 9.7 Template files
+### 9.10 File structure
 
-| File                                          | Purpose                              |
-|-----------------------------------------------|--------------------------------------|
-| `infra/k8s/api/sealed-secret.yaml.example`    | API secret template (SealedSecret)   |
-| `infra/k8s/postgres/sealed-secret.yaml.example` | Postgres secret template (SealedSecret) |
+```
+infra/k8s/overlays/
+├── dev/
+│   ├── kustomization.yaml           # base + sealed secrets + configmap patches
+│   ├── sealed-api-secret.yaml       # COMMITTED (encrypted)
+│   ├── sealed-postgres-secret.yaml  # COMMITTED (encrypted)
+│   ├── secret-api.yaml              # LOCAL ONLY (.gitignore)
+│   └── secret-postgres.yaml         # LOCAL ONLY (.gitignore)
+├── staging/
+│   └── (same pattern — different values, same namespace-wide scope)
+└── prod/
+    └── (same pattern — different values)
+```
+
+Each environment has **independent secrets** (SESSION_SECRET, DATABASE_URL, OAuth keys, etc.).
+SealedSecrets are encrypted per namespace — a dev SealedSecret cannot be decrypted in prod.
 | `scripts/seal-secret.sh`                      | Encryption helper script             |
 
 ---

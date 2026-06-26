@@ -4,7 +4,6 @@ metadata:
   name: kubernal-api
   labels:
     app: kubernal-api
-    kubernal.io/environment: dev
     kubernal.io/managed-by: kubernal
 spec:
   replicas: 1
@@ -15,7 +14,6 @@ spec:
     metadata:
       labels:
         app: kubernal-api
-        kubernal.io/environment: dev
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '4000'

@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kubernal-prod
+resources:
+  - ../../base
+  - sealed-api-secret.yaml
+  - sealed-postgres-secret.yaml
+configMapGenerator:
+  - name: kubernal-api-config
+    behavior: merge
+    literals:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - CORS_ORIGIN=https://backstage.kubernal.local
+      - PORTAL_URL=https://portal.kubernal.local
+patches:
+  - target:
+      kind: Deployment
+      name: kubernal-api
+    patch: |-
+      - op: add
+        path: /metadata/labels/kubernal.io~1environment
+        value: prod
+      - op: add
+        path: /spec/template/metadata/labels/kubernal.io~1environment
+        value: prod
+  - target:
+      kind: Ingress
+      name: kubernal-api
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: kubernal-prod.local

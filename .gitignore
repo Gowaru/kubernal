@@ -62,13 +62,14 @@ infra/k8s/tls/*.key
 infra/k8s/tls/*.crt
 
 # Kubernetes secrets (real values live in *.yaml.example templates)
-infra/k8s/*/secret.yaml
+# Overlay plaintext secrets (NEVER commit — used as input to kubeseal)
+infra/k8s/overlays/*/secret*.yaml
+# Legacy patterns for any secret*.yaml under infra/k8s
 infra/k8s/**/secret.yaml
 *.secret.yaml
 **/secrets/
-# Allow template files explicitly (negation comes after the rule)
-!infra/k8s/*/secret.yaml.example
-!**/secret.yaml.example
+# Allow sealed secret templates
+!**/sealed-secret*.yaml
 
 # Generic credentials & key material
 *.pem
