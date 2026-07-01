@@ -9,7 +9,7 @@ export interface PaginationState {
   to: number;
 }
 
-export function usePagination<T>(data: T[], defaultPageSize = 10) {
+export function usePagination<T>(data: T[], defaultPageSize = 10): PaginationState & { setPage: (p: number) => void; setPageSize: (s: number) => void; paginatedData: T[] } {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(defaultPageSize);
 

@@ -16,14 +16,14 @@ export function PodTerminal({ namespace, podName, container, shell, onStatusChan
 
   useEffect(() => {
     connect(namespace, podName, { container, shell });
-    return () => disconnect();
+    return (): void => disconnect();
   }, [namespace, podName, container, shell]);
 
   useEffect(() => {
     fit();
-    const onResize = () => fit();
+    const onResize = (): void => fit();
     window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    return (): void => window.removeEventListener('resize', onResize);
   }, [status]);
 
   useEffect(() => {

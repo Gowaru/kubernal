@@ -166,7 +166,7 @@ export function createWsLogServer(server: HttpServer): { close: () => void } {
   logger.info('WebSocket log server attached');
 
   return {
-    close: () => {
+    close: (): void => {
       wss.close();
     },
   };

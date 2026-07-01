@@ -34,6 +34,7 @@ export function auditContext(req: Request, _res: Response, next: NextFunction): 
   _res.setHeader('X-Request-Id', augmented.requestId);
 
   const originalJson = _res.json.bind(_res);
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   _res.json = function (body: unknown) {
     const method = req.method;
     if (['POST', 'PATCH', 'DELETE', 'PUT'].includes(method)) {

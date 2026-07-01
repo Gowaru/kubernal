@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     intervalRef.current = setInterval(() => {
       fetchUser();
     }, POLL_INTERVAL_MS);
-    return () => {
+    return (): void => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }

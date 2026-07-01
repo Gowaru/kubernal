@@ -23,13 +23,13 @@ const EVENT_LABELS: Record<string, string> = {
   approval_needed: 'Approbation',
 };
 
-function DeliveryIcon({ status }: { status: WebhookDelivery['status'] }) {
+function DeliveryIcon({ status }: { status: WebhookDelivery['status'] }): JSX.Element {
   if (status === 'success') return <CheckCircle2 className="h-3.5 w-3.5 text-status-success" />;
   if (status === 'failed') return <XCircle className="h-3.5 w-3.5 text-status-error" />;
   return <Clock className="h-3.5 w-3.5 text-muted-foreground animate-pulse" />;
 }
 
-function DeliveryList({ configId }: { configId: string }) {
+function DeliveryList({ configId }: { configId: string }): JSX.Element {
   const { data: deliveries, isLoading } = useWebhookDeliveries(configId);
   if (isLoading) return <Skeleton className="h-12 w-full" />;
   if (!deliveries?.length) return <p className="text-xs text-muted-foreground py-2">Aucune livraison</p>;
@@ -55,7 +55,7 @@ function ConfigRow({
 }: {
   config: WebhookConfig;
   onEdit: (c: WebhookConfig) => void;
-}) {
+}): JSX.Element {
   const del = useDeleteWebhookOutbound();
   const test = useTestWebhookOutbound();
 

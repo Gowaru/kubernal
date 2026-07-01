@@ -74,7 +74,7 @@ export default function AppDetail(): JSX.Element {
 
   const [tab, setTab] = useState<'recent' | 'history'>('recent');
 
-  function AppEnvCardWithArgo({ envId }: { envId: string }) {
+  function AppEnvCardWithArgo({ envId }: { envId: string }): JSX.Element {
     const { data: argoStatus } = useArgoSync(id!, envId);
     return <AppEnvCard key={envId} envId={envId} deployments={appDeployments} argoStatus={argoStatus} />;
   }

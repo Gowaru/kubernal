@@ -1,5 +1,5 @@
 import { db } from '../../shared/database.js';
-import type { Prisma } from '@prisma/client';
+import type { Prisma, WebhookConfig, WebhookDelivery } from '@prisma/client';
 import { auditService } from '../audit/audit.service.js';
 
 type DeployEvent = 'started' | 'success' | 'failure' | 'rolled_back' | 'cancelled' | 'approval_needed';
@@ -187,11 +187,11 @@ export const webhookOutboundService = {
     );
   },
 
-  async listConfigs(applicationId: string) {
+  async listConfigs(applicationId: string): Promise<WebhookConfig[]> {
     return db.webhookConfig.findMany({ where: { applicationId }, orderBy: { createdAt: 'desc' } });
   },
 
-  async getConfig(id: string) {
+  async getConfig(id: string): Promise<WebhookConfig> {
     const config = await db.webhookConfig.findUnique({ where: { id } });
     if (!config) throw new Error(`WebhookConfig ${id} not found`);
     return config;
@@ -203,7 +203,7 @@ export const webhookOutboundService = {
     url: string;
     secret?: string;
     events?: string[];
-  }) {
+  }): Promise<WebhookConfig> {
     const count = await db.webhookConfig.count({ where: { applicationId: data.applicationId } });
     if (count >= 10) {
       throw new Error('Maximum 10 webhook configs per application');
@@ -226,7 +226,7 @@ export const webhookOutboundService = {
     return result;
   },
 
-  async updateConfig(id: string, data: { name?: string; url?: string; secret?: string; events?: string[]; enabled?: boolean }) {
+  async updateConfig(id: string, data: { name?: string; url?: string; secret?: string; events?: string[]; enabled?: boolean }): Promise<WebhookConfig> {
     const result = await db.webhookConfig.update({ where: { id }, data });
     auditService.log({
       action: 'UPDATE',
@@ -237,7 +237,7 @@ export const webhookOutboundService = {
     return result;
   },
 
-  async deleteConfig(id: string) {
+  async deleteConfig(id: string): Promise<WebhookConfig> {
     const result = await db.webhookConfig.delete({ where: { id } });
     auditService.log({
       action: 'DELETE',
@@ -247,7 +247,7 @@ export const webhookOutboundService = {
     return result;
   },
 
-  async testConfig(id: string) {
+  async testConfig(id: string): Promise<void> {
     const config = await db.webhookConfig.findUnique({ where: { id } });
     if (!config) throw new Error(`WebhookConfig ${id} not found`);
     auditService.log({
@@ -267,7 +267,7 @@ export const webhookOutboundService = {
     });
   },
 
-  async listDeliveries(webhookConfigId: string, limit = 20) {
+  async listDeliveries(webhookConfigId: string, limit = 20): Promise<WebhookDelivery[]> {
     return db.webhookDelivery.findMany({
       where: { webhookConfigId },
       orderBy: { createdAt: 'desc' },

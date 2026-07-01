@@ -255,7 +255,7 @@ export function createWsExecServer(server: HttpServer): { close: () => void } {
   logger.info('WebSocket exec server attached');
 
   return {
-    close: () => {
+    close: (): void => {
       wss.close();
     },
   };

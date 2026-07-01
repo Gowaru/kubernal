@@ -7,6 +7,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { type JSX } from 'react';
 import type { PaginationState } from '@/hooks/usePagination';
 
 interface PaginationBarProps {
@@ -15,7 +16,7 @@ interface PaginationBarProps {
   onPageSizeChange: (size: number) => void;
 }
 
-export function PaginationBar({ pagination, onPageChange, onPageSizeChange }: PaginationBarProps) {
+export function PaginationBar({ pagination, onPageChange, onPageSizeChange }: PaginationBarProps): JSX.Element {
   const { page, pageSize, totalPages, total, from, to } = pagination;
 
   return (

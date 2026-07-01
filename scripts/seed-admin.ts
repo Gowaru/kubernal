@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import 'dotenv/config';
 import bcrypt from 'bcrypt';
 import { createPrismaClient } from '../apps/api/src/shared/database.js';

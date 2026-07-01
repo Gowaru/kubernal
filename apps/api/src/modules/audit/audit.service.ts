@@ -1,5 +1,5 @@
 import { db } from '../../shared/database.js';
-import type { Prisma } from '@prisma/client';
+import type { AuditLog, Prisma } from '@prisma/client';
 
 type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'TRANSITION' | 'LOGIN' | 'APPROVE' | 'PROMOTE' | 'TEST' | 'REGENERATE';
 
@@ -30,7 +30,7 @@ export const auditService = {
     });
   },
 
-  async list(opts: { resource?: string; resourceId?: string; action?: string; actorId?: string; limit?: number; offset?: number }) {
+  async list(opts: { resource?: string; resourceId?: string; action?: string; actorId?: string; limit?: number; offset?: number }): Promise<{ data: AuditLog[]; total: number }> {
     const where: Record<string, unknown> = {};
     if (opts.resource) where['resource'] = opts.resource;
     if (opts.resourceId) where['resourceId'] = opts.resourceId;

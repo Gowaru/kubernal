@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import bcrypt from 'bcrypt';
 import { createPrismaClient } from '../src/shared/database.js';
 

@@ -18,7 +18,7 @@ function hexFromCssVar(varName: string, fallback: string): string {
   document.body.removeChild(temp);
   const m = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
   if (!m) return fallback;
-  const hex = (n: string) => parseInt(n).toString(16).padStart(2, '0');
+  const hex = (n: string): string => parseInt(n).toString(16).padStart(2, '0');
   return `#${hex(m[1])}${hex(m[2])}${hex(m[3])}`;
 }
 
@@ -141,7 +141,7 @@ export function useTerminal(): UseTerminalReturn {
 
     bufferRef.current = [];
 
-    ws.onopen = () => {
+    ws.onopen = (): void => {
       setIsConnected(true);
       setStatus('connected');
 
@@ -151,7 +151,7 @@ export function useTerminal(): UseTerminalReturn {
       bufferRef.current = [];
     };
 
-    ws.onmessage = (event) => {
+    ws.onmessage = (event: MessageEvent): void => {
       try {
         const msg = JSON.parse(event.data) as TerminalMessage;
 
@@ -189,7 +189,7 @@ export function useTerminal(): UseTerminalReturn {
       }
     };
 
-    ws.onclose = () => {
+    ws.onclose = (): void => {
       if (status !== 'disconnected' && status !== 'error') {
         const term = xtermRef.current;
         if (term) {
@@ -200,7 +200,7 @@ export function useTerminal(): UseTerminalReturn {
       }
     };
 
-    ws.onerror = () => {
+    ws.onerror = (): void => {
       const term = xtermRef.current;
       if (term) {
         term.write('\r\n\x1b[31mErreur de connexion\x1b[0m\r\n');

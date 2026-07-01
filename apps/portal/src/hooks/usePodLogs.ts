@@ -103,12 +103,12 @@ export function usePodLogs(
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
-    ws.onopen = () => {
+    ws.onopen = (): void => {
       setIsLoading(false);
       setTransport('ws');
     };
 
-    ws.onmessage = (event) => {
+    ws.onmessage = (event: MessageEvent): void => {
       try {
         const msg = JSON.parse(event.data) as { type: string; line?: string; message?: string };
         if (msg.type === 'log' && msg.line !== null && msg.line !== undefined) {
@@ -126,7 +126,7 @@ export function usePodLogs(
       }
     };
 
-    ws.onclose = () => {
+    ws.onclose = (): void => {
       if (followRef.current) {
         reconnectTimeoutRef.current = setTimeout(() => {
           if (followRef.current && isActive) {
@@ -139,7 +139,7 @@ export function usePodLogs(
       }
     };
 
-    ws.onerror = () => {
+    ws.onerror = (): void => {
       if (followRef.current) {
         reconnectTimeoutRef.current = setTimeout(() => {
           if (followRef.current && isActive) {
@@ -159,7 +159,7 @@ export function usePodLogs(
     setTransport('poll');
     setIsLoading(true);
 
-    const fetchLogs = async () => {
+    const fetchLogs = async (): Promise<void> => {
       try {
         const { data } = await apiClient.get<PodLogsResult>(
           `/kubernetes/pods/${encodeURIComponent(namespace)}/${encodeURIComponent(podName)}/logs`,
@@ -200,7 +200,7 @@ export function usePodLogs(
       startPoll();
     }
 
-    return () => {
+    return (): void => {
       cleanupWs();
       cleanupPoll();
       cleanupReconnect();

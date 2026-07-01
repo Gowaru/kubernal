@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -18,7 +19,7 @@ import type { User } from '@kubernal/shared-types';
 
 const PgSession = connectPgSimple(session);
 
-export function setTestUser(user: User | undefined) {
+export function setTestUser(user: User | undefined): void {
   (globalThis as { __testUser?: User }).__testUser = user;
 }
 

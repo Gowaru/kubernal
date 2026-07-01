@@ -61,13 +61,13 @@ export function WebhookOutboundModal({
     setError(null);
   }, [config, open]);
 
-  const toggleEvent = (ev: string) => {
+  const toggleEvent = (ev: string): void => {
     setSelectedEvents((prev) =>
       prev.includes(ev) ? prev.filter((e) => e !== ev) : [...prev, ev],
     );
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (): Promise<void> => {
     setError(null);
     if (!url) { setError('URL requise'); return; }
     try { new URL(url); } catch { setError('URL invalide'); return; }
