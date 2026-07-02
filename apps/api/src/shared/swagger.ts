@@ -1,9 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import spec from './openapi.json' with { type: 'json' };
 
 export function loadOpenapiSpec(): Record<string, unknown> {
-  const __dirname = dirname(fileURLToPath(import.meta.url));
-  const specPath = resolve(__dirname, 'openapi.json');
-  return JSON.parse(readFileSync(specPath, 'utf-8'));
+  return spec as Record<string, unknown>;
 }
