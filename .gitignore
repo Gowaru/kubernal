@@ -39,6 +39,7 @@ logs/
 coverage/
 playwright-tests/
 test-results/
+__tests__/
 
 
 # Prisma
