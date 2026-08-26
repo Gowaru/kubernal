@@ -9,11 +9,11 @@ export default function NotFound(): JSX.Element {
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
       <div className="relative w-full max-w-lg">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-accent/5 via-transparent to-transparent rounded-3xl blur-3xl" />
+        <div className="absolute inset-0 -z-10 bg-linear-to-br from-accent/5 via-transparent to-transparent rounded-3xl blur-3xl" />
         <div className="flex flex-col items-center text-center space-y-6 p-8">
           <div className="relative">
             <div className="absolute inset-0 bg-accent/20 blur-2xl rounded-full" />
-            <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-accent/20 to-accent/5 border border-accent/20">
+            <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl bg-linear-to-br from-accent/20 to-accent/5 border border-accent/20">
               <Compass className="h-12 w-12 text-accent" />
             </div>
           </div>

@@ -179,10 +179,10 @@ export default function K8sEventsPage(): JSX.Element {
                         <TableCell className="font-mono text-xs font-medium">
                           {event.reason}
                         </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground truncate max-w-[180px]">
+                        <TableCell className="font-mono text-xs text-muted-foreground truncate max-w-45">
                           {event.involvedObject}
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground truncate max-w-[250px]">
+                        <TableCell className="text-xs text-muted-foreground truncate max-w-62.5">
                           {event.message}
                         </TableCell>
                         <TableCell className="text-center">

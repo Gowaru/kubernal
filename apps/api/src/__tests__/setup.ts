@@ -8,6 +8,7 @@ vi.mock('../shared/database.js', () => {
   const mockPrisma = {
     user: {
       findMany: vi.fn().mockResolvedValue([]),
+      findFirst: vi.fn(),
       findUnique: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
