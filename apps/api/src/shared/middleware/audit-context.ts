@@ -1,11 +1,13 @@
 import type { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'node:crypto';
 import { auditService } from '../../modules/audit/audit.service.js';
+import { logger } from '../logger.js';
 
 type AuditedRequest = Request & {
   requestId: string;
   actor: { id: string; email: string } | null;
   realIp: string;
+  log: typeof logger;
 };
 
 const SENSITIVE_BODY_KEYS = new Set(['secret', 'password', 'token', 'apiKey', 'webhookSecret']);
@@ -31,6 +33,7 @@ export function auditContext(req: Request, _res: Response, next: NextFunction): 
   augmented.requestId = randomUUID();
   augmented.actor = req.user ? { id: req.user.id, email: req.user.email } : null;
   augmented.realIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? 'unknown';
+  augmented.log = logger.child({ requestId: augmented.requestId, actor: augmented.actor?.email });
   _res.setHeader('X-Request-Id', augmented.requestId);
 
   const originalJson = _res.json.bind(_res);

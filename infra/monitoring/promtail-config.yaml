@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: promtail-config
+  labels:
+    app: promtail
+    kubernal.io/managed-by: kubernal
+data:
+  promtail.yaml: |
+    server:
+      http_listen_port: 9080
+      grpc_listen_port: 0
+      log_level: info
+
+    positions:
+      filename: /tmp/positions.yaml
+
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+        backoff_config:
+          min_period: 100ms
+          max_period: 5s
+          max_retries: 5
+
+    scrape_configs:
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+        pipeline_stages:
+          - cri: {}
+          - json:
+              expressions:
+                level: level
+                msg: msg
+                requestId: requestId
+                time: time
+          - labels:
+              level:
+              requestId:
+          - match:
+              selector: '{app="kubernal-api"}'
+              stages:
+                - json:
+                    expressions:
+                      level: level
+                      msg: msg
+                      requestId: requestId
+                - labels:
+                    level:
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_kubernetes_io_config_hash]
+            regex: .+
+            action: drop
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_pod_container_name]
+            target_label: container
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            target_label: app
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_container_name]
+            separator: '/'
+            target_label: job
+            replacement: $1/$2
+          - source_labels: [__meta_kubernetes_pod_uid, __meta_kubernetes_pod_container_name]
+            separator: '/'
+            replacement: /var/log/pods/*$1/*.log
+            target_label: __path__
