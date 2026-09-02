@@ -5,6 +5,6 @@ resources:
   - ../../k8s/base
 images:
   - name: ghcr.io/gowaru/kubernal-api
-    newTag: sha-92929d5
+    newTag: sha-4b06def
   - name: ghcr.io/gowaru/kubernal-backstage
     newTag: latest
