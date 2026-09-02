@@ -11,7 +11,7 @@ spec:
   project: kubernal
   source:
     repoURL: 'https://github.com/Gowaru/kubernal'
-    targetRevision: develop
+    targetRevision: main
     path: infra/overlays/staging
   destination:
     server: 'https://kubernetes.default.svc'

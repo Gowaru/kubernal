@@ -3,7 +3,7 @@ kind: Kustomization
 namespace: kubernal-staging
 
 resources:
-  - ../../k8s/
+  - ../../k8s/base
 
 images:
   - name: ghcr.io/gowaru/kubernal-api
