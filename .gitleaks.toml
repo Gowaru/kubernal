@@ -41,6 +41,9 @@ paths = [
   '''opencode\.json''',
   '''AGENTS\.md''',
   '''docs/SECURITY\.md''',
+  '''docs/WALKTHROUGH-REPORT\.md''',
+  '''apps/backstage/\.yarn/''',
+  '''infra/k8s/overlays/.*/sealed.*\.yaml''',
   '''\.gitleaks\.toml$''',
 ]
 stopwords = [
