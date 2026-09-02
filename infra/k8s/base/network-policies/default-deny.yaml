@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  labels:
+    kubernal.io/managed-by: kubernal
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+          # kube-system hosts CoreDNS; allow DNS resolution for all pods
+          # Covers kube-system/coredns:53 (UDP+TCP). Alternative label
+          # kubernetes.io/metadata.name is also present on newer clusters.
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

@@ -1,0 +1,148 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-to-postgres
+  labels:
+    kubernal.io/managed-by: kubernal
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: kubernal-api
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+# Allow ingress-nginx → kubernal-api:4000
+# and egress from API to postgres, DNS, Kubernetes API and registries
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-api
+  labels:
+    kubernal.io/managed-by: kubernal
+spec:
+  podSelector:
+    matchLabels:
+      app: kubernal-api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+              # also matches kubernetes.io/metadata.name=ingress-nginx on newer clusters
+        # Some setups run ingress controller in kube-system; keep namespace-only
+        # to avoid tight coupling to controller pod labels.
+      ports:
+        - protocol: TCP
+          port: 4000
+    # Allow Prometheus scraping (optional) — same namespace
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 4000
+  egress:
+    # kubernal-api → postgres:5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # DNS resolution (redundant with default-deny-all but explicit for API)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Kubernetes API server (for ClusterRole operations + discovery)
+    # kube-apiserver is exposed via kubernetes.default.svc:443/6443
+    - to:
+        - namespaceSelector: {}
+          # Better to allow 443 to any destination for cloud-managed control plane
+          # where apiserver is not in-cluster. Restrict by port.
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 6443
+    # Allow image pulls & external registries (GHCR, Docker Hub) over HTTPS
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.169.254/32 # metadata service guard
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+---
+# Allow promtail → loki (audit requirement)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-promtail-to-loki
+  labels:
+    kubernal.io/managed-by: kubernal
+spec:
+  podSelector:
+    matchLabels:
+      app: loki
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: promtail
+      ports:
+        - protocol: TCP
+          port: 3100
+---
+# Egress for promtail pods toward loki + DNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-promtail-egress
+  labels:
+    kubernal.io/managed-by: kubernal
+spec:
+  podSelector:
+    matchLabels:
+      app: promtail
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: loki
+      ports:
+        - protocol: TCP
+          port: 3100
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

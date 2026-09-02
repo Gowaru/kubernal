@@ -10,6 +10,8 @@ resources:
   - postgres/deployment.yaml
   - postgres/service.yaml
   - postgres/pvc.yaml
+  - network-policies/default-deny.yaml
+  - network-policies/allow-api-to-postgres.yaml
 configMapGenerator:
   - name: kubernal-api-config
     literals:

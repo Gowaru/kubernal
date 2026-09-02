@@ -5,3 +5,5 @@ metadata:
   labels:
     kubernal.io/environment: prod
     kubernal.io/managed-by: kubernal
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted

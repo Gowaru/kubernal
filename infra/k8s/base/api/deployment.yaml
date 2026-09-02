@@ -24,13 +24,15 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api
-          image: ghcr.io/gowaru/kubernal-api:latest
+          image: ghcr.io/gowaru/kubernal-api:sha-92929d5
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
             privileged: false
-            readOnlyRootFilesystem: false
-            runAsNonRoot: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
             capabilities:
               drop:
                 - ALL
@@ -42,6 +44,9 @@ spec:
                 name: kubernal-api-config
             - secretRef:
                 name: kubernal-api-secret
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           livenessProbe:
             httpGet:
               path: /health
@@ -54,6 +59,12 @@ spec:
               port: 4000
             initialDelaySeconds: 5
             periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            failureThreshold: 30
+            periodSeconds: 5
           resources:
             requests:
               cpu: '100m'
@@ -61,3 +72,6 @@ spec:
             limits:
               cpu: '500m'
               memory: '256Mi'
+      volumes:
+        - name: tmp
+          emptyDir: {}

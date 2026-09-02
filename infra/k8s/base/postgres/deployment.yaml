@@ -15,12 +15,19 @@ spec:
       labels:
         app: postgres
     spec:
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: postgres
           image: postgres:16-alpine
           securityContext:
             allowPrivilegeEscalation: false
             privileged: false
+            readOnlyRootFilesystem: false
             runAsNonRoot: false
             capabilities:
               add:

@@ -13,3 +13,9 @@ subjects:
   - kind: ServiceAccount
     name: kubernal-api
     namespace: kubernal-dev
+  - kind: ServiceAccount
+    name: kubernal-api
+    namespace: kubernal-staging
+  - kind: ServiceAccount
+    name: kubernal-api
+    namespace: kubernal-prod
