@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import type { User } from '@kubernal/shared-types';
 import { createApp, setTestUser } from '../app.js';
+import { db } from '../shared/database.js';
+
+const mockDb = db as unknown as Record<string, Record<string, ReturnType<typeof vi.fn>>>;
 
 const mockUsers: Record<string, User> = {
   admin: {
@@ -45,6 +48,23 @@ const mockUsers: Record<string, User> = {
 beforeEach(() => {
   setTestUser(undefined);
   vi.clearAllMocks();
+  for (const model of [
+    'user',
+    'team',
+    'application',
+    'goldenPathTemplate',
+    'environment',
+    'deployment',
+    'pipeline',
+    'securityPolicy',
+    'auditLog',
+  ] as const) {
+    const m = mockDb[model];
+    if (m?.findMany) m.findMany.mockResolvedValue([]);
+    if (m?.count) m.count.mockResolvedValue(0);
+    if (m?.findFirst) m.findFirst.mockResolvedValue(null);
+    if (m?.findUnique) m.findUnique.mockResolvedValue(null);
+  }
 });
 
 afterEach(() => {

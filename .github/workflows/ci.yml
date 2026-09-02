@@ -95,6 +95,8 @@ jobs:
         run: npm run build --workspaces --if-present
 
       - run: npm test
+        env:
+          DATABASE_URL: postgresql://kubernal:ci_test@localhost:5432/kubernal_idp
 
   format:
     name: Format Check

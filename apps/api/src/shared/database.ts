@@ -9,11 +9,15 @@ export function createPrismaClient(databaseUrl: string): PrismaClient {
 
 const databaseUrl = process.env['DATABASE_URL'];
 
-if (!databaseUrl) {
+if (!databaseUrl && process.env.NODE_ENV !== 'test') {
   throw new Error('DATABASE_URL environment variable is required');
 }
 
-export const db = createPrismaClient(databaseUrl);
+export const db = databaseUrl
+  ? createPrismaClient(databaseUrl)
+  : (process.env.NODE_ENV === 'test'
+      ? ({} as unknown as PrismaClient)
+      : createPrismaClient('postgresql://missing:missing@localhost:5432/missing'));
 
 export async function disconnectDatabase(): Promise<void> {
   await db.$disconnect();
