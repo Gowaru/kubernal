@@ -44,7 +44,9 @@ __tests__/
 
 # Prisma
 apps/api/prisma/*.generated.ts
-apps/api/prisma/migrations/
+# Allow migrations to be committed (required for CI E2E)
+!apps/api/prisma/migrations/
+!apps/api/prisma/migrations/**
 
 # Backstage
 apps/backstage/.cache/
