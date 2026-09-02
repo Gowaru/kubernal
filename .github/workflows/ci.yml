@@ -336,6 +336,7 @@ jobs:
             git stash push --include-untracked
             git pull --rebase origin ${{ github.ref_name }}
             git stash pop
+            git add infra/overlays/
             git commit -m "chore(gitops): update overlay images to sha-${GITHUB_SHA:0:7}"
             git push
             echo "Overlay images updated and pushed"
