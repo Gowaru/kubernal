@@ -1,12 +1,7 @@
 import { type JSX } from 'react';
 import type { K8sPod, K8sPodPhase } from '@kubernal/shared-types';
 import { cn } from '@/lib/utils';
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-  TooltipProvider,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 
 interface PodTooltipProps {
   pod: K8sPod;
@@ -84,9 +79,7 @@ export function PodTooltip({ pod, children }: PodTooltipProps): JSX.Element {
 
           {pod.containers.length > 0 && (
             <div className="mt-2 pt-2 border-t border-border">
-              <div className="text-[10px] font-medium text-muted-foreground mb-1">
-                Conteneurs
-              </div>
+              <div className="text-[10px] font-medium text-muted-foreground mb-1">Conteneurs</div>
               <div className="space-y-1">
                 {pod.containers.map((c) => (
                   <div key={c.name} className="text-[11px]">

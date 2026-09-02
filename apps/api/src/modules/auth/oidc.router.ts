@@ -10,7 +10,9 @@ export function createOidcRouter(): Router {
       const url = getGitHubAuthUrl(req);
       res.redirect(url);
     } catch (err) {
-      const message = encodeURIComponent(err instanceof Error ? err.message : 'SSO configuration error');
+      const message = encodeURIComponent(
+        err instanceof Error ? err.message : 'SSO configuration error',
+      );
       const portalUrl = process.env['PORTAL_URL'] || 'http://localhost:3000';
       res.redirect(`${portalUrl}/login?error=${message}`);
     }
@@ -23,11 +25,15 @@ export function createOidcRouter(): Router {
       const returnedState = req.query['state'] as string | undefined;
 
       if (!code) {
-        res.redirect(`${portalUrl}/login?error=${encodeURIComponent('Missing authorization code')}`);
+        res.redirect(
+          `${portalUrl}/login?error=${encodeURIComponent('Missing authorization code')}`,
+        );
         return;
       }
 
-      const sessionState = (req.session as unknown as Record<string, unknown>).oidcState as string | undefined;
+      const sessionState = (req.session as unknown as Record<string, unknown>).oidcState as
+        | string
+        | undefined;
       if (!sessionState || sessionState !== returnedState) {
         res.redirect(`${portalUrl}/login?error=${encodeURIComponent('Invalid state parameter')}`);
         return;

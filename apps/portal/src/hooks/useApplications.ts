@@ -1,4 +1,12 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+  type UseQueryResult,
+  type UseMutationResult,
+} from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '@/lib/api-client';
 import type { Application } from '@kubernal/shared-types';
 
@@ -39,7 +47,9 @@ export function useApplications(): UseQueryResult<Application[], Error> {
   });
 }
 
-export function useCatalogueApplications(filters: CatalogueFilters): UseQueryResult<PaginatedResult<Application>, Error> {
+export function useCatalogueApplications(
+  filters: CatalogueFilters,
+): UseQueryResult<PaginatedResult<Application>, Error> {
   return useQuery<PaginatedResult<Application>>({
     queryKey: ['applications', 'catalogue', filters],
     queryFn: async () => {
@@ -53,7 +63,9 @@ export function useCatalogueApplications(filters: CatalogueFilters): UseQueryRes
       if (filters.sortBy) params.set('sortBy', filters.sortBy);
       if (filters.sortOrder) params.set('sortOrder', filters.sortOrder);
       const qs = params.toString();
-      const { data } = await apiClient.get<PaginatedResult<Application>>(`/applications${qs ? `?${qs}` : ''}`);
+      const { data } = await apiClient.get<PaginatedResult<Application>>(
+        `/applications${qs ? `?${qs}` : ''}`,
+      );
       return data;
     },
     placeholderData: keepPreviousData,
@@ -72,7 +84,11 @@ export function useApplication(id: string): UseQueryResult<Application, Error> {
   });
 }
 
-export function useCreateApplication(): UseMutationResult<Application, Error, CreateApplicationInput> {
+export function useCreateApplication(): UseMutationResult<
+  Application,
+  Error,
+  CreateApplicationInput
+> {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (app: CreateApplicationInput) => {
@@ -93,6 +109,20 @@ export function useDeleteApplication(): UseMutationResult<void, Error, string> {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
+    },
+  });
+}
+
+export function useArchiveApplication(): UseMutationResult<void, Error, string> {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.post(`/applications/${id}/archive`);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['applications'] });
+      navigate('/catalogue');
     },
   });
 }

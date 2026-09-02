@@ -18,15 +18,15 @@ apiClient.interceptors.response.use(
         window.location.href = '/login?expired=true';
       }
       const errData = error.response?.data?.error;
-      const message = typeof errData === 'string'
-        ? errData
-        : errData?.message || 'Identifiants incorrects';
+      const message =
+        typeof errData === 'string' ? errData : errData?.message || 'Identifiants incorrects';
       return Promise.reject(new Error(message));
     }
     const errData = error.response?.data?.error;
-    const message = typeof errData === 'string'
-      ? errData
-      : errData?.message || error.message || 'Erreur inconnue';
+    const message =
+      typeof errData === 'string'
+        ? errData
+        : errData?.message || error.message || 'Erreur inconnue';
     return Promise.reject(new Error(message));
   },
 );

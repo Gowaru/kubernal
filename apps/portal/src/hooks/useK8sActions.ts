@@ -77,7 +77,10 @@ export function useK8sPodLogs(
   });
 }
 
-export function useK8sScale(namespace: string, deploymentName: string): UseMutationResult<ScaleResult, Error, number> {
+export function useK8sScale(
+  namespace: string,
+  deploymentName: string,
+): UseMutationResult<ScaleResult, Error, number> {
   const qc = useQueryClient();
   return useMutation<ScaleResult, Error, number>({
     mutationFn: async (replicas) => {
@@ -95,7 +98,10 @@ export function useK8sScale(namespace: string, deploymentName: string): UseMutat
   });
 }
 
-export function useK8sRestart(namespace: string, deploymentName: string): UseMutationResult<RestartResult, Error, void> {
+export function useK8sRestart(
+  namespace: string,
+  deploymentName: string,
+): UseMutationResult<RestartResult, Error, void> {
   const qc = useQueryClient();
   return useMutation<RestartResult, Error, void>({
     mutationFn: async () => {
@@ -112,7 +118,10 @@ export function useK8sRestart(namespace: string, deploymentName: string): UseMut
   });
 }
 
-export function useK8sDelete(namespace: string, deploymentName: string): UseMutationResult<DeleteResult, Error, DeleteInput> {
+export function useK8sDelete(
+  namespace: string,
+  deploymentName: string,
+): UseMutationResult<DeleteResult, Error, DeleteInput> {
   const qc = useQueryClient();
   return useMutation<DeleteResult, Error, DeleteInput>({
     mutationFn: async ({ deleteService = true } = {}) => {
@@ -130,7 +139,10 @@ export function useK8sDelete(namespace: string, deploymentName: string): UseMuta
   });
 }
 
-export function useK8sExec(namespace: string, podName: string): UseMutationResult<ExecResult, Error, ExecInput> {
+export function useK8sExec(
+  namespace: string,
+  podName: string,
+): UseMutationResult<ExecResult, Error, ExecInput> {
   return useMutation<ExecResult, Error, ExecInput>({
     mutationFn: async ({ command, container } = {}) => {
       const { data } = await apiClient.post<{ data: ExecResult }>(
@@ -148,16 +160,25 @@ type ArgoAutoSyncResult = { success: boolean; message: string; autoSync: boolean
 export function useArgoSync(): UseMutationResult<ArgoSyncResult, Error, string> {
   return useMutation<ArgoSyncResult, Error, string>({
     mutationFn: async (application) => {
-      const { data } = await apiClient.post<{ data: ArgoSyncResult }>('/kubernetes/argo/sync', { application });
+      const { data } = await apiClient.post<{ data: ArgoSyncResult }>('/kubernetes/argo/sync', {
+        application,
+      });
       return data.data;
     },
   });
 }
 
-export function useArgoAutoSync(): UseMutationResult<ArgoAutoSyncResult, Error, { application: string; enabled: boolean }> {
+export function useArgoAutoSync(): UseMutationResult<
+  ArgoAutoSyncResult,
+  Error,
+  { application: string; enabled: boolean }
+> {
   return useMutation<ArgoAutoSyncResult, Error, { application: string; enabled: boolean }>({
     mutationFn: async (input) => {
-      const { data } = await apiClient.patch<{ data: ArgoAutoSyncResult }>('/kubernetes/argo/auto-sync', input);
+      const { data } = await apiClient.patch<{ data: ArgoAutoSyncResult }>(
+        '/kubernetes/argo/auto-sync',
+        input,
+      );
       return data.data;
     },
   });

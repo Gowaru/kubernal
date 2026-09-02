@@ -17,12 +17,9 @@ export const createDeploymentSchema = z.object({
 export const createDeploymentStrictSchema = z.object({
   applicationId: z.string().uuid(),
   environmentId: z.string().uuid(),
-  version: z
-    .string()
-    .min(1)
-    .refine(isStrictSemver, {
-      message: 'version must be valid semver (e.g., 1.2.3, 1.2.3+sha.abc, 1.2.3-alpha.1)',
-    }),
+  version: z.string().min(1).refine(isStrictSemver, {
+    message: 'version must be valid semver (e.g., 1.2.3, 1.2.3+sha.abc, 1.2.3-alpha.1)',
+  }),
   commitSha: z.string().min(1),
   trigger: z.enum(['manual', 'git_push', 'scheduled', 'rollback']).optional().default('manual'),
 });

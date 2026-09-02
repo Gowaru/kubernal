@@ -1,5 +1,14 @@
 import { useState, type JSX } from 'react';
-import { Github, GitBranch, Copy, RefreshCw, ExternalLink, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import {
+  Github,
+  GitBranch,
+  Copy,
+  RefreshCw,
+  ExternalLink,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -41,7 +50,8 @@ export function WebhookConfigCard({
   const [lastSecret, setLastSecret] = useState<string | null>(null);
 
   const provider = repositoryUrl ? detectProvider(repositoryUrl) : null;
-  const validProvider = provider === 'github' || provider === 'gitlab' || provider === 'bitbucket' ? provider : null;
+  const validProvider =
+    provider === 'github' || provider === 'gitlab' || provider === 'bitbucket' ? provider : null;
   const Icon = validProvider === 'github' ? Github : GitBranch;
   const providerLabel = validProvider ? PROVIDER_LABEL[validProvider] : 'Repository';
 
@@ -92,7 +102,8 @@ export function WebhookConfigCard({
           Webhook {providerLabel}
         </CardTitle>
         <CardDescription>
-          Configurez cette URL sur votre repository pour déclencher un déploiement dev à chaque push.
+          Configurez cette URL sur votre repository pour déclencher un déploiement dev à chaque
+          push.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -135,7 +146,11 @@ export function WebhookConfigCard({
                   aria-label={showSecret ? 'Masquer le secret' : 'Afficher le secret'}
                   title={showSecret ? 'Masquer le secret' : 'Afficher le secret'}
                 >
-                  {showSecret ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  {showSecret ? (
+                    <EyeOff className="h-3.5 w-3.5" />
+                  ) : (
+                    <Eye className="h-3.5 w-3.5" />
+                  )}
                 </Button>
                 <Button
                   variant="ghost"
@@ -157,7 +172,9 @@ export function WebhookConfigCard({
               disabled={regenerate.isPending}
               className="shrink-0"
             >
-              <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${regenerate.isPending ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`mr-1.5 h-3.5 w-3.5 ${regenerate.isPending ? 'animate-spin' : ''}`}
+              />
               Régénérer
             </Button>
           </div>
@@ -172,21 +189,11 @@ export function WebhookConfigCard({
         <div className="rounded-md border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground space-y-1">
           <p className="font-medium text-foreground">Instructions :</p>
           <ol className="list-decimal list-inside space-y-0.5">
-            <li>
-              Aller dans Settings → Webhooks de votre repository {providerLabel}
-            </li>
-            <li>
-              Coller l'URL ci-dessus dans le champ "Payload URL"
-            </li>
-            <li>
-              Coller le secret dans le champ "Secret"
-            </li>
-            <li>
-              Sélectionner l'événement "push" (Content type: application/json)
-            </li>
-            <li>
-              Activer le webhook et pousser un commit pour tester
-            </li>
+            <li>Aller dans Settings → Webhooks de votre repository {providerLabel}</li>
+            <li>Coller l'URL ci-dessus dans le champ "Payload URL"</li>
+            <li>Coller le secret dans le champ "Secret"</li>
+            <li>Sélectionner l'événement "push" (Content type: application/json)</li>
+            <li>Activer le webhook et pousser un commit pour tester</li>
           </ol>
           <a
             href={validProvider ? PROVIDER_DOCS[validProvider] : '#'}

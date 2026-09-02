@@ -83,7 +83,7 @@ async function promptTeam(): Promise<Team> {
 
 async function createTeam(): Promise<Team> {
   const name = await input({
-    message: 'Nom de l\'équipe :',
+    message: "Nom de l'équipe :",
     validate: async (value) => {
       if (!value.trim()) return 'Le nom ne peut pas être vide';
       const existing = await db.team.findUnique({ where: { name: value.trim() } });
@@ -98,7 +98,8 @@ async function createTeam(): Promise<Team> {
     message: 'Préfixe namespace (minuscules, chiffres, tirets) :',
     validate: (value) => {
       if (!value.trim()) return 'Le préfixe ne peut pas être vide';
-      if (!NS_PREFIX_REGEX.test(value.trim())) return 'Format invalide (minuscules, chiffres, tirets uniquement)';
+      if (!NS_PREFIX_REGEX.test(value.trim()))
+        return 'Format invalide (minuscules, chiffres, tirets uniquement)';
       return true;
     },
   });
@@ -106,7 +107,7 @@ async function createTeam(): Promise<Team> {
   const quotaCpu = await input({ message: 'Quota CPU (défaut "4") :', default: '4' });
   const quotaMemory = await input({ message: 'Quota mémoire (défaut "8Gi") :', default: '8Gi' });
 
-  console.log('\nRésumé de l\'équipe :');
+  console.log("\nRésumé de l'équipe :");
   console.log(`  Nom      : ${name.trim()}`);
   console.log(`  Namespace: ${namespacePrefix.trim()}`);
   console.log(`  CPU      : ${quotaCpu.trim()}`);
@@ -261,7 +262,9 @@ async function featureList(): Promise<void> {
 
 // ── Feature 3: Modifier un utilisateur ──────────────────────────────────────
 
-async function selectUser(message = 'Sélectionnez un utilisateur :'): Promise<User & { team: Team | null }> {
+async function selectUser(
+  message = 'Sélectionnez un utilisateur :',
+): Promise<User & { team: Team | null }> {
   const users = await db.user.findMany({
     include: { team: true },
     orderBy: { email: 'asc' },
@@ -348,17 +351,21 @@ async function featureEdit(): Promise<void> {
     const choices = teams.map((t) => ({ value: t.id, name: t.name }));
     choices.push({ value: '', name: 'Aucune équipe' });
 
-    updates.teamId = await select({
-      message: 'Nouvelle équipe :',
-      choices,
-      default: user.teamId ?? '',
-    }) || null;
+    updates.teamId =
+      (await select({
+        message: 'Nouvelle équipe :',
+        choices,
+        default: user.teamId ?? '',
+      })) || null;
   }
 
   console.log('\n┌─── Modifications ─────────────────────────');
   if (updates.name) console.log(`│ Nom   : ${user.name} → ${updates.name}`);
   if (updates.email) console.log(`│ Email : ${user.email} → ${updates.email}`);
-  if (updates.role) console.log(`│ Rôle  : ${ROLE_LABELS[user.role] ?? user.role} → ${ROLE_LABELS[updates.role] ?? updates.role}`);
+  if (updates.role)
+    console.log(
+      `│ Rôle  : ${ROLE_LABELS[user.role] ?? user.role} → ${ROLE_LABELS[updates.role] ?? updates.role}`,
+    );
   if (updates.teamId !== undefined) {
     const teams = await db.team.findMany();
     const newTeam = teams.find((t) => t.id === updates.teamId);
@@ -469,7 +476,10 @@ async function featureDelete(): Promise<void> {
 
   console.log('\n⚠️  Cette action est irréversible !');
 
-  const sure = await confirm({ message: 'Êtes-vous sûr de vouloir supprimer cet utilisateur ?', default: false });
+  const sure = await confirm({
+    message: 'Êtes-vous sûr de vouloir supprimer cet utilisateur ?',
+    default: false,
+  });
   if (!sure) {
     console.log('Suppression annulée.');
     return;

@@ -1,7 +1,16 @@
 import { db } from '../../shared/database.js';
 import type { AuditLog, Prisma } from '@prisma/client';
 
-type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'TRANSITION' | 'LOGIN' | 'APPROVE' | 'PROMOTE' | 'TEST' | 'REGENERATE';
+type AuditAction =
+  | 'CREATE'
+  | 'UPDATE'
+  | 'DELETE'
+  | 'TRANSITION'
+  | 'LOGIN'
+  | 'APPROVE'
+  | 'PROMOTE'
+  | 'TEST'
+  | 'REGENERATE';
 
 interface AuditLogInput {
   action: AuditAction;
@@ -23,14 +32,21 @@ export const auditService = {
         action: input.action,
         resource: input.resource,
         resourceId: input.resourceId ?? null,
-        details: input.details as Prisma.InputJsonValue ?? undefined,
+        details: (input.details as Prisma.InputJsonValue) ?? undefined,
         ip: input.ip ?? null,
         userAgent: input.userAgent ?? null,
       },
     });
   },
 
-  async list(opts: { resource?: string; resourceId?: string; action?: string; actorId?: string; limit?: number; offset?: number }): Promise<{ data: AuditLog[]; total: number }> {
+  async list(opts: {
+    resource?: string;
+    resourceId?: string;
+    action?: string;
+    actorId?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ data: AuditLog[]; total: number }> {
     const where: Record<string, unknown> = {};
     if (opts.resource) where['resource'] = opts.resource;
     if (opts.resourceId) where['resourceId'] = opts.resourceId;

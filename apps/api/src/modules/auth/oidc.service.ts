@@ -14,8 +14,9 @@ export function getGitHubAuthUrl(req: Request): string {
     throw new Error('GITHUB_CLIENT_ID environment variable is required');
   }
 
-  const baseUrl = process.env['API_BASE_URL'] || `http://${req.headers.host ?? 'localhost:4000'}`;
-  const redirectUri = `${baseUrl}/api/v1/auth/oidc/github/callback`;
+  const redirectUri =
+    process.env['GITHUB_REDIRECT_URI'] ??
+    `${process.env['API_BASE_URL'] || `http://${req.headers.host ?? 'localhost:4000'}`}/api/v1/auth/oidc/github/callback`;
 
   const state = randomBytes(32).toString('hex');
   (req.session as unknown as Record<string, unknown>).oidcState = state;
@@ -54,9 +55,15 @@ export async function handleGitHubCallback(code: string): Promise<GitHubProfile>
     throw new Error(`GitHub token exchange failed: ${tokenRes.status}`);
   }
 
-  const tokenData = await tokenRes.json() as { access_token?: string; error?: string; error_description?: string };
+  const tokenData = (await tokenRes.json()) as {
+    access_token?: string;
+    error?: string;
+    error_description?: string;
+  };
   if (!tokenData.access_token) {
-    throw new Error(tokenData.error_description ?? tokenData.error ?? 'Failed to obtain GitHub access token');
+    throw new Error(
+      tokenData.error_description ?? tokenData.error ?? 'Failed to obtain GitHub access token',
+    );
   }
 
   const accessToken = tokenData.access_token;
@@ -74,18 +81,23 @@ export async function handleGitHubCallback(code: string): Promise<GitHubProfile>
     throw new Error(`GitHub user fetch failed: ${userRes.status}`);
   }
 
-  const ghUser = await userRes.json() as {
+  const ghUser = (await userRes.json()) as {
     id: number;
     login: string;
     name: string | null;
     avatar_url: string | null;
   };
 
-  const ghEmails = await emailsRes.json() as Array<{ email: string; primary: boolean; verified: boolean }>;
+  const ghEmails = (await emailsRes.json()) as Array<{
+    email: string;
+    primary: boolean;
+    verified: boolean;
+  }>;
 
-  const primaryEmail = ghEmails.find((e) => e.primary && e.verified)?.email
-    ?? ghEmails.find((e) => e.verified)?.email
-    ?? ghEmails[0]?.email;
+  const primaryEmail =
+    ghEmails.find((e) => e.primary && e.verified)?.email ??
+    ghEmails.find((e) => e.verified)?.email ??
+    ghEmails[0]?.email;
 
   if (!primaryEmail) {
     throw new Error('No verified email found on GitHub account');

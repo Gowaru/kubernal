@@ -36,7 +36,13 @@ export const teamService = {
 
     const team = await teamRepository.create(data);
 
-    await provisionTeamEnvironments(team.id, team.name, team.namespacePrefix, data.quotaCpu, data.quotaMemory);
+    await provisionTeamEnvironments(
+      team.id,
+      team.name,
+      team.namespacePrefix,
+      data.quotaCpu,
+      data.quotaMemory,
+    );
 
     return team;
   },
@@ -96,6 +102,9 @@ async function provisionTeamEnvironments(
     await ensureResourceQuota(ns, `${ns}-quota`, split.cpu, split.memory);
     await ensureLimitRange(ns);
 
-    logger.info({ namespace: ns, team: teamName, environment: env.type }, 'Team environment provisioned');
+    logger.info(
+      { namespace: ns, team: teamName, environment: env.type },
+      'Team environment provisioned',
+    );
   }
 }

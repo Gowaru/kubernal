@@ -67,7 +67,9 @@ async function reconcileOne(deploymentId: string): Promise<void> {
           data: {
             status: 'failed',
             completedAt: new Date(),
-            policyViolations: [{ reason: 'timeout', message: `Reconcile timeout after ${TIMEOUT_MS}ms` }],
+            policyViolations: [
+              { reason: 'timeout', message: `Reconcile timeout after ${TIMEOUT_MS}ms` },
+            ],
           },
         });
         logger.warn({ id: dep.id, age }, 'Deployment marked failed (timeout)');

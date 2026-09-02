@@ -18,7 +18,7 @@ export function requireRole(...roles: UserRole[]) {
       throw new UnauthorizedError('Authentication required');
     }
     const userRole = req.user.role as UserRole;
-    const hasPermission = roles.some(role => hasRole(userRole, role));
+    const hasPermission = roles.some((role) => hasRole(userRole, role));
     if (!hasPermission) {
       throw new ForbiddenError(
         `Insufficient permissions. Required role: ${roles.join(' or ')}. Your role: ${userRole}`,

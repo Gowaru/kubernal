@@ -25,7 +25,10 @@ export const environmentRepository = {
     return db.environment.create({ data, include: { application: true } });
   },
 
-  update(id: string, data: { name?: string; namespace?: string; requiresApproval?: boolean }): Promise<Environment> {
+  update(
+    id: string,
+    data: { name?: string; namespace?: string; requiresApproval?: boolean },
+  ): Promise<Environment> {
     return db.environment.update({ where: { id }, data });
   },
 

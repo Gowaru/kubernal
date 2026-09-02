@@ -11,7 +11,11 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/useAuth';
 import { useUsers } from '@/hooks/useUsers';
 import { useTeams } from '@/hooks/useTeams';
-import { GenerateApiKeyModal, type ApiKey } from '@/components/settings/GenerateApiKeyModal';
+import { useApiKeys, useDeleteApiKey } from '@/hooks/useApiKeys';
+import { useNotificationPrefs, useUpdateNotificationPrefs } from '@/hooks/useNotificationPrefs';
+import { useDeleteAccount } from '@/hooks/useDeleteAccount';
+import { GenerateApiKeyModal } from '@/components/settings/GenerateApiKeyModal';
+import type { ApiKeyCreated } from '@kubernal/shared-types';
 import { cn } from '@/lib/utils';
 import {
   Moon,
@@ -30,24 +34,37 @@ import {
 } from 'lucide-react';
 
 const notificationOptions = [
-  { id: 'deploy_success', label: 'Déploiements réussis', description: 'Notifications pour les déploiements terminés avec succès' },
-  { id: 'deploy_failure', label: 'Échecs de déploiement', description: 'Alertes immédiates en cas d\'échec de déploiement' },
-  { id: 'approval_pending', label: 'Approbations en attente', description: 'Rappels pour les approbations de déploiement en attente' },
-  { id: 'policy_violation', label: 'Violations de politique', description: 'Notifications lors de violations de politique de sécurité' },
-];
-
-// TODO: connect to API when ApiKey model is implemented
-const initialKeys: ApiKey[] = [
-  { id: '1', name: 'Production', key: 'kpl_2a8f9c1e4b7d2a5f8e3b6c9d2a5f8e3b', created: '2025-12-15', lastUsed: '2026-05-28', expires: '2026-12-15' },
-  { id: '2', name: 'Staging', key: 'kpl_7c3e8b2a1d4f9c5e2b8a1d4f7c3e8b2a', created: '2026-01-20', lastUsed: '2026-05-29', expires: '2027-01-20' },
-  { id: '3', name: 'CI/CD', key: 'kpl_4b1d6c8e2a9f5b3d7c1e4a8f2b6d9c3e', created: '2026-03-10', lastUsed: '2026-05-27', expires: '2027-03-10' },
+  {
+    id: 'deploy_success',
+    label: 'Déploiements réussis',
+    description: 'Notifications pour les déploiements terminés avec succès',
+  },
+  {
+    id: 'deploy_failure',
+    label: 'Échecs de déploiement',
+    description: "Alertes immédiates en cas d'échec de déploiement",
+  },
+  {
+    id: 'approval_pending',
+    label: 'Approbations en attente',
+    description: 'Rappels pour les approbations de déploiement en attente',
+  },
+  {
+    id: 'policy_violation',
+    label: 'Violations de politique',
+    description: 'Notifications lors de violations de politique de sécurité',
+  },
 ];
 
 export default function Settings(): JSX.Element {
   const { isDark, toggle: toggleTheme } = useTheme();
+  const [lang, setLang] = useState(() => localStorage.getItem('kubernal-lang') ?? 'fr');
   const { user: currentUser, isLoading: userLoading } = useAuth();
   const { data: users, error: usersError } = useUsers();
   const { data: teams, error: teamsError } = useTeams();
+  const { data: apiKeys, error: apiKeysError } = useApiKeys();
+  const deleteMutation = useDeleteApiKey();
+  const deleteAccountMutation = useDeleteAccount();
 
   useEffect(() => {
     if (usersError) {
@@ -60,22 +77,25 @@ export default function Settings(): JSX.Element {
         description: (teamsError as Error)?.message || 'Veuillez réessayer',
       });
     }
-  }, [usersError, teamsError]);
-  const [notifications, setNotifications] = useState<string[]>(['deploy_failure', 'policy_violation']);
+    if (apiKeysError) {
+      toast.error('Erreur lors du chargement des clés API', {
+        description: (apiKeysError as Error)?.message || 'Veuillez réessayer',
+      });
+    }
+  }, [usersError, teamsError, apiKeysError]);
+  const { data: prefs, isLoading: prefsLoading } = useNotificationPrefs();
+  const updatePrefs = useUpdateNotificationPrefs();
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>(initialKeys);
   const [showGenerateKeyModal, setShowGenerateKeyModal] = useState(false);
 
-  const handleKeyGenerated = useCallback((newKey: ApiKey) => {
-    setApiKeys((prev) => [newKey, ...prev]);
-  }, []);
-
-  const toggleNotification = useCallback((id: string) => {
-    setNotifications((prev) =>
-      prev.includes(id) ? prev.filter((n) => n !== id) : [...prev, id],
-    );
-  }, []);
+  const toggleNotification = useCallback(
+    (id: string) => {
+      const currentEnabled = prefs?.some((p) => p.type === id && p.enabled) ?? false;
+      updatePrefs.mutate([{ type: id, enabled: !currentEnabled }]);
+    },
+    [prefs, updatePrefs],
+  );
 
   const handleCopyKey = useCallback((keyId: string, keyValue: string) => {
     try {
@@ -92,11 +112,39 @@ export default function Settings(): JSX.Element {
     setShowKeys((prev) => ({ ...prev, [keyId]: !prev[keyId] }));
   }, []);
 
+  const handleKeyGenerated = useCallback((_created: ApiKeyCreated) => {
+    // Query refetches automatically via invalidateQueries
+  }, []);
+
+  const handleDeleteKey = useCallback(
+    (keyId: string, keyName: string) => {
+      if (!confirm(`Supprimer la clé "${keyName}" ? Cette action est irréversible.`)) return;
+      deleteMutation.mutate(keyId, {
+        onSuccess: () => {
+          toast.success(`Clé "${keyName}" supprimée`);
+        },
+        onError: (err) => {
+          toast.error('Erreur lors de la suppression', {
+            description: err.message,
+          });
+        },
+      });
+    },
+    [deleteMutation],
+  );
+
+  const formatDate = (dateStr: string | null): string => {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleDateString('fr-FR');
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Réglages</h2>
-        <p className="text-muted-foreground">Configurez vos préférences et paramètres de la plateforme.</p>
+        <p className="text-muted-foreground">
+          Configurez vos préférences et paramètres de la plateforme.
+        </p>
       </div>
 
       <Card>
@@ -107,48 +155,57 @@ export default function Settings(): JSX.Element {
           </CardTitle>
           <CardDescription>Informations de votre compte utilisateur</CardDescription>
         </CardHeader>
-    <CardContent className="space-y-4">
-        {userLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-9 w-full rounded-md" />
-              </div>
-            ))}
-          </div>
-        ) : (
-          ((): JSX.Element => {
-            const user = currentUser ?? users?.[0];
-            return (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nom</Label>
-                  <Input id="name" value={user?.name ?? ''} readOnly className="bg-muted/50" />
+        <CardContent className="space-y-4">
+          {userLoading ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-9 w-full rounded-md" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" value={user?.email ?? ''} readOnly className="bg-muted/50" />
+              ))}
+            </div>
+          ) : (
+            ((): JSX.Element => {
+              const user = currentUser ?? users?.[0];
+              return (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nom</Label>
+                    <Input id="name" value={user?.name ?? ''} readOnly className="bg-muted/50" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" value={user?.email ?? ''} readOnly className="bg-muted/50" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Rôle</Label>
+                    <Input id="role" value={user?.role ?? ''} readOnly className="bg-muted/50" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="team">Équipe</Label>
+                    <Input
+                      id="team"
+                      value={teams?.find((t) => t.id === user?.teamId)?.name ?? user?.teamId ?? ''}
+                      readOnly
+                      className="bg-muted/50"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Rôle</Label>
-                  <Input id="role" value={user?.role ?? ''} readOnly className="bg-muted/50" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="team">Équipe</Label>
-                  <Input id="team" value={teams?.find(t => t.id === user?.teamId)?.name ?? user?.teamId ?? ''} readOnly className="bg-muted/50" />
-                </div>
-              </div>
-            );
-          })()
-        )}
-      </CardContent>
+              );
+            })()
+          )}
+        </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            {isDark ? <Moon className="h-4 w-4 text-muted-foreground" /> : <Sun className="h-4 w-4 text-muted-foreground" />}
+            {isDark ? (
+              <Moon className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <Sun className="h-4 w-4 text-muted-foreground" />
+            )}
             Apparence
           </CardTitle>
           <CardDescription>Personnalisez l'affichage de l'interface</CardDescription>
@@ -157,7 +214,9 @@ export default function Settings(): JSX.Element {
           <div className="flex items-center justify-between rounded-lg border border-border p-4">
             <div>
               <p className="text-sm font-medium">Thème sombre</p>
-              <p className="text-xs text-muted-foreground">Basculer entre le mode sombre et clair</p>
+              <p className="text-xs text-muted-foreground">
+                Basculer entre le mode sombre et clair
+              </p>
             </div>
             <button
               onClick={toggleTheme}
@@ -181,10 +240,39 @@ export default function Settings(): JSX.Element {
               <p className="text-sm font-medium">Langue</p>
               <p className="text-xs text-muted-foreground">Langue de l'interface utilisateur</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Français</span>
-              <Badge variant="outline" className="text-xs">Disponible</Badge>
+            <div className="flex items-center gap-1 rounded-md border border-border bg-muted/30 p-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setLang('fr');
+                  localStorage.setItem('kubernal-lang', 'fr');
+                }}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                  lang === 'fr'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                <Globe className="h-3 w-3" />
+                FR
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLang('en');
+                  localStorage.setItem('kubernal-lang', 'en');
+                }}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                  lang === 'en'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                <Globe className="h-3 w-3" />
+                EN
+              </button>
             </div>
           </div>
         </CardContent>
@@ -205,8 +293,9 @@ export default function Settings(): JSX.Element {
               className="flex items-start gap-3 rounded-lg border border-border p-3 cursor-pointer hover:bg-accent/50 transition-colors"
             >
               <Checkbox
-                checked={notifications.includes(opt.id)}
+                checked={prefs?.some((p) => p.type === opt.id && p.enabled) ?? false}
                 onCheckedChange={() => toggleNotification(opt.id)}
+                disabled={updatePrefs.isPending || prefsLoading}
                 className="mt-0.5"
               />
               <div>
@@ -220,11 +309,15 @@ export default function Settings(): JSX.Element {
 
       <Card>
         <CardHeader>
-    <CardTitle className="flex items-center gap-2 text-base">
-      <Key className="h-4 w-4 text-muted-foreground" />
-      Accès API
-      <Badge variant="outline" className="text-xs">Demo</Badge>
-    </CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Key className="h-4 w-4 text-muted-foreground" />
+            Accès API
+            {apiKeysError && (
+              <Badge variant="outline" className="text-xs">
+                Demo
+              </Badge>
+            )}
+          </CardTitle>
           <CardDescription>Gérez vos clés d'API pour l'intégration</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -233,7 +326,7 @@ export default function Settings(): JSX.Element {
             Générer une clé
           </Button>
           <div className="space-y-2">
-            {apiKeys.map((k) => (
+            {apiKeys?.map((k) => (
               <div
                 key={k.id}
                 className="flex items-center justify-between rounded-lg border border-border p-3"
@@ -242,9 +335,11 @@ export default function Settings(): JSX.Element {
                   <p className="text-sm font-medium">{k.name}</p>
                   <div className="flex items-center gap-2">
                     <code className="text-xs text-muted-foreground font-mono">
-                      {showKeys[k.id] ? k.key : k.key.slice(0, 4) + '••••••••••••'}
+                      {showKeys[k.id] ? `${k.prefix}••••••••••••••••` : `${k.prefix}••••••••••••`}
                     </code>
-                    <span className="text-xs text-muted-foreground">· créée le {k.created}</span>
+                    <span className="text-xs text-muted-foreground">
+                      · créée le {formatDate(k.createdAt)}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -260,9 +355,22 @@ export default function Settings(): JSX.Element {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => handleCopyKey(k.id, k.key)}
+                    onClick={() => handleCopyKey(k.id, k.prefix)}
                   >
-                    {copiedKey === k.id ? <Check className="h-4 w-4 text-status-success" /> : <Copy className="h-4 w-4" />}
+                    {copiedKey === k.id ? (
+                      <Check className="h-4 w-4 text-status-success" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    onClick={() => handleDeleteKey(k.id, k.name)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -287,9 +395,29 @@ export default function Settings(): JSX.Element {
                 Supprime définitivement votre compte et toutes les données associées
               </p>
             </div>
-            <Button variant="outline" size="sm" disabled className="border-destructive/30 text-destructive" title="Fonctionnalité à venir">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={deleteAccountMutation.isPending}
+              className="border-destructive/30 text-destructive hover:bg-destructive/10"
+              onClick={() => {
+                if (
+                  !confirm(
+                    'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.',
+                  )
+                )
+                  return;
+                deleteAccountMutation.mutate(undefined, {
+                  onError: (err) => {
+                    toast.error('Erreur lors de la suppression du compte', {
+                      description: err.message,
+                    });
+                  },
+                });
+              }}
+            >
               <Trash2 className="mr-2 h-4 w-4" />
-              Supprimer
+              {deleteAccountMutation.isPending ? 'Suppression…' : 'Supprimer'}
             </Button>
           </div>
         </CardContent>

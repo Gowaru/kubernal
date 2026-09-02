@@ -26,7 +26,9 @@ export function usePipelineSteps(pipelineId: string | undefined): UseQueryResult
   });
 }
 
-export function usePipelinesByDeployment(deploymentId: string | undefined): UseQueryResult<Pipeline[], Error> {
+export function usePipelinesByDeployment(
+  deploymentId: string | undefined,
+): UseQueryResult<Pipeline[], Error> {
   return useQuery<Pipeline[]>({
     queryKey: ['pipelines', 'by-deployment', deploymentId],
     queryFn: async () => {

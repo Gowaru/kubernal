@@ -43,12 +43,7 @@ function asNumber(value: unknown): number | null {
   return Number.isNaN(n) ? null : n;
 }
 
-function diffField(
-  changes: FieldChange[],
-  field: string,
-  fromVal: unknown,
-  toVal: unknown,
-): void {
+function diffField(changes: FieldChange[], field: string, fromVal: unknown, toVal: unknown): void {
   const a = asString(fromVal);
   const b = asString(toVal);
   if (a !== b) {
@@ -82,9 +77,12 @@ export function summarizeDiff(from: DeploymentLike, to: DeploymentLike): Deploym
     summary = 'Aucun changement';
   } else {
     const parts: string[] = [];
-    if (changes.find((c) => c.field === 'version')) parts.push(`version ${from.version} → ${to.version}`);
-    if (changes.find((c) => c.field === 'commitSha')) parts.push(`commit ${from.commitSha.slice(0, 7)} → ${to.commitSha.slice(0, 7)}`);
-    if (changes.find((c) => c.field === 'status')) parts.push(`statut ${from.status} → ${to.status}`);
+    if (changes.find((c) => c.field === 'version'))
+      parts.push(`version ${from.version} → ${to.version}`);
+    if (changes.find((c) => c.field === 'commitSha'))
+      parts.push(`commit ${from.commitSha.slice(0, 7)} → ${to.commitSha.slice(0, 7)}`);
+    if (changes.find((c) => c.field === 'status'))
+      parts.push(`statut ${from.status} → ${to.status}`);
     if (isPromotion) parts.push(`promotion ${from.environmentType} → ${to.environmentType}`);
     if (durationDelta !== null && durationDelta !== 0) {
       const sign = durationDelta > 0 ? '+' : '';

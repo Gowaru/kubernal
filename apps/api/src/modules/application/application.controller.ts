@@ -39,4 +39,16 @@ export const applicationController = {
     await applicationService.delete(id);
     res.status(204).send();
   },
+
+  async archive(req: Request, res: Response): Promise<void> {
+    const id = req.params.id as string;
+    const app = await applicationService.archive(id);
+    res.json({ data: app });
+  },
+
+  async unarchive(req: Request, res: Response): Promise<void> {
+    const id = req.params.id as string;
+    const app = await applicationService.unarchive(id);
+    res.json({ data: app });
+  },
 };

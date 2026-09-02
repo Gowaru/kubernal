@@ -10,9 +10,7 @@ export default function PageLoader(): JSX.Element {
         className="h-16 w-16 object-contain animate-pulse-glow"
       />
       <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      <p className="text-sm text-muted-foreground animate-pulse">
-        Chargement...
-      </p>
+      <p className="text-sm text-muted-foreground animate-pulse">Chargement...</p>
     </div>
   );
 }

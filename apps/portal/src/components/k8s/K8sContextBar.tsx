@@ -10,7 +10,12 @@ interface K8sContextBarProps {
   revision: string;
 }
 
-export function K8sContextBar({ cluster, namespace, branch, revision }: K8sContextBarProps): JSX.Element {
+export function K8sContextBar({
+  cluster,
+  namespace,
+  branch,
+  revision,
+}: K8sContextBarProps): JSX.Element {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}

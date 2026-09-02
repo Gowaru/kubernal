@@ -1,4 +1,12 @@
-import { createContext, useState, useEffect, useCallback, useRef, type ReactNode, type JSX } from 'react';
+import {
+  createContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  type ReactNode,
+  type JSX,
+} from 'react';
 import type { User, UserRole } from '@kubernal/shared-types';
 import { hasRole } from '@kubernal/shared-types';
 import apiClient from '@/lib/api-client';
@@ -48,7 +56,11 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   }, [fetchUser]);
 
   const login = async (email: string, password: string, rememberMe?: boolean): Promise<void> => {
-    const { data } = await apiClient.post<{ success: true; data: User }>('/auth/login', { email, password, rememberMe });
+    const { data } = await apiClient.post<{ success: true; data: User }>('/auth/login', {
+      email,
+      password,
+      rememberMe,
+    });
     setUser(data.data);
   };
 
@@ -81,4 +93,3 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     </AuthContext.Provider>
   );
 }
-

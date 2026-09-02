@@ -11,7 +11,14 @@ import { coreApi, rbacApi } from '../../../shared/k8s-client.js';
 import type { ActionContext, ActionResult, PipelineAction } from './types.js';
 
 const DEPLOYER_VERBS = ['get', 'list', 'watch', 'create', 'update', 'patch', 'delete'] as const;
-const DEPLOYER_RESOURCES = ['pods', 'services', 'deployments', 'configmaps', 'secrets', 'ingresses'] as const;
+const DEPLOYER_RESOURCES = [
+  'pods',
+  'services',
+  'deployments',
+  'configmaps',
+  'secrets',
+  'ingresses',
+] as const;
 const VALID_ENV_TYPES = ['dev', 'staging', 'prod'] as const;
 type EnvType = (typeof VALID_ENV_TYPES)[number];
 
@@ -43,7 +50,9 @@ function validateResourceQuota(value: unknown): { cpu?: string; memory?: string 
   if (q['cpu'] !== undefined) out.cpu = validateString(q['cpu'], 'resourceQuota.cpu');
   if (q['memory'] !== undefined) out.memory = validateString(q['memory'], 'resourceQuota.memory');
   if (out.cpu === undefined && out.memory === undefined) {
-    throw new Error('provision:infrastructure: params.resourceQuota must define at least cpu or memory');
+    throw new Error(
+      'provision:infrastructure: params.resourceQuota must define at least cpu or memory',
+    );
   }
   return out;
 }
@@ -57,7 +66,8 @@ function parseProvisionParams(raw: Record<string, unknown>): ProvisionInfrastruc
     );
   }
   const teamNamespacePrefix = validateString(raw['teamNamespacePrefix'], 'teamNamespacePrefix');
-  const resourceQuota = raw['resourceQuota'] !== undefined ? validateResourceQuota(raw['resourceQuota']) : undefined;
+  const resourceQuota =
+    raw['resourceQuota'] !== undefined ? validateResourceQuota(raw['resourceQuota']) : undefined;
   const createRbac = raw['createRbac'] === undefined ? true : raw['createRbac'];
   if (typeof createRbac !== 'boolean') {
     throw new Error('provision:infrastructure: params.createRbac must be a boolean');
@@ -138,7 +148,9 @@ async function createNamespacedIfMissing<T>(
     logger.info(`${resourceKind} '${resourceName}' created in namespace '${namespace}'`);
   } catch (err: unknown) {
     if (isAlreadyExists(err)) {
-      logger.info(`${resourceKind} '${resourceName}' already exists in namespace '${namespace}', skipping`);
+      logger.info(
+        `${resourceKind} '${resourceName}' already exists in namespace '${namespace}', skipping`,
+      );
       return;
     }
     throw err;
@@ -193,7 +205,7 @@ function buildResourceQuota(
   memory: string | undefined,
 ): V1ResourceQuota {
   const hard: Record<string, string> = {
-    'persistentvolumeclaims': '10',
+    persistentvolumeclaims: '10',
     'count/deployments.apps': '50',
     'count/services': '50',
   };
@@ -221,30 +233,33 @@ async function tryCreateRbac(
 ): Promise<{ ok: boolean }> {
   try {
     await createNamespacedIfMissing(
-      () => coreApi.createNamespacedServiceAccount({
-        namespace,
-        body: buildServiceAccount(saName, namespace),
-      }),
+      () =>
+        coreApi.createNamespacedServiceAccount({
+          namespace,
+          body: buildServiceAccount(saName, namespace),
+        }),
       'ServiceAccount',
       saName,
       namespace,
       logger,
     );
     await createNamespacedIfMissing(
-      () => rbacApi.createNamespacedRole({
-        namespace,
-        body: buildDeployerRole(roleName, namespace),
-      }),
+      () =>
+        rbacApi.createNamespacedRole({
+          namespace,
+          body: buildDeployerRole(roleName, namespace),
+        }),
       'Role',
       roleName,
       namespace,
       logger,
     );
     await createNamespacedIfMissing(
-      () => rbacApi.createNamespacedRoleBinding({
-        namespace,
-        body: buildDeployerRoleBinding(bindingName, namespace, roleName, saName),
-      }),
+      () =>
+        rbacApi.createNamespacedRoleBinding({
+          namespace,
+          body: buildDeployerRoleBinding(bindingName, namespace, roleName, saName),
+        }),
       'RoleBinding',
       bindingName,
       namespace,
@@ -267,10 +282,11 @@ async function tryCreateResourceQuota(
 ): Promise<void> {
   try {
     await createNamespacedIfMissing(
-      () => coreApi.createNamespacedResourceQuota({
-        namespace,
-        body: buildResourceQuota(quotaName, namespace, cpu, memory),
-      }),
+      () =>
+        coreApi.createNamespacedResourceQuota({
+          namespace,
+          body: buildResourceQuota(quotaName, namespace, cpu, memory),
+        }),
       'ResourceQuota',
       quotaName,
       namespace,
@@ -311,7 +327,9 @@ export const provisionInfrastructureAction: PipelineAction = {
     let rbacOk = false;
     if (params.createRbac) {
       context.logger.info(`Provisioning RBAC (SA + Role + RoleBinding) in '${namespace}'`);
-      rbacOk = (await tryCreateRbac(namespace, saName, roleName, bindingName, safeApp, context.logger)).ok;
+      rbacOk = (
+        await tryCreateRbac(namespace, saName, roleName, bindingName, safeApp, context.logger)
+      ).ok;
     }
 
     let quotaCpu: string | undefined;
@@ -338,9 +356,7 @@ export const provisionInfrastructureAction: PipelineAction = {
         quotaCpu: quotaCpu ?? null,
         quotaMemory: quotaMemory ?? null,
       },
-      artifacts: [
-        { name: 'namespace', url: `kubernetes://namespaces/${namespace}` },
-      ],
+      artifacts: [{ name: 'namespace', url: `kubernetes://namespaces/${namespace}` }],
     };
   },
 };

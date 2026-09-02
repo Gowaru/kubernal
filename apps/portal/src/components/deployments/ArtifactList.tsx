@@ -68,13 +68,23 @@ const KIND_META: Record<ArtifactKind, ArtifactKindMeta> = {
 function detectKind(name: string, url: string | undefined): ArtifactKind {
   const n = name.toLowerCase();
   const u = (url ?? '').toLowerCase();
-  if (n.startsWith('image') || n.startsWith('sha256:') || u.startsWith('localhost:5000') || u.startsWith('ghcr.io/')) {
+  if (
+    n.startsWith('image') ||
+    n.startsWith('sha256:') ||
+    u.startsWith('localhost:5000') ||
+    u.startsWith('ghcr.io/')
+  ) {
     return 'image';
   }
   if (n.includes('scan') || n.includes('trivy') || n.includes('grype') || n.includes('vulnerab')) {
     return 'scan';
   }
-  if (n.includes('manifest') || u.startsWith('k8s://') || u.endsWith('.yaml') || u.endsWith('.yml')) {
+  if (
+    n.includes('manifest') ||
+    u.startsWith('k8s://') ||
+    u.endsWith('.yaml') ||
+    u.endsWith('.yml')
+  ) {
     return 'manifest';
   }
   if (u.startsWith('git://') || u.includes('github.com') || u.includes('gitlab.com')) {
@@ -100,7 +110,11 @@ function CopyButton({ text, label }: { text: string; label: string }): JSX.Eleme
       className="shrink-0 inline-flex items-center gap-1 rounded border border-border bg-card/50 px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
       title={`Copier ${label}`}
     >
-      {copied ? <Check className="h-2.5 w-2.5 text-status-success" /> : <Copy className="h-2.5 w-2.5" />}
+      {copied ? (
+        <Check className="h-2.5 w-2.5 text-status-success" />
+      ) : (
+        <Copy className="h-2.5 w-2.5" />
+      )}
       {copied ? 'Copié' : 'Copier'}
     </button>
   );
@@ -149,7 +163,9 @@ function ArtifactItem({ artifact, kind, isExpanded, onToggle }: ArtifactItemProp
             {artifact.name}
           </span>
         </button>
-        <span className="text-[10px] text-muted-foreground shrink-0 font-mono">{artifact.size}</span>
+        <span className="text-[10px] text-muted-foreground shrink-0 font-mono">
+          {artifact.size}
+        </span>
         {displayUrl && <CopyButton text={displayUrl} label="URL" />}
         {hasUrl && (
           <a
@@ -253,7 +269,9 @@ export function ArtifactList({ artifacts }: ArtifactListProps): JSX.Element {
               onClick={() => setFilter(k)}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-colors',
-                filter === k ? meta.chip + ' ' + meta.tone : 'border-border bg-card/50 text-muted-foreground hover:text-foreground',
+                filter === k
+                  ? meta.chip + ' ' + meta.tone
+                  : 'border-border bg-card/50 text-muted-foreground hover:text-foreground',
               )}
             >
               <Icon className="h-3 w-3" />

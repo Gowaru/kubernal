@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import AppShell from '@/components/layout/AppShell';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import PageLoader from '@/components/ui/page-loader';
+import { ErrorFallback } from '@/components/ui/error-fallback';
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Catalogue = lazy(() => import('@/pages/Catalogue'));
@@ -25,33 +26,147 @@ const AuthCallback = lazy(() => import('@/pages/AuthCallback'));
 const router = createBrowserRouter([
   {
     path: '/login',
-    element: <Suspense fallback={<PageLoader />}><LoginPage /></Suspense>,
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <LoginPage />
+      </Suspense>
+    ),
   },
   {
     path: '/auth/callback',
-    element: <Suspense fallback={<PageLoader />}><AuthCallback /></Suspense>,
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <AuthCallback />
+      </Suspense>
+    ),
   },
   {
     element: <ProtectedRoute />,
+    errorElement: <ErrorFallback />,
     children: [
       {
         element: <AppShell />,
         children: [
-          { path: '/', element: <Suspense fallback={<PageLoader />}><Dashboard /></Suspense> },
-          { path: '/catalogue', element: <Suspense fallback={<PageLoader />}><Catalogue /></Suspense> },
-          { path: '/catalogue/:id', element: <Suspense fallback={<PageLoader />}><AppDetail /></Suspense> },
-          { path: '/deployments', element: <Suspense fallback={<PageLoader />}><Deployments /></Suspense> },
-          { path: '/deployments/:id', element: <Suspense fallback={<PageLoader />}><DeploymentDetail /></Suspense> },
-          { path: '/observability', element: <Suspense fallback={<PageLoader />}><Observability /></Suspense> },
-          { path: '/environments', element: <Suspense fallback={<PageLoader />}><Environments /></Suspense> },
-          { path: '/teams', element: <Suspense fallback={<PageLoader />}><Teams /></Suspense> },
-          { path: '/templates', element: <Suspense fallback={<PageLoader />}><Templates /></Suspense> },
-          { path: '/policies', element: <Suspense fallback={<PageLoader />}><Policies /></Suspense> },
-          { path: '/settings', element: <Suspense fallback={<PageLoader />}><Settings /></Suspense> },
-          { path: '/k8s/pods', element: <Suspense fallback={<PageLoader />}><K8sPodsPage /></Suspense> },
-          { path: '/k8s/services', element: <Suspense fallback={<PageLoader />}><K8sServicesPage /></Suspense> },
-          { path: '/k8s/events', element: <Suspense fallback={<PageLoader />}><K8sEventsPage /></Suspense> },
-          { path: '*', element: <Suspense fallback={<PageLoader />}><NotFound /></Suspense> },
+          {
+            path: '/',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <Dashboard />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/catalogue',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <Catalogue />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/catalogue/:id',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AppDetail />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/deployments',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <Deployments />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/deployments/:id',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <DeploymentDetail />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/observability',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <Observability />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/environments',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <Environments />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/teams',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <Teams />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/templates',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <Templates />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/policies',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <Policies />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/settings',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <Settings />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/k8s/pods',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <K8sPodsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/k8s/services',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <K8sServicesPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/k8s/events',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <K8sEventsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: '*',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <NotFound />
+              </Suspense>
+            ),
+          },
         ],
       },
     ],

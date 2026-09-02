@@ -6,7 +6,10 @@ export function useCrossplaneClaims(namespace: string): UseQueryResult<Crossplan
   return useQuery<CrossplaneClaim[]>({
     queryKey: ['k8s-claims', namespace],
     queryFn: async () => {
-      const { data } = await apiClient.get<{ data: CrossplaneClaim[] }>('/kubernetes/crossplane/claims', { params: { namespace } });
+      const { data } = await apiClient.get<{ data: CrossplaneClaim[] }>(
+        '/kubernetes/crossplane/claims',
+        { params: { namespace } },
+      );
       return data.data;
     },
     staleTime: 15_000,

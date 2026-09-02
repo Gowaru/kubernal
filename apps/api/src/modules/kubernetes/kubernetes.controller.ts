@@ -71,6 +71,11 @@ export const kubernetesController = {
     res.json({ data: hpas, total: hpas.length });
   },
 
+  async listAllHPA(_req: Request, res: Response): Promise<void> {
+    const hpas = await kubernetesService.listAllHPA();
+    res.json({ data: hpas, total: hpas.length });
+  },
+
   async listClaims(req: Request, res: Response): Promise<void> {
     const q = listClaimsSchema.parse(req.query);
     const claims = await kubernetesService.listClaims(q.namespace);
@@ -90,7 +95,11 @@ export const kubernetesController = {
   async scaleDeployment(req: Request, res: Response): Promise<void> {
     const params = scaleDeploymentParamsSchema.parse(req.params);
     const body = req.body as { replicas: number };
-    const result = await kubernetesService.scaleDeployment(params.namespace, params.name, body.replicas);
+    const result = await kubernetesService.scaleDeployment(
+      params.namespace,
+      params.name,
+      body.replicas,
+    );
     res.json({ data: result });
   },
 
@@ -122,7 +131,7 @@ export const kubernetesController = {
   async getDeploymentAccess(req: Request, res: Response): Promise<void> {
     const params = deploymentAccessParamsSchema.parse(req.params);
     const query = deploymentAccessQuerySchema.parse(req.query);
-    const deployment = await deploymentService.getById(params.id) as Deployment & {
+    const deployment = (await deploymentService.getById(params.id)) as Deployment & {
       application: { name: string };
       environment: { type: string; namespace: string };
     };

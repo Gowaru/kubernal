@@ -85,7 +85,8 @@ export function PromoteModal({
                 Promouvoir vers {envLabels[targetEnv.type]}
               </DialogTitle>
               <DialogDescription>
-                Déployer la version <span className="font-mono">{version}</span> sur l'environnement suivant.
+                Déployer la version <span className="font-mono">{version}</span> sur l'environnement
+                suivant.
               </DialogDescription>
             </DialogHeader>
 
@@ -122,7 +123,8 @@ export function PromoteModal({
                   <div>
                     <p className="font-medium text-status-warning">Approbation requise</p>
                     <p className="text-muted-foreground mt-0.5">
-                      Ce déploiement devra être approuvé manuellement avant d'être créé dans le cluster.
+                      Ce déploiement devra être approuvé manuellement avant d'être créé dans le
+                      cluster.
                     </p>
                   </div>
                 </div>
@@ -161,7 +163,7 @@ export function PromoteModal({
               <Loader2 className="h-10 w-10 animate-spin text-primary" />
               <p className="text-sm text-muted-foreground">
                 {targetEnv.requiresApproval
-                  ? 'Création du déploiement en attente d\'approbation...'
+                  ? "Création du déploiement en attente d'approbation..."
                   : 'Le worker IDP va créer le K8s Deployment...'}
               </p>
             </div>

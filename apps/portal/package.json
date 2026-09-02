@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint . --max-warnings 200"
+    "lint": "eslint . --max-warnings 200",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@kubernal/shared-types": "*",
@@ -42,6 +43,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/vite": "^4.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

@@ -3,6 +3,7 @@ import { PassThrough } from 'node:stream';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { coreApi, k8sLog } from './k8s-client.js';
 import { logger } from './logger.js';
+import { authenticateUpgrade, type AuthenticatedUser } from './ws-auth.js';
 
 const LOG_PATH_PREFIX = '/api/v1/ws/kubernetes/pods';
 const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;
@@ -20,7 +21,13 @@ interface WsLogSession {
   closed: boolean;
 }
 
-function parsePath(url: string): { namespace: string; podName: string; container: string | undefined; tailLines: number | undefined; timestamps: boolean } | null {
+function parsePath(url: string): {
+  namespace: string;
+  podName: string;
+  container: string | undefined;
+  tailLines: number | undefined;
+  timestamps: boolean;
+} | null {
   const path = url.split('?')[0] ?? url;
   const query = url.split('?')[1] ?? '';
   const params = new URLSearchParams(query);
@@ -66,24 +73,46 @@ function cleanup(session: WsLogSession): void {
   session.closed = true;
   if (session.inactivityTimer) clearTimeout(session.inactivityTimer);
   if (session.abortController) session.abortController.abort();
-  try { session.ws.close(); } catch { /* ignore */ }
-  try { session.logStream.destroy(); } catch { /* ignore */ }
+  try {
+    session.ws.close();
+  } catch {
+    /* ignore */
+  }
+  try {
+    session.logStream.destroy();
+  } catch {
+    /* ignore */
+  }
 }
 
 function sendJson(ws: WebSocket, msg: Record<string, unknown>): void {
   if (ws.readyState !== ws.OPEN) return;
-  try { ws.send(JSON.stringify(msg)); } catch { /* ignore */ }
+  try {
+    ws.send(JSON.stringify(msg));
+  } catch {
+    /* ignore */
+  }
 }
 
 export function createWsLogServer(server: HttpServer): { close: () => void } {
   const wss = new WebSocketServer({ noServer: true });
 
-  server.on('upgrade', (req, socket, head) => {
+  server.on('upgrade', async (req, socket, head) => {
     const url = req.url ?? '';
 
     if (!url.startsWith(`${LOG_PATH_PREFIX}/`) || !url.endsWith('/logs')) {
       return;
     }
+
+    const user = await authenticateUpgrade(req);
+    if (!user) {
+      logger.warn({ url }, 'WS log upgrade rejected: unauthorized');
+      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    (req as typeof req & { wsUser?: AuthenticatedUser }).wsUser = user;
 
     wss.handleUpgrade(req, socket, head, (ws) => {
       wss.emit('connection', ws, req);
@@ -91,9 +120,13 @@ export function createWsLogServer(server: HttpServer): { close: () => void } {
   });
 
   wss.on('connection', async (ws: WebSocket, req) => {
+    const wsUser = (req as typeof req & { wsUser?: AuthenticatedUser }).wsUser;
     const parsed = parsePath(req.url ?? '');
     if (!parsed) {
-      sendJson(ws, { type: 'error', message: 'Invalid path. Expected /api/v1/ws/kubernetes/pods/:namespace/:name/logs' });
+      sendJson(ws, {
+        type: 'error',
+        message: 'Invalid path. Expected /api/v1/ws/kubernetes/pods/:namespace/:name/logs',
+      });
       ws.close();
       return;
     }
@@ -155,7 +188,17 @@ export function createWsLogServer(server: HttpServer): { close: () => void } {
         timestamps,
       });
       session.abortController = abortController;
-      logger.info({ namespace, pod: podName, container: container ?? '(default)', tailLines, timestamps }, 'WS log session started');
+      logger.info(
+        {
+          namespace,
+          pod: podName,
+          container: container ?? '(default)',
+          tailLines,
+          timestamps,
+          user: wsUser?.email,
+        },
+        'WS log session started',
+      );
     } catch (err) {
       logger.error({ err, namespace, pod: podName }, 'Failed to stream pod logs');
       sendJson(ws, { type: 'error', message: 'Failed to stream pod logs' });

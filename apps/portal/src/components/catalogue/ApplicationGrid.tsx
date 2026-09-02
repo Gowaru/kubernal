@@ -53,11 +53,7 @@ export function ApplicationGrid({ filters, onFiltersChange }: ApplicationGridPro
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {applications.map((app) => (
-                <ApplicationCard
-                  key={app.id}
-                  application={app}
-                  onDeploy={setDeployTarget}
-                />
+                <ApplicationCard key={app.id} application={app} onDeploy={setDeployTarget} />
               ))}
             </div>
 
@@ -67,7 +63,7 @@ export function ApplicationGrid({ filters, onFiltersChange }: ApplicationGridPro
                 pageSize: filters.pageSize ?? 20,
                 totalPages,
                 total,
-                from: total === 0 ? 0 : ((filters.page ?? 0) * (filters.pageSize ?? 20)) + 1,
+                from: total === 0 ? 0 : (filters.page ?? 0) * (filters.pageSize ?? 20) + 1,
                 to: Math.min(((filters.page ?? 0) + 1) * (filters.pageSize ?? 20), total),
               }}
               onPageChange={(page) => onFiltersChange({ ...filters, page })}

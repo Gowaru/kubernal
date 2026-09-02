@@ -29,4 +29,10 @@ export const userController = {
     await userService.delete(id);
     res.status(204).send();
   },
+
+  async deleteMe(req: Request, res: Response): Promise<void> {
+    const userId = req.user!.id;
+    await userService.delete(userId);
+    res.status(204).send();
+  },
 };

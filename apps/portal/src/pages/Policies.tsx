@@ -24,26 +24,41 @@ export default function Policies(): JSX.Element {
 
   const filtered = useMemo(() => {
     return (policies ?? []).filter((p) => {
-      if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.description.toLowerCase().includes(search.toLowerCase())) return false;
+      if (
+        search &&
+        !p.name.toLowerCase().includes(search.toLowerCase()) &&
+        !p.description.toLowerCase().includes(search.toLowerCase())
+      )
+        return false;
       if (categoryFilter && p.category !== categoryFilter) return false;
       return true;
     });
   }, [policies, search, categoryFilter]);
 
   const totalEnabled = useMemo(() => (policies ?? []).filter((p) => p.enabled).length, [policies]);
-  const totalCritical = useMemo(() => (policies ?? []).filter((p) => p.severity === 'critical').length, [policies]);
-  const totalDisabled = useMemo(() => (policies ?? []).filter((p) => !p.enabled).length, [policies]);
+  const totalCritical = useMemo(
+    () => (policies ?? []).filter((p) => p.severity === 'critical').length,
+    [policies],
+  );
+  const totalDisabled = useMemo(
+    () => (policies ?? []).filter((p) => !p.enabled).length,
+    [policies],
+  );
 
-  const handleToggle = useCallback((id: string, enabled: boolean) => {
-    const name = (policies ?? []).find((p) => p.id === id)?.name ?? '';
-    togglePolicy.mutate(
-      { id, enabled },
-      {
-        onSuccess: () => toast.success(`Politique "${name}" ${enabled ? 'activée' : 'désactivée'}`),
-        onError: () => toast.error('Erreur lors de la modification de la politique'),
-      },
-    );
-  }, [togglePolicy, policies]);
+  const handleToggle = useCallback(
+    (id: string, enabled: boolean) => {
+      const name = (policies ?? []).find((p) => p.id === id)?.name ?? '';
+      togglePolicy.mutate(
+        { id, enabled },
+        {
+          onSuccess: () =>
+            toast.success(`Politique "${name}" ${enabled ? 'activée' : 'désactivée'}`),
+          onError: () => toast.error('Erreur lors de la modification de la politique'),
+        },
+      );
+    },
+    [togglePolicy, policies],
+  );
 
   useEffect(() => {
     if (error) toast.error('Erreur lors du chargement des politiques');

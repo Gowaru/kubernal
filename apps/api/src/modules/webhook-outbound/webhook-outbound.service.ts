@@ -2,7 +2,13 @@ import { db } from '../../shared/database.js';
 import type { Prisma, WebhookConfig, WebhookDelivery } from '@prisma/client';
 import { auditService } from '../audit/audit.service.js';
 
-type DeployEvent = 'started' | 'success' | 'failure' | 'rolled_back' | 'cancelled' | 'approval_needed';
+type DeployEvent =
+  | 'started'
+  | 'success'
+  | 'failure'
+  | 'rolled_back'
+  | 'cancelled'
+  | 'approval_needed';
 
 interface DeployPayload {
   applicationId: string;
@@ -38,13 +44,19 @@ function buildSlackBlocks(event: DeployEvent, data: DeployPayload): Record<strin
       fields: [
         { type: 'mrkdwn', text: `*Application:*\n${data.applicationName}` },
         { type: 'mrkdwn', text: `*Version:*\n${data.version}` },
-        { type: 'mrkdwn', text: `*Environnement:*\n${data.environmentName} (${data.environmentType})` },
+        {
+          type: 'mrkdwn',
+          text: `*Environnement:*\n${data.environmentName} (${data.environmentType})`,
+        },
         { type: 'mrkdwn', text: `*Commit:*\n\`${data.commitSha.slice(0, 7)}\`` },
       ],
     },
     {
       type: 'section',
-      text: { type: 'mrkdwn', text: `*Déploiement:* <${data.deploymentUrl ?? '#'}|${data.deploymentId.slice(0, 8)}>` },
+      text: {
+        type: 'mrkdwn',
+        text: `*Déploiement:* <${data.deploymentUrl ?? '#'}|${data.deploymentId.slice(0, 8)}>`,
+      },
     },
   ];
 
@@ -77,15 +89,17 @@ function buildSlackBlocks(event: DeployEvent, data: DeployPayload): Record<strin
 
   blocks.push({
     type: 'context',
-    elements: [
-      { type: 'mrkdwn', text: `Envoyé par Kubernal IDP · ${new Date().toISOString()}` },
-    ],
+    elements: [{ type: 'mrkdwn', text: `Envoyé par Kubernal IDP · ${new Date().toISOString()}` }],
   });
 
   return [{ type: 'section', text: { type: 'mrkdwn', text: `*${statusText}*` } }, ...blocks];
 }
 
-async function sendWebhook(url: string, body: Record<string, unknown>, secret?: string): Promise<{ status: number; body: string }> {
+async function sendWebhook(
+  url: string,
+  body: Record<string, unknown>,
+  secret?: string,
+): Promise<{ status: number; body: string }> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (secret) {
     headers['X-Kubernal-Signature'] = secret;
@@ -162,7 +176,11 @@ export const webhookOutboundService = {
 
         try {
           const start = Date.now();
-          const result = await retrySend(config.url, payload as Record<string, unknown>, config.secret ?? undefined);
+          const result = await retrySend(
+            config.url,
+            payload as Record<string, unknown>,
+            config.secret ?? undefined,
+          );
           await db.webhookDelivery.update({
             where: { id: delivery.id },
             data: {
@@ -217,44 +235,58 @@ export const webhookOutboundService = {
         events: data.events ?? ['started', 'success', 'failure'],
       },
     });
-    auditService.log({
-      action: 'CREATE',
-      resource: 'WebhookConfig',
-      resourceId: result.id,
-      details: { applicationId: data.applicationId, name: result.name } as Record<string, unknown>,
-    }).catch(() => {});
+    auditService
+      .log({
+        action: 'CREATE',
+        resource: 'WebhookConfig',
+        resourceId: result.id,
+        details: { applicationId: data.applicationId, name: result.name } as Record<
+          string,
+          unknown
+        >,
+      })
+      .catch(() => {});
     return result;
   },
 
-  async updateConfig(id: string, data: { name?: string; url?: string; secret?: string; events?: string[]; enabled?: boolean }): Promise<WebhookConfig> {
+  async updateConfig(
+    id: string,
+    data: { name?: string; url?: string; secret?: string; events?: string[]; enabled?: boolean },
+  ): Promise<WebhookConfig> {
     const result = await db.webhookConfig.update({ where: { id }, data });
-    auditService.log({
-      action: 'UPDATE',
-      resource: 'WebhookConfig',
-      resourceId: id,
-      details: data as Record<string, unknown>,
-    }).catch(() => {});
+    auditService
+      .log({
+        action: 'UPDATE',
+        resource: 'WebhookConfig',
+        resourceId: id,
+        details: data as Record<string, unknown>,
+      })
+      .catch(() => {});
     return result;
   },
 
   async deleteConfig(id: string): Promise<WebhookConfig> {
     const result = await db.webhookConfig.delete({ where: { id } });
-    auditService.log({
-      action: 'DELETE',
-      resource: 'WebhookConfig',
-      resourceId: id,
-    }).catch(() => {});
+    auditService
+      .log({
+        action: 'DELETE',
+        resource: 'WebhookConfig',
+        resourceId: id,
+      })
+      .catch(() => {});
     return result;
   },
 
   async testConfig(id: string): Promise<void> {
     const config = await db.webhookConfig.findUnique({ where: { id } });
     if (!config) throw new Error(`WebhookConfig ${id} not found`);
-    auditService.log({
-      action: 'TEST',
-      resource: 'WebhookConfig',
-      resourceId: id,
-    }).catch(() => {});
+    auditService
+      .log({
+        action: 'TEST',
+        resource: 'WebhookConfig',
+        resourceId: id,
+      })
+      .catch(() => {});
     await this.dispatch('started', {
       applicationId: config.applicationId,
       applicationName: 'Test Webhook',

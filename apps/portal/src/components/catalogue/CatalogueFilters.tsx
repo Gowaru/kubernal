@@ -39,7 +39,9 @@ export function CatalogueFilters({ filters, onChange }: CatalogueFiltersProps): 
 
       <Select
         value={filters.teamId ?? '_all'}
-        onValueChange={(v) => onChange({ ...filters, teamId: v === '_all' ? undefined : v, page: 0 })}
+        onValueChange={(v) =>
+          onChange({ ...filters, teamId: v === '_all' ? undefined : v, page: 0 })
+        }
       >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Équipe" />
@@ -47,14 +49,18 @@ export function CatalogueFilters({ filters, onChange }: CatalogueFiltersProps): 
         <SelectContent>
           <SelectItem value="_all">Toutes les équipes</SelectItem>
           {(teams ?? []).map((t) => (
-            <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+            <SelectItem key={t.id} value={t.id}>
+              {t.name}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
 
       <Select
         value={filters.status ?? '_all'}
-        onValueChange={(v) => onChange({ ...filters, status: v === '_all' ? undefined : v, page: 0 })}
+        onValueChange={(v) =>
+          onChange({ ...filters, status: v === '_all' ? undefined : v, page: 0 })
+        }
       >
         <SelectTrigger className="w-[150px]">
           <SelectValue placeholder="Statut" />
@@ -62,14 +68,18 @@ export function CatalogueFilters({ filters, onChange }: CatalogueFiltersProps): 
         <SelectContent>
           <SelectItem value="_all">Tous les statuts</SelectItem>
           {Object.entries(APPLICATION_STATUS_CONFIG).map(([key, cfg]) => (
-            <SelectItem key={key} value={key}>{cfg.label}</SelectItem>
+            <SelectItem key={key} value={key}>
+              {cfg.label}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
 
       <Select
         value={filters.templateId ?? '_all'}
-        onValueChange={(v) => onChange({ ...filters, templateId: v === '_all' ? undefined : v, page: 0 })}
+        onValueChange={(v) =>
+          onChange({ ...filters, templateId: v === '_all' ? undefined : v, page: 0 })
+        }
       >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Template" />
@@ -77,7 +87,9 @@ export function CatalogueFilters({ filters, onChange }: CatalogueFiltersProps): 
         <SelectContent>
           <SelectItem value="_all">Tous les templates</SelectItem>
           {(templates ?? []).map((t) => (
-            <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+            <SelectItem key={t.id} value={t.id}>
+              {t.name}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>

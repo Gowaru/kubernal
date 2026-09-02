@@ -112,8 +112,18 @@ export function DeploymentChart({ deployments }: DeploymentChartProps): JSX.Elem
                 cursor={{ fill: 'var(--muted)' }}
               />
               <BarStack radius={[4, 4, 0, 0]}>
-                <Bar dataKey="succès" fill="var(--color-status-success)" fillOpacity={1} maxBarSize={32} />
-                <Bar dataKey="échecs" fill="var(--color-status-error)" fillOpacity={1} maxBarSize={32} />
+                <Bar
+                  dataKey="succès"
+                  fill="var(--color-status-success)"
+                  fillOpacity={1}
+                  maxBarSize={32}
+                />
+                <Bar
+                  dataKey="échecs"
+                  fill="var(--color-status-error)"
+                  fillOpacity={1}
+                  maxBarSize={32}
+                />
               </BarStack>
             </BarChart>
           </ResponsiveContainer>

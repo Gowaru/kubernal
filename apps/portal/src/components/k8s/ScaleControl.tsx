@@ -13,7 +13,12 @@ interface ScaleControlProps {
   clusterReady: boolean;
 }
 
-export function ScaleControl({ hpa, namespace, deploymentName, clusterReady }: ScaleControlProps): JSX.Element {
+export function ScaleControl({
+  hpa,
+  namespace,
+  deploymentName,
+  clusterReady,
+}: ScaleControlProps): JSX.Element {
   const scale = useK8sScale(namespace, deploymentName);
   const [pendingDelta, setPendingDelta] = useState<number | null>(null);
 
@@ -24,7 +29,8 @@ export function ScaleControl({ hpa, namespace, deploymentName, clusterReady }: S
       </div>
     );
   }
-  const cpuOverTarget = hpa.cpuTarget !== null && hpa.cpuCurrent !== null && hpa.cpuCurrent > hpa.cpuTarget;
+  const cpuOverTarget =
+    hpa.cpuTarget !== null && hpa.cpuCurrent !== null && hpa.cpuCurrent > hpa.cpuTarget;
   const minR = hpa.minReplicas;
   const maxR = hpa.maxReplicas;
   const current = hpa.currentReplicas;
@@ -88,7 +94,9 @@ export function ScaleControl({ hpa, namespace, deploymentName, clusterReady }: S
           min: {minR} max: {maxR}
           {hpa.cpuTarget !== null && hpa.cpuCurrent !== null && (
             <>
-              {' · '}cpu: <span className={cn(cpuOverTarget && 'text-k8s-failed')}>{hpa.cpuCurrent}%</span> / {hpa.cpuTarget}%
+              {' · '}cpu:{' '}
+              <span className={cn(cpuOverTarget && 'text-k8s-failed')}>{hpa.cpuCurrent}%</span> /{' '}
+              {hpa.cpuTarget}%
             </>
           )}
         </span>

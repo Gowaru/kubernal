@@ -31,7 +31,10 @@ export function GitHubBadge({ config, isLoading }: GitHubBadgeProps): JSX.Elemen
 
   if (!config) {
     return (
-      <Badge variant="outline" className="border-muted-foreground/30 bg-muted-foreground/10 text-muted-foreground">
+      <Badge
+        variant="outline"
+        className="border-muted-foreground/30 bg-muted-foreground/10 text-muted-foreground"
+      >
         <X className="mr-1 h-3 w-3" />
         Webhook non configuré
       </Badge>
@@ -43,7 +46,10 @@ export function GitHubBadge({ config, isLoading }: GitHubBadgeProps): JSX.Elemen
 
   if (!config.hasSecret) {
     return (
-      <Badge variant="outline" className="border-status-warning/30 bg-status-warning/10 text-status-warning">
+      <Badge
+        variant="outline"
+        className="border-status-warning/30 bg-status-warning/10 text-status-warning"
+      >
         <Icon className="mr-1 h-3 w-3" />
         {label} · secret non configuré
       </Badge>
@@ -51,7 +57,10 @@ export function GitHubBadge({ config, isLoading }: GitHubBadgeProps): JSX.Elemen
   }
 
   return (
-    <Badge variant="outline" className="border-status-success/30 bg-status-success/10 text-status-success">
+    <Badge
+      variant="outline"
+      className="border-status-success/30 bg-status-success/10 text-status-success"
+    >
       <Check className="mr-1 h-3 w-3" />
       {label} connecté
     </Badge>

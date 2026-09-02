@@ -7,11 +7,33 @@ import type { ActionContext, ActionResult, PipelineAction } from './types.js';
 const execFileAsync = promisify(execFile);
 
 const ALLOWED_COMMANDS = new Set<string>([
-  'ls', 'cat', 'echo', 'pwd', 'mkdir', 'rm', 'cp', 'mv', 'touch', 'find', 'grep', 'sed', 'awk',
-  'node', 'npm', 'npx', 'pnpm', 'yarn',
-  'python', 'python3', 'pip', 'pip3',
-  'go', 'cargo', 'rustc',
-  'make', 'cmake',
+  'ls',
+  'cat',
+  'echo',
+  'pwd',
+  'mkdir',
+  'rm',
+  'cp',
+  'mv',
+  'touch',
+  'find',
+  'grep',
+  'sed',
+  'awk',
+  'node',
+  'npm',
+  'npx',
+  'pnpm',
+  'yarn',
+  'python',
+  'python3',
+  'pip',
+  'pip3',
+  'go',
+  'cargo',
+  'rustc',
+  'make',
+  'cmake',
   'docker',
   'git',
   'kubectl',
@@ -100,7 +122,7 @@ function parseRunScriptParams(raw: Record<string, unknown>): RunScriptParams {
     const allowed = [...ALLOWED_COMMANDS].sort().join(', ');
     throw new Error(
       `run:script: params.command '${command}' is not in the whitelist. ` +
-      `Allowed: ${allowed}, or absolute paths under ${ALLOWED_PATH_PREFIXES.join(', ')}`,
+        `Allowed: ${allowed}, or absolute paths under ${ALLOWED_PATH_PREFIXES.join(', ')}`,
     );
   }
   const args = validateArgs(raw['args']);
@@ -128,7 +150,7 @@ async function resolveCwd(params: RunScriptParams, workspaceDir: string): Promis
     if (!isPathInside(cwdResolved, wsResolved)) {
       throw new Error(
         `run:script: params.cwd '${params.cwd}' (resolved: ${cwdResolved}) ` +
-        `must be within workspaceDir '${wsResolved}'`,
+          `must be within workspaceDir '${wsResolved}'`,
       );
     }
     return cwdResolved;
@@ -175,7 +197,9 @@ export const runScriptAction: PipelineAction = {
     const cwd = await resolveCwd(params, context.workspaceDir);
     const env: NodeJS.ProcessEnv = { ...process.env, ...(params.env ?? {}) };
     const startedAt = Date.now();
-    context.logger.info(`run:script: executing '${params.command}' (args=${params.args.length}, cwd=${cwd})`);
+    context.logger.info(
+      `run:script: executing '${params.command}' (args=${params.args.length}, cwd=${cwd})`,
+    );
 
     let stdout = '';
     let stderr = '';
@@ -210,9 +234,10 @@ export const runScriptAction: PipelineAction = {
 
     if (exitCode !== 0) {
       const reason = killed ? `killed (signal=${signal ?? 'timeout'})` : `exitCode=${exitCode}`;
-      const stderrHead = stderr.length > STDERR_ERROR_TRUNCATE
-        ? `${stderr.slice(0, STDERR_ERROR_TRUNCATE)}...`
-        : stderr;
+      const stderrHead =
+        stderr.length > STDERR_ERROR_TRUNCATE
+          ? `${stderr.slice(0, STDERR_ERROR_TRUNCATE)}...`
+          : stderr;
       context.logger.error(`run:script: command '${params.command}' failed (${reason})`);
       throw new Error(
         `run:script: '${params.command}' failed (${reason}): ${stderrHead || '<no stderr>'}`,

@@ -34,7 +34,13 @@ interface StepDef {
   name: string;
   action: string;
   status: string;
-  output?: { vulnCount?: number; criticalCount?: number; highCount?: number; image?: string; namespace?: string } | null;
+  output?: {
+    vulnCount?: number;
+    criticalCount?: number;
+    highCount?: number;
+    image?: string;
+    namespace?: string;
+  } | null;
   errorMessage?: string | null;
   startedAt: string | null;
   completedAt: string | null;
@@ -193,7 +199,9 @@ function StepTile({
   onSelect,
   onShowCves,
 }: StepTileProps): JSX.Element {
-  const statusKey = (STATUS_ICON[step.status] ? step.status : 'pending') as keyof typeof STATUS_ICON;
+  const statusKey = (
+    STATUS_ICON[step.status] ? step.status : 'pending'
+  ) as keyof typeof STATUS_ICON;
   const { Icon, tone, ring } = STATUS_ICON[statusKey]!;
   const ActionIcon = ACTION_ICON[step.action];
   const duration = formatDuration(step.startedAt, step.completedAt);
@@ -226,15 +234,9 @@ function StepTile({
               'flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all',
               ring,
             )}
-            animate={
-              isRunning
-                ? { scale: [0.95, 1.05, 0.95] }
-                : { scale: 1 }
-            }
+            animate={isRunning ? { scale: [0.95, 1.05, 0.95] } : { scale: 1 }}
             transition={
-              isRunning
-                ? { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }
-                : { duration: 0.2 }
+              isRunning ? { duration: 1.6, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }
             }
           >
             <AnimatePresence mode="wait">
@@ -283,7 +285,8 @@ function StepTile({
             title="Voir les vulnérabilités"
           >
             <AlertTriangle className="h-2.5 w-2.5" />
-            {vulnCount} CVE{criticalCount > 0 ? ` (${criticalCount}C)` : highCount > 0 ? ` (${highCount}H)` : ''}
+            {vulnCount} CVE
+            {criticalCount > 0 ? ` (${criticalCount}C)` : highCount > 0 ? ` (${highCount}H)` : ''}
           </button>
         )}
       </button>
@@ -322,7 +325,11 @@ function PipelineSummary({ steps }: { steps: StepDef[] }): JSX.Element {
           <span className="text-xs text-muted-foreground">/ {total}</span>
         </div>
         <div className="mt-1 flex items-center gap-1 text-[10px]">
-          {failed > 0 && <span className="text-status-error">{failed} échec{failed > 1 ? 's' : ''}</span>}
+          {failed > 0 && (
+            <span className="text-status-error">
+              {failed} échec{failed > 1 ? 's' : ''}
+            </span>
+          )}
           {running > 0 && <span className="text-status-info">{running} en cours</span>}
           {pending > 0 && <span className="text-muted-foreground">{pending} en attente</span>}
           {failed === 0 && running === 0 && pending === 0 && (
@@ -333,7 +340,10 @@ function PipelineSummary({ steps }: { steps: StepDef[] }): JSX.Element {
       {buildStep && buildStep.output && (
         <div className="rounded-md border border-border bg-card/50 px-3 py-2">
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Image</div>
-          <div className="mt-0.5 text-xs font-mono text-foreground/90 truncate" title={String(buildStep.output.image ?? '')}>
+          <div
+            className="mt-0.5 text-xs font-mono text-foreground/90 truncate"
+            title={String(buildStep.output.image ?? '')}
+          >
             {String(buildStep.output.image ?? '—')}
           </div>
         </div>
@@ -361,7 +371,10 @@ function PipelineSummary({ steps }: { steps: StepDef[] }): JSX.Element {
       {deployStep && deployStep.output && (
         <div className="rounded-md border border-border bg-card/50 px-3 py-2">
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Cible</div>
-          <div className="mt-0.5 text-xs font-mono text-foreground/90 truncate" title={String(deployStep.output.namespace ?? '')}>
+          <div
+            className="mt-0.5 text-xs font-mono text-foreground/90 truncate"
+            title={String(deployStep.output.namespace ?? '')}
+          >
             {String(deployStep.output.namespace ?? '—')}
           </div>
         </div>
@@ -389,9 +402,7 @@ export function PipelineStepsTimeline({
   }
 
   if (!pipeline || !steps) {
-    return (
-      <p className="text-xs text-muted-foreground text-center py-8">Pipeline introuvable</p>
-    );
+    return <p className="text-xs text-muted-foreground text-center py-8">Pipeline introuvable</p>;
   }
 
   const stepList = steps as StepDef[];
@@ -465,7 +476,8 @@ export function PipelineStepsTimeline({
 
         {!selectedStep && (
           <p className="mt-3 text-[11px] text-muted-foreground text-center">
-            <ChevronRight className="inline h-3 w-3 -mt-0.5" /> Cliquez sur une étape pour voir ses détails
+            <ChevronRight className="inline h-3 w-3 -mt-0.5" /> Cliquez sur une étape pour voir ses
+            détails
           </p>
         )}
       </div>

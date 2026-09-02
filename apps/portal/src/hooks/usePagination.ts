@@ -9,7 +9,14 @@ export interface PaginationState {
   to: number;
 }
 
-export function usePagination<T>(data: T[], defaultPageSize = 10): PaginationState & { setPage: (p: number) => void; setPageSize: (s: number) => void; paginatedData: T[] } {
+export function usePagination<T>(
+  data: T[],
+  defaultPageSize = 10,
+): PaginationState & {
+  setPage: (p: number) => void;
+  setPageSize: (s: number) => void;
+  paginatedData: T[];
+} {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(defaultPageSize);
 
@@ -42,5 +49,9 @@ export function usePagination<T>(data: T[], defaultPageSize = 10): PaginationSta
     from: total === 0 ? 0 : safePage * pageSize + 1,
     to: Math.min((safePage + 1) * pageSize, total),
     paginatedData,
-  } satisfies PaginationState & { setPage: (p: number) => void; setPageSize: (s: number) => void; paginatedData: T[] };
+  } satisfies PaginationState & {
+    setPage: (p: number) => void;
+    setPageSize: (s: number) => void;
+    paginatedData: T[];
+  };
 }

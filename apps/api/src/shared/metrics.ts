@@ -32,7 +32,12 @@ const deploymentsStatus = new client.Gauge({
   registers: [register],
 });
 
-export function trackRequest(method: string, route: string, status: number, durationMs: number): void {
+export function trackRequest(
+  method: string,
+  route: string,
+  status: number,
+  durationMs: number,
+): void {
   httpRequestDuration.observe({ method, route, status: String(status) }, durationMs / 1000);
   httpRequestsTotal.inc({ method, route, status: String(status) });
 }

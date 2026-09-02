@@ -112,7 +112,8 @@ function parseBuildImageParams(raw: Record<string, unknown>): BuildImageParams {
   const target = validateOptionalString(raw['target'], 'target');
   const buildArgs = validateStringMap(raw['buildArgs'], 'buildArgs');
   const labels = validateStringMap(raw['labels'], 'labels');
-  const timeoutMs = validateOptionalPositiveInt(raw['timeoutMs'], 'timeoutMs') ?? DEFAULT_TIMEOUT_MS;
+  const timeoutMs =
+    validateOptionalPositiveInt(raw['timeoutMs'], 'timeoutMs') ?? DEFAULT_TIMEOUT_MS;
   const params: BuildImageParams = {
     image,
     contextPath,
@@ -148,9 +149,13 @@ async function ensureDockerAvailable(logger: ActionContext['logger']): Promise<v
   } catch (err: unknown) {
     const failure = readExecFileError(err);
     if (failure.code === 'ENOENT') {
-      throw new Error('build:image: docker CLI not found in PATH. Install Docker to use this action.');
+      throw new Error(
+        'build:image: docker CLI not found in PATH. Install Docker to use this action.',
+      );
     }
-    throw new Error(`build:image: failed to invoke docker --version: ${failure.stderr || '<no stderr>'}`);
+    throw new Error(
+      `build:image: failed to invoke docker --version: ${failure.stderr || '<no stderr>'}`,
+    );
   }
   logger.info('docker CLI detected');
 }
@@ -195,7 +200,15 @@ export const buildImageAction: PipelineAction = {
       );
     }
 
-    const args: string[] = ['build', '-t', params.image, '-f', dockerfileAbs, '--platform', params.platform];
+    const args: string[] = [
+      'build',
+      '-t',
+      params.image,
+      '-f',
+      dockerfileAbs,
+      '--platform',
+      params.platform,
+    ];
     if (params.noCache) args.push('--no-cache');
     if (params.pull) args.push('--pull');
     if (params.target) {
@@ -243,12 +256,14 @@ export const buildImageAction: PipelineAction = {
 
     if (exitCode !== 0) {
       const reason = killed ? `killed (signal=${signal ?? 'timeout'})` : `exitCode=${exitCode}`;
-      const stderrHead = stderr.length > STDERR_ERROR_TRUNCATE
-        ? `${stderr.slice(0, STDERR_ERROR_TRUNCATE)}...`
-        : stderr;
-      const stdoutHead = stdout.length > STDERR_ERROR_TRUNCATE
-        ? `${stdout.slice(0, STDERR_ERROR_TRUNCATE)}...`
-        : stdout;
+      const stderrHead =
+        stderr.length > STDERR_ERROR_TRUNCATE
+          ? `${stderr.slice(0, STDERR_ERROR_TRUNCATE)}...`
+          : stderr;
+      const stdoutHead =
+        stdout.length > STDERR_ERROR_TRUNCATE
+          ? `${stdout.slice(0, STDERR_ERROR_TRUNCATE)}...`
+          : stdout;
       context.logger.error(`build:image: docker build failed (${reason})`);
       throw new Error(
         `build:image: docker build failed (${reason}): ${stderrHead || stdoutHead || '<no output>'}`,
@@ -258,7 +273,7 @@ export const buildImageAction: PipelineAction = {
     const imageId = parseImageIdFromOutput(stdout);
     context.logger.info(
       `build:image: built '${params.image}' in ${durationMs}ms` +
-      (imageId ? ` (id=${imageId})` : ' (id not parsed)'),
+        (imageId ? ` (id=${imageId})` : ' (id not parsed)'),
     );
 
     const stdoutTruncated = truncate(stdout, MAX_OUTPUT_BYTES);
@@ -281,9 +296,7 @@ export const buildImageAction: PipelineAction = {
         stdoutTruncated,
         stderrTruncated,
       },
-      artifacts: [
-        { name: 'image', url: `docker://${params.image}` },
-      ],
+      artifacts: [{ name: 'image', url: `docker://${params.image}` }],
     };
   },
 };

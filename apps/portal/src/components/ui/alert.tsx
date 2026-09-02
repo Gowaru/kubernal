@@ -8,7 +8,8 @@ const alertVariants = cva(
     variants: {
       variant: {
         default: 'bg-background text-foreground',
-        destructive: 'border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive',
+        destructive:
+          'border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive',
       },
     },
     defaultVariants: {
@@ -24,18 +25,26 @@ const Alert = forwardRef<HTMLDivElement, AlertProps>(({ className, variant, ...p
 ));
 Alert.displayName = 'Alert';
 
-type AlertTitleProps = HTMLAttributes<HTMLHeadingElement>
+type AlertTitleProps = HTMLAttributes<HTMLHeadingElement>;
 
-const AlertTitle = forwardRef<HTMLHeadingElement, AlertTitleProps>(({ className, ...props }, ref) => (
-  <h5 ref={ref} className={cn('mb-1 font-medium leading-none tracking-tight', className)} {...props} />
-));
+const AlertTitle = forwardRef<HTMLHeadingElement, AlertTitleProps>(
+  ({ className, ...props }, ref) => (
+    <h5
+      ref={ref}
+      className={cn('mb-1 font-medium leading-none tracking-tight', className)}
+      {...props}
+    />
+  ),
+);
 AlertTitle.displayName = 'AlertTitle';
 
-type AlertDescriptionProps = HTMLAttributes<HTMLDivElement>
+type AlertDescriptionProps = HTMLAttributes<HTMLDivElement>;
 
-const AlertDescription = forwardRef<HTMLDivElement, AlertDescriptionProps>(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn('text-sm [&_p]:leading-relaxed', className)} {...props} />
-));
+const AlertDescription = forwardRef<HTMLDivElement, AlertDescriptionProps>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn('text-sm [&_p]:leading-relaxed', className)} {...props} />
+  ),
+);
 AlertDescription.displayName = 'AlertDescription';
 
 export { Alert, AlertTitle, AlertDescription };

@@ -30,11 +30,20 @@ function printHeader(title: string): void {
 
 function fmtStepResult(step: DemoStep): string {
   const icon =
-    step.status === 'ok' ? '✓' : step.status === 'skipped' ? '⊘' : step.status === 'failed' ? '✗' : '…';
+    step.status === 'ok'
+      ? '✓'
+      : step.status === 'skipped'
+        ? '⊘'
+        : step.status === 'failed'
+          ? '✗'
+          : '…';
   return `  ${icon} ${step.name.padEnd(45)} ${step.status.toUpperCase().padEnd(8)} (${step.durationMs}ms)`;
 }
 
-function runStep<T>(name: string, fn: () => T | Promise<T>): Promise<{ step: DemoStep; value?: T; error?: unknown }> {
+function runStep<T>(
+  name: string,
+  fn: () => T | Promise<T>,
+): Promise<{ step: DemoStep; value?: T; error?: unknown }> {
   const start = Date.now();
   return Promise.resolve()
     .then(() => fn())
@@ -182,7 +191,9 @@ async function findOrCreateEnvironment(args: {
   applicationId: string;
   namespace: string;
 }): Promise<Environment> {
-  const existing = await db.environment.findFirst({ where: { name: args.name, applicationId: args.applicationId } });
+  const existing = await db.environment.findFirst({
+    where: { name: args.name, applicationId: args.applicationId },
+  });
   if (existing) {
     return {
       id: existing.id,
@@ -287,52 +298,56 @@ async function runPhase131Demo(): Promise<void> {
   }
 
   process.stdout.write('\n  Setting up demo entities...\n');
-  const setupStep = await runStep('2.1 create user + team + template + app + env + deployment', async () => {
-    const team = await findOrCreateTeam();
-    const user = await findOrCreateUser(team.id);
-    const template = await findOrCreateTemplate({
-      name: `pipeline-demo-${demoTag}`,
-      description: 'Phase 13.1 pipeline demo template (single fetch:template step)',
-      steps: [
-        {
-          id: 'clone',
-          name: 'Clone template repository',
-          action: 'fetch:template',
-          input: { repository: REPO_URL },
-        },
-      ],
-    });
-    const app = await findOrCreateApplication({
-      name: `pipeline-demo-app-${demoTag}`,
-      description: 'Phase 13.1 pipeline demo application',
-      teamId: team.id,
-      ownerId: user.id,
-      templateId: template.id,
-    });
-    const env = await findOrCreateEnvironment({
-      name: `pipeline-demo-app-${demoTag}-dev`,
-      applicationId: app.id,
-      namespace: `pipeline-demo-${demoTag}-dev`.slice(0, 63),
-    });
-    const deployment = await findOrCreateDeployment({
-      applicationId: app.id,
-      environmentId: env.id,
-      commitSha: 'demo13.1a1b2',
-    });
-    return {
-      teamId: team.id,
-      userId: user.id,
-      templateId: template.id,
-      appId: app.id,
-      envId: env.id,
-      deploymentId: deployment.id,
-      appName: app.name,
-      templateName: template.name,
-    };
-  });
+  const setupStep = await runStep(
+    '2.1 create user + team + template + app + env + deployment',
+    async () => {
+      const team = await findOrCreateTeam();
+      const user = await findOrCreateUser(team.id);
+      const template = await findOrCreateTemplate({
+        name: `pipeline-demo-${demoTag}`,
+        description: 'Phase 13.1 pipeline demo template (single fetch:template step)',
+        steps: [
+          {
+            id: 'clone',
+            name: 'Clone template repository',
+            action: 'fetch:template',
+            input: { repository: REPO_URL },
+          },
+        ],
+      });
+      const app = await findOrCreateApplication({
+        name: `pipeline-demo-app-${demoTag}`,
+        description: 'Phase 13.1 pipeline demo application',
+        teamId: team.id,
+        ownerId: user.id,
+        templateId: template.id,
+      });
+      const env = await findOrCreateEnvironment({
+        name: `pipeline-demo-app-${demoTag}-dev`,
+        applicationId: app.id,
+        namespace: `pipeline-demo-${demoTag}-dev`.slice(0, 63),
+      });
+      const deployment = await findOrCreateDeployment({
+        applicationId: app.id,
+        environmentId: env.id,
+        commitSha: 'demo13.1a1b2',
+      });
+      return {
+        teamId: team.id,
+        userId: user.id,
+        templateId: template.id,
+        appId: app.id,
+        envId: env.id,
+        deploymentId: deployment.id,
+        appName: app.name,
+        templateName: template.name,
+      };
+    },
+  );
   steps.push(setupStep.step);
   if (setupStep.error || !setupStep.value) {
-    const msg = setupStep.error instanceof Error ? setupStep.error.message : String(setupStep.error);
+    const msg =
+      setupStep.error instanceof Error ? setupStep.error.message : String(setupStep.error);
     process.stderr.write(`\nFatal: setup failed - ${msg}\n\n`);
     process.exit(1);
   }
@@ -571,24 +586,21 @@ async function runPhase132Demo(): Promise<void> {
   const { clonedPath } = printPipelineSteps(pipelineSteps);
 
   process.stdout.write('\n  Verifying K8s namespace exists...\n');
-  const verifyNsStep = await runStep(
-    `6.1 kubectl get namespace ${expectedNamespace}`,
-    async () => {
-      const result = await execFileAsync(KUBECTL_BIN, [
-        'get',
-        'namespace',
-        expectedNamespace,
-        '-o',
-        'jsonpath={.metadata.name}',
-      ]);
-      const actual = result.stdout.trim();
-      if (actual !== expectedNamespace) {
-        throw new Error(`expected namespace '${expectedNamespace}', got '${actual}'`);
-      }
-      process.stdout.write(`     namespace verified: ${actual}\n`);
-      return actual;
-    },
-  );
+  const verifyNsStep = await runStep(`6.1 kubectl get namespace ${expectedNamespace}`, async () => {
+    const result = await execFileAsync(KUBECTL_BIN, [
+      'get',
+      'namespace',
+      expectedNamespace,
+      '-o',
+      'jsonpath={.metadata.name}',
+    ]);
+    const actual = result.stdout.trim();
+    if (actual !== expectedNamespace) {
+      throw new Error(`expected namespace '${expectedNamespace}', got '${actual}'`);
+    }
+    process.stdout.write(`     namespace verified: ${actual}\n`);
+    return actual;
+  });
   steps.push(verifyNsStep.step);
 
   let verifiedReadme = false;
@@ -674,26 +686,23 @@ async function runPhase133Demo(): Promise<void> {
   printHeader('Phase 13.3 — build:image (1-step pipeline building a sample image)');
 
   process.stdout.write('\n  Verifying local sample-app fixture on disk...\n');
-  const fixtureStep = await runStep(
-    '1.1 stat sample-app/Dockerfile',
-    async () => {
-      if (!existsSync(sampleAppDir)) {
-        throw new Error(`sample-app directory not found at ${sampleAppDir}`);
-      }
-      if (!existsSync(dockerfilePath)) {
-        throw new Error(`Dockerfile not found at ${dockerfilePath}`);
-      }
-      const { readFileSync } = await import('node:fs');
-      const dockerfile = readFileSync(dockerfilePath, 'utf8');
-      process.stdout.write(`     context:    ${sampleAppDir}\n`);
-      process.stdout.write(`     dockerfile: ${dockerfilePath}\n`);
-      process.stdout.write(`     content:\n`);
-      for (const line of dockerfile.split('\n')) {
-        process.stdout.write(`       ${line}\n`);
-      }
-      return { sampleAppDir, dockerfilePath };
-    },
-  );
+  const fixtureStep = await runStep('1.1 stat sample-app/Dockerfile', async () => {
+    if (!existsSync(sampleAppDir)) {
+      throw new Error(`sample-app directory not found at ${sampleAppDir}`);
+    }
+    if (!existsSync(dockerfilePath)) {
+      throw new Error(`Dockerfile not found at ${dockerfilePath}`);
+    }
+    const { readFileSync } = await import('node:fs');
+    const dockerfile = readFileSync(dockerfilePath, 'utf8');
+    process.stdout.write(`     context:    ${sampleAppDir}\n`);
+    process.stdout.write(`     dockerfile: ${dockerfilePath}\n`);
+    process.stdout.write(`     content:\n`);
+    for (const line of dockerfile.split('\n')) {
+      process.stdout.write(`       ${line}\n`);
+    }
+    return { sampleAppDir, dockerfilePath };
+  });
   steps.push(fixtureStep.step);
   if (fixtureStep.error) {
     process.stderr.write(`\nFatal: sample-app fixture missing\n\n`);
@@ -779,7 +788,9 @@ async function runPhase133Demo(): Promise<void> {
   const pipeline = executeStep.value;
   const pipelineStart = Date.now();
 
-  process.stdout.write('\n  Waiting for worker to build image (max 90s, docker pull may take time)...\n');
+  process.stdout.write(
+    '\n  Waiting for worker to build image (max 90s, docker pull may take time)...\n',
+  );
   const pollStep = await runStep('4.1 poll pipeline status (max 90s)', async () => {
     return pollPipelineCompletion(pipeline.id, 90);
   });
@@ -809,25 +820,24 @@ async function runPhase133Demo(): Promise<void> {
     buildStep && typeof buildStep.output === 'object' && buildStep.output !== null
       ? (buildStep.output as Record<string, unknown>)
       : null;
-  const builtImage = typeof buildOutput?.['image'] === 'string' ? (buildOutput['image'] as string) : null;
-  const builtImageId = typeof buildOutput?.['imageId'] === 'string' ? (buildOutput['imageId'] as string) : null;
+  const builtImage =
+    typeof buildOutput?.['image'] === 'string' ? (buildOutput['image'] as string) : null;
+  const builtImageId =
+    typeof buildOutput?.['imageId'] === 'string' ? (buildOutput['imageId'] as string) : null;
 
   process.stdout.write('\n  Verifying built image via docker run...\n');
-  const runStepResult = await runStep('6.1 docker run --rm kubernal-sample:13.3-demo cat /hello.txt', async () => {
-    const result = await execFileAsync('docker', [
-      'run',
-      '--rm',
-      imageTag,
-      'cat',
-      '/hello.txt',
-    ]);
-    const output = result.stdout.trim();
-    process.stdout.write(`     stdout: ${output}\n`);
-    if (output !== 'hello') {
-      throw new Error(`expected 'hello', got '${output}'`);
-    }
-    return output;
-  });
+  const runStepResult = await runStep(
+    '6.1 docker run --rm kubernal-sample:13.3-demo cat /hello.txt',
+    async () => {
+      const result = await execFileAsync('docker', ['run', '--rm', imageTag, 'cat', '/hello.txt']);
+      const output = result.stdout.trim();
+      process.stdout.write(`     stdout: ${output}\n`);
+      if (output !== 'hello') {
+        throw new Error(`expected 'hello', got '${output}'`);
+      }
+      return output;
+    },
+  );
   steps.push(runStepResult.step);
 
   process.stdout.write('\n  Verifying image metadata via docker inspect...\n');
@@ -844,7 +854,9 @@ async function runPhase133Demo(): Promise<void> {
     process.stdout.write(`     layers:     ${layerCount}\n`);
     process.stdout.write(`     labels:     ${labels}\n`);
     if (builtImageId && inspectId && !inspectId.includes(builtImageId)) {
-      process.stdout.write(`     WARN: parsed id '${builtImageId}' not in inspect id '${inspectId}'\n`);
+      process.stdout.write(
+        `     WARN: parsed id '${builtImageId}' not in inspect id '${inspectId}'\n`,
+      );
     }
     return { inspectId, layerCount, labels };
   });
@@ -896,26 +908,23 @@ async function runPhase134Demo(): Promise<void> {
   const start = Date.now();
 
   process.stdout.write('\n  Verifying local sample-app fixture on disk...\n');
-  const fixtureStep = await runStep(
-    '1.1 stat sample-app/Dockerfile',
-    async () => {
-      if (!existsSync(sampleAppDir)) {
-        throw new Error(`sample-app directory not found at ${sampleAppDir}`);
-      }
-      if (!existsSync(dockerfilePath)) {
-        throw new Error(`Dockerfile not found at ${dockerfilePath}`);
-      }
-      const { readFileSync } = await import('node:fs');
-      const dockerfile = readFileSync(dockerfilePath, 'utf8');
-      process.stdout.write(`     context:    ${sampleAppDir}\n`);
-      process.stdout.write(`     dockerfile: ${dockerfilePath}\n`);
-      process.stdout.write(`     content:\n`);
-      for (const line of dockerfile.split('\n')) {
-        process.stdout.write(`       ${line}\n`);
-      }
-      return { sampleAppDir, dockerfilePath };
-    },
-  );
+  const fixtureStep = await runStep('1.1 stat sample-app/Dockerfile', async () => {
+    if (!existsSync(sampleAppDir)) {
+      throw new Error(`sample-app directory not found at ${sampleAppDir}`);
+    }
+    if (!existsSync(dockerfilePath)) {
+      throw new Error(`Dockerfile not found at ${dockerfilePath}`);
+    }
+    const { readFileSync } = await import('node:fs');
+    const dockerfile = readFileSync(dockerfilePath, 'utf8');
+    process.stdout.write(`     context:    ${sampleAppDir}\n`);
+    process.stdout.write(`     dockerfile: ${dockerfilePath}\n`);
+    process.stdout.write(`     content:\n`);
+    for (const line of dockerfile.split('\n')) {
+      process.stdout.write(`       ${line}\n`);
+    }
+    return { sampleAppDir, dockerfilePath };
+  });
   steps.push(fixtureStep.step);
 
   process.stdout.write('\n  Reusing team + user from Phase 13.1...\n');
@@ -977,15 +986,19 @@ async function runPhase134Demo(): Promise<void> {
     body: JSON.stringify({ deploymentId: deploymentId, templateId: templateId, params: {} }),
   });
   if (!pipelineRes.ok) {
-    throw new Error(`POST /pipelines/execute failed: ${pipelineRes.status} ${await pipelineRes.text()}`);
+    throw new Error(
+      `POST /pipelines/execute failed: ${pipelineRes.status} ${await pipelineRes.text()}`,
+    );
   }
-  const pipeline = (await pipelineRes.json() as { data: Pipeline }).data;
+  const pipeline = ((await pipelineRes.json()) as { data: Pipeline }).data;
 
   const finalPipeline = await pollPipelineCompletion(pipeline.id, 120);
   const pipelineDuration = Date.now() - start;
 
-  const pipelineStepsRes = await fetch(`http://127.0.0.1:4000/api/v1/pipelines/${finalPipeline.id}/steps`);
-  const pipelineSteps = (await pipelineStepsRes.json() as { data: PipelineStep[] }).data;
+  const pipelineStepsRes = await fetch(
+    `http://127.0.0.1:4000/api/v1/pipelines/${finalPipeline.id}/steps`,
+  );
+  const pipelineSteps = ((await pipelineStepsRes.json()) as { data: PipelineStep[] }).data;
 
   const sourceTag = 'localhost:5000/kubernal-sample:13.4-demo';
   const targetTag = 'localhost:5000/kubernal-sample:13.4-demo';
@@ -1108,7 +1121,9 @@ async function runPhase135Demo(): Promise<void> {
   });
   steps.push(setupStep.step);
   if (setupStep.error) {
-    process.stderr.write(`\nFatal: setup failed — ${setupStep.error instanceof Error ? setupStep.error.message : String(setupStep.error)}\n\n`);
+    process.stderr.write(
+      `\nFatal: setup failed — ${setupStep.error instanceof Error ? setupStep.error.message : String(setupStep.error)}\n\n`,
+    );
     process.exit(1);
   }
   const ids = setupStep.value!;
@@ -1129,18 +1144,26 @@ async function runPhase135Demo(): Promise<void> {
   const pipelineRes = await fetch('http://127.0.0.1:4000/api/v1/pipelines/execute', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ deploymentId: ids.deployment.id, templateId: ids.template.id, params: {} }),
+    body: JSON.stringify({
+      deploymentId: ids.deployment.id,
+      templateId: ids.template.id,
+      params: {},
+    }),
   });
   if (!pipelineRes.ok) {
-    throw new Error(`POST /pipelines/execute failed: ${pipelineRes.status} ${await pipelineRes.text()}`);
+    throw new Error(
+      `POST /pipelines/execute failed: ${pipelineRes.status} ${await pipelineRes.text()}`,
+    );
   }
-  const pipeline = (await pipelineRes.json() as { data: Pipeline }).data;
+  const pipeline = ((await pipelineRes.json()) as { data: Pipeline }).data;
 
   const finalPipeline = await pollPipelineCompletion(pipeline.id, 180);
   const pipelineDuration = Date.now() - start;
 
-  const pipelineStepsRes = await fetch(`http://127.0.0.1:4000/api/v1/pipelines/${finalPipeline.id}/steps`);
-  const pipelineSteps = (await pipelineStepsRes.json() as { data: PipelineStep[] }).data;
+  const pipelineStepsRes = await fetch(
+    `http://127.0.0.1:4000/api/v1/pipelines/${finalPipeline.id}/steps`,
+  );
+  const pipelineSteps = ((await pipelineStepsRes.json()) as { data: PipelineStep[] }).data;
 
   printPipelineSteps(pipelineSteps);
 
@@ -1162,22 +1185,33 @@ async function runPhase135Demo(): Promise<void> {
   steps.push(scanCheck.step);
 
   process.stdout.write('\n  Verifying deployment...\n');
-  const deployCheck = await runStep('3.1 check deploy:manifest output + kubectl get deployment', async () => {
-    if (!deployStep) throw new Error('deploy:manifest step not found');
-    const ns = targetNamespace;
+  const deployCheck = await runStep(
+    '3.1 check deploy:manifest output + kubectl get deployment',
+    async () => {
+      if (!deployStep) throw new Error('deploy:manifest step not found');
+      const ns = targetNamespace;
 
-    const result = await execFileAsync('kubectl', ['get', 'deployment', 'nginx-demo', '-n', ns, '-o', 'name']);
-    const depName = result.stdout.trim();
-    process.stdout.write(`     deployment:     ${depName}\n`);
-    if (!depName) throw new Error('deployment not found');
+      const result = await execFileAsync('kubectl', [
+        'get',
+        'deployment',
+        'nginx-demo',
+        '-n',
+        ns,
+        '-o',
+        'name',
+      ]);
+      const depName = result.stdout.trim();
+      process.stdout.write(`     deployment:     ${depName}\n`);
+      if (!depName) throw new Error('deployment not found');
 
-    await execFileAsync('kubectl', ['delete', 'deployment', 'nginx-demo', '-n', ns]);
-    process.stdout.write(`     cleaned up deployment nginx-demo\n`);
+      await execFileAsync('kubectl', ['delete', 'deployment', 'nginx-demo', '-n', ns]);
+      process.stdout.write(`     cleaned up deployment nginx-demo\n`);
 
-    await execFileAsync('kubectl', ['delete', 'namespace', ns]);
-    process.stdout.write(`     cleaned up namespace ${ns}\n`);
-    return { namespace: ns };
-  });
+      await execFileAsync('kubectl', ['delete', 'namespace', ns]);
+      process.stdout.write(`     cleaned up namespace ${ns}\n`);
+      return { namespace: ns };
+    },
+  );
   steps.push(deployCheck.step);
 
   printHeader('Summary (Phase 13.5+13.6)');

@@ -15,11 +15,15 @@ export interface DeploymentVulnerability {
   detectedAt: string;
 }
 
-export function useDeploymentVulnerabilities(deploymentId: string | undefined): UseQueryResult<DeploymentVulnerability[], Error> {
+export function useDeploymentVulnerabilities(
+  deploymentId: string | undefined,
+): UseQueryResult<DeploymentVulnerability[], Error> {
   return useQuery<DeploymentVulnerability[]>({
     queryKey: ['deployments', deploymentId, 'vulnerabilities'],
     queryFn: async () => {
-      const r = await apiClient.get<{ data: DeploymentVulnerability[] }>(`/deployments/${deploymentId}/vulnerabilities`);
+      const r = await apiClient.get<{ data: DeploymentVulnerability[] }>(
+        `/deployments/${deploymentId}/vulnerabilities`,
+      );
       return r.data.data;
     },
     enabled: !!deploymentId,

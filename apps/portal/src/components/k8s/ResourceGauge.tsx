@@ -51,7 +51,14 @@ interface GaugeRingProps {
   usage: string | null;
 }
 
-function GaugeRing({ icon: Icon, label, percentage, request, limit, usage }: GaugeRingProps): JSX.Element {
+function GaugeRing({
+  icon: Icon,
+  label,
+  percentage,
+  request,
+  limit,
+  usage,
+}: GaugeRingProps): JSX.Element {
   const offset = CIRCUMFERENCE * (1 - percentage / 100);
   const tone = usageTone(percentage);
 
@@ -102,9 +109,7 @@ function GaugeRing({ icon: Icon, label, percentage, request, limit, usage }: Gau
         </div>
         <div className="flex justify-between w-full px-1">
           <span>Use</span>
-          <span className={cn(percentage > 0 && TONE_BG[tone].split(' ')[1])}>
-            {usage ?? '—'}
-          </span>
+          <span className={cn(percentage > 0 && TONE_BG[tone].split(' ')[1])}>{usage ?? '—'}</span>
         </div>
       </div>
     </div>
@@ -113,8 +118,9 @@ function GaugeRing({ icon: Icon, label, percentage, request, limit, usage }: Gau
 
 export function ResourceGauge({ resources }: ResourceGaugeProps): JSX.Element | null {
   const main =
-    resources.find((r) => !r.containerName.includes('istio') && !r.containerName.includes('proxy')) ??
-    resources[0];
+    resources.find(
+      (r) => !r.containerName.includes('istio') && !r.containerName.includes('proxy'),
+    ) ?? resources[0];
 
   const cpuPct = useMemo(() => {
     if (!main) return 0;

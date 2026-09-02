@@ -62,7 +62,9 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): J
   };
 
   const validateStep1 = (): boolean => {
-    const result = formSchema.pick({ name: true, description: true, namespacePrefix: true }).safeParse(form);
+    const result = formSchema
+      .pick({ name: true, description: true, namespacePrefix: true })
+      .safeParse(form);
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof FormData, string>> = {};
       for (const issue of result.error.issues) {
@@ -145,9 +147,7 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): J
           <>
             <DialogHeader>
               <DialogTitle>Nouvelle équipe</DialogTitle>
-              <DialogDescription>
-                Étape 1 sur 2 — Identité de l'équipe
-              </DialogDescription>
+              <DialogDescription>Étape 1 sur 2 — Identité de l'équipe</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-2">
@@ -160,9 +160,7 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): J
                   onChange={(e) => setField('name', e.target.value)}
                   required
                 />
-                {errors.name && (
-                  <p className="text-xs text-status-error">{errors.name}</p>
-                )}
+                {errors.name && <p className="text-xs text-status-error">{errors.name}</p>}
               </div>
 
               <div className="space-y-2">
@@ -209,9 +207,7 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): J
           <>
             <DialogHeader>
               <DialogTitle>Nouvelle équipe</DialogTitle>
-              <DialogDescription>
-                Étape 2 sur 2 — Ressources et quotas
-              </DialogDescription>
+              <DialogDescription>Étape 2 sur 2 — Ressources et quotas</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-2">
@@ -245,13 +241,23 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): J
               <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-2">
                 <p className="text-sm font-medium">Récapitulatif</p>
                 <div className="text-sm text-muted-foreground space-y-1">
-                  <p>Nom : <span className="text-foreground">{form.name}</span></p>
+                  <p>
+                    Nom : <span className="text-foreground">{form.name}</span>
+                  </p>
                   {form.description && (
-                    <p>Description : <span className="text-foreground">{form.description}</span></p>
+                    <p>
+                      Description : <span className="text-foreground">{form.description}</span>
+                    </p>
                   )}
-                  <p>Namespace : <span className="text-foreground">{form.namespacePrefix}</span></p>
-                  <p>CPU : <span className="text-foreground">{form.quotaCpu || '—'}</span></p>
-                  <p>Mémoire : <span className="text-foreground">{form.quotaMemory || '—'}</span></p>
+                  <p>
+                    Namespace : <span className="text-foreground">{form.namespacePrefix}</span>
+                  </p>
+                  <p>
+                    CPU : <span className="text-foreground">{form.quotaCpu || '—'}</span>
+                  </p>
+                  <p>
+                    Mémoire : <span className="text-foreground">{form.quotaMemory || '—'}</span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -262,9 +268,7 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): J
                 Retour
               </Button>
               <Button onClick={handleNext} disabled={createTeam.isPending}>
-                {createTeam.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {createTeam.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Créer l'équipe
               </Button>
             </DialogFooter>
@@ -308,25 +312,19 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): J
           <>
             <DialogHeader>
               <DialogTitle>Équipe créée !</DialogTitle>
-              <DialogDescription>
-                L'équipe a été créée avec succès.
-              </DialogDescription>
+              <DialogDescription>L'équipe a été créée avec succès.</DialogDescription>
             </DialogHeader>
 
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
               <CheckCircle2 className="h-16 w-16 text-status-success" />
               <p className="text-sm text-muted-foreground text-center max-w-xs">
-                L'équipe{' '}
-                <strong className="text-foreground">{form.name}</strong>{' '}
-                a été créée avec le namespace{' '}
-                <strong className="text-foreground">{form.namespacePrefix}</strong>.
+                L'équipe <strong className="text-foreground">{form.name}</strong> a été créée avec
+                le namespace <strong className="text-foreground">{form.namespacePrefix}</strong>.
               </p>
             </div>
 
             <DialogFooter>
-              <Button onClick={handleSuccessDone}>
-                Terminé
-              </Button>
+              <Button onClick={handleSuccessDone}>Terminé</Button>
             </DialogFooter>
           </>
         )}

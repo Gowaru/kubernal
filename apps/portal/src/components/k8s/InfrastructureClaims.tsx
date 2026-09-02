@@ -2,7 +2,11 @@ import { type JSX } from 'react';
 import { Database, Server, Cloud, Network, Boxes } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import type { CrossplaneClaim, CrossplaneClaimKind, CrossplaneClaimStatus } from '@kubernal/shared-types';
+import type {
+  CrossplaneClaim,
+  CrossplaneClaimKind,
+  CrossplaneClaimStatus,
+} from '@kubernal/shared-types';
 import type { LucideIcon } from 'lucide-react';
 
 const kindIcons: Record<CrossplaneClaimKind, LucideIcon> = {
@@ -83,9 +87,7 @@ export function InfrastructureClaims({ claims }: InfrastructureClaimsProps): JSX
               </span>
             )}
 
-            {claim.message && (
-              <span className="text-xs text-k8s-pending">{claim.message}</span>
-            )}
+            {claim.message && <span className="text-xs text-k8s-pending">{claim.message}</span>}
           </motion.div>
         );
       })}

@@ -42,28 +42,34 @@ export function createApp(): express.Application {
 
   const sessionSecret = process.env['SESSION_SECRET'];
   const maxAge = parseInt(process.env['SESSION_MAX_AGE_SECONDS'] ?? '86400', 10) * 1000;
-  const rememberMaxAge = parseInt(process.env['SESSION_REMEMBER_MAX_AGE_SECONDS'] ?? '604800', 10) * 1000;
+  const rememberMaxAge =
+    parseInt(process.env['SESSION_REMEMBER_MAX_AGE_SECONDS'] ?? '604800', 10) * 1000;
 
   if (sessionSecret && sessionSecret.length >= 32) {
     const pgPool = new Pool({ connectionString: process.env['DATABASE_URL'] });
     (globalThis as { __sessionPgPool?: Pool }).__sessionPgPool = pgPool;
-    app.use(session({
-      store: new PgSession({
-        pool: pgPool,
-        tableName: 'session',
-        createTableIfMissing: true,
-        pruneSessionInterval: parseInt(process.env['SESSION_PRUNE_INTERVAL_SECONDS'] ?? '900', 10),
+    app.use(
+      session({
+        store: new PgSession({
+          pool: pgPool,
+          tableName: 'session',
+          createTableIfMissing: true,
+          pruneSessionInterval: parseInt(
+            process.env['SESSION_PRUNE_INTERVAL_SECONDS'] ?? '900',
+            10,
+          ),
+        }),
+        secret: sessionSecret,
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+          httpOnly: true,
+          secure: process.env['NODE_ENV'] === 'production',
+          sameSite: 'lax',
+          maxAge,
+        },
       }),
-      secret: sessionSecret,
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        httpOnly: true,
-        secure: process.env['NODE_ENV'] === 'production',
-        sameSite: 'lax',
-        maxAge,
-      },
-    }));
+    );
 
     app.use((req, _res, next) => {
       const currentMax = req.session.cookie.maxAge;
@@ -84,7 +90,7 @@ export function createApp(): express.Application {
       if (err) return next(err);
       const raw = (req as unknown as { body?: Buffer | string }).body;
       (req as unknown as { rawBody?: string }).rawBody =
-        typeof raw === 'string' ? raw : raw?.toString('utf8') ?? '';
+        typeof raw === 'string' ? raw : (raw?.toString('utf8') ?? '');
       next();
     });
   });

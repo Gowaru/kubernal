@@ -1,11 +1,21 @@
-import { useState, type JSX } from 'react';
+import { useState, useCallback, type JSX } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { RotateCcw, RefreshCw, BarChart3, Link, FileCode, Loader2 } from 'lucide-react';
+import { RotateCcw, RefreshCcw, BarChart3, Link, FileCode, Loader2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useK8sRestart, useArgoSync } from '@/hooks/useK8sActions';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { useK8sRestart, useK8sDelete, useArgoSync } from '@/hooks/useK8sActions';
+import { useAuth } from '@/hooks/useAuth';
 import type { ArgoAppStatus } from '@kubernal/shared-types';
 
 interface K8sActionsBarProps {
@@ -13,11 +23,12 @@ interface K8sActionsBarProps {
   namespace: string;
   deploymentName: string;
   clusterReady: boolean;
+  deploymentStatus?: string;
 }
 
 const ACTIONS = [
   { key: 'restart', label: 'Redémarrage Rolling', icon: RotateCcw },
-  { key: 'sync', label: 'Sync Argo CD', icon: RefreshCw },
+  { key: 'sync', label: 'Sync Argo CD', icon: RefreshCcw },
   { key: 'grafana', label: 'Grafana', icon: BarChart3 },
   { key: 'portforward', label: 'Port-Forward', icon: Link },
   { key: 'yaml', label: 'YAML', icon: FileCode },
@@ -28,11 +39,23 @@ export function K8sActionsBar({
   namespace,
   deploymentName,
   clusterReady,
+  deploymentStatus,
 }: K8sActionsBarProps): JSX.Element {
   const restart = useK8sRestart(namespace, deploymentName);
+  const deleteDeployment = useK8sDelete(namespace, deploymentName);
   const argoSync = useArgoSync();
+  const { hasRole } = useAuth();
+  const navigate = useNavigate();
   const [showRestartDialog, setShowRestartDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmName, setDeleteConfirmName] = useState('');
   const isOutOfSync = argoStatus.sync === 'OutOfSync';
+
+  const canDelete = hasRole('platform_engineer');
+  const isDeploying =
+    deploymentStatus === 'pending' ||
+    deploymentStatus === 'building' ||
+    deploymentStatus === 'deploying';
 
   const handleAction = (key: string): void => {
     if (!clusterReady) {
@@ -55,15 +78,24 @@ export function K8sActionsBar({
       return;
     }
     if (key === 'grafana') {
-      toast.warning('Grafana : à brancher');
+      const grafanaUrl = import.meta.env.VITE_GRAFANA_URL as string | undefined;
+      if (grafanaUrl) {
+        window.open(grafanaUrl, '_blank');
+      } else {
+        toast.error('Grafana non configuré. Ajoutez VITE_GRAFANA_URL.');
+      }
       return;
     }
     if (key === 'portforward') {
-      toast.warning('Port-Forward : à brancher');
+      const cmd = `kubectl port-forward -n ${namespace} svc/${deploymentName} 8080:80`;
+      void navigator.clipboard.writeText(cmd);
+      toast.success('Commande copiée !', { description: cmd });
       return;
     }
     if (key === 'yaml') {
-      toast.warning('YAML viewer : à brancher');
+      const cmd = `kubectl get deployment -n ${namespace} ${deploymentName} -o yaml`;
+      void navigator.clipboard.writeText(cmd);
+      toast.success('Commande YAML copiée !', { description: cmd });
       return;
     }
   };
@@ -81,6 +113,26 @@ export function K8sActionsBar({
     });
   };
 
+  const confirmDelete = useCallback((): void => {
+    setShowDeleteDialog(false);
+    setDeleteConfirmName('');
+    toast.info('Suppression du déploiement K8s...');
+    deleteDeployment.mutate(
+      { deleteService: true },
+      {
+        onSuccess: () => {
+          toast.success('Déploiement K8s supprimé');
+          navigate('/deployments');
+        },
+        onError: (err) => {
+          toast.error(`Échec de la suppression : ${err.message}`);
+        },
+      },
+    );
+  }, [deleteDeployment, navigate]);
+
+  const isDeleteConfirmValid = deleteConfirmName === deploymentName;
+
   return (
     <>
       <div className="flex items-center gap-2 flex-wrap">
@@ -88,7 +140,8 @@ export function K8sActionsBar({
           const Icon = action.icon;
           const isSync = action.key === 'sync';
           const isRestart = action.key === 'restart';
-          const disabled = (isRestart && restart.isPending) || (isSync && argoSync.isPending) || !clusterReady;
+          const disabled =
+            (isRestart && restart.isPending) || (isSync && argoSync.isPending) || !clusterReady;
 
           return (
             <motion.button
@@ -125,6 +178,36 @@ export function K8sActionsBar({
             </motion.button>
           );
         })}
+
+        {canDelete && (
+          <motion.button
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: ACTIONS.length * 0.05 }}
+            disabled={!clusterReady || isDeploying || deleteDeployment.isPending}
+            onClick={() => setShowDeleteDialog(true)}
+            title={
+              !clusterReady
+                ? 'Cluster K8s non branché'
+                : isDeploying
+                  ? 'Déploiement en cours'
+                  : 'Supprimer le déploiement K8s'
+            }
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ml-auto',
+              !clusterReady || isDeploying || deleteDeployment.isPending
+                ? 'text-muted-foreground opacity-50 cursor-not-allowed border-border'
+                : 'text-destructive border-destructive/30 hover:bg-destructive/10',
+            )}
+          >
+            {deleteDeployment.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Trash2 className="h-3.5 w-3.5" />
+            )}
+            Supprimer
+          </motion.button>
+        )}
       </div>
 
       <Dialog open={showRestartDialog} onOpenChange={setShowRestartDialog}>
@@ -132,7 +215,9 @@ export function K8sActionsBar({
           <DialogHeader>
             <DialogTitle>Confirmer le redémarrage</DialogTitle>
             <DialogDescription>
-              Voulez-vous déclencher un rollout restart du déploiement <strong>{deploymentName}</strong> dans le namespace <code className="font-mono text-xs">{namespace}</code> ?
+              Voulez-vous déclencher un rollout restart du déploiement{' '}
+              <strong>{deploymentName}</strong> dans le namespace{' '}
+              <code className="font-mono text-xs">{namespace}</code> ?
             </DialogDescription>
           </DialogHeader>
           <div className="text-sm text-muted-foreground">
@@ -143,8 +228,55 @@ export function K8sActionsBar({
             <Button variant="outline" onClick={() => setShowRestartDialog(false)}>
               Annuler
             </Button>
-            <Button onClick={confirmRestart}>
-              Confirmer le redémarrage
+            <Button onClick={confirmRestart}>Confirmer le redémarrage</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showDeleteDialog}
+        onOpenChange={(open) => {
+          setShowDeleteDialog(open);
+          if (!open) setDeleteConfirmName('');
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Vous êtes sur le point de supprimer le déploiement K8s{' '}
+              <strong>{deploymentName}</strong> dans le namespace{' '}
+              <code className="font-mono text-xs">{namespace}</code>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 text-sm">
+            <p className="text-muted-foreground">
+              Cette action est irréversible. Le déploiement et le service K8s associé seront
+              supprimés.
+            </p>
+            <p className="text-muted-foreground">
+              Tapez <strong>{deploymentName}</strong> pour confirmer :
+            </p>
+            <Input
+              value={deleteConfirmName}
+              onChange={(e) => setDeleteConfirmName(e.target.value)}
+              placeholder={deploymentName}
+              className="font-mono text-xs"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setDeleteConfirmName('');
+              }}
+            >
+              Annuler
+            </Button>
+            <Button variant="destructive" disabled={!isDeleteConfirmValid} onClick={confirmDelete}>
+              Supprimer le déploiement
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -18,7 +18,10 @@ export const userRepository = {
     return db.user.create({ data, include: { team: true } });
   },
 
-  update(id: string, data: { name?: string; role?: string; teamId?: string | null }): Promise<User> {
+  update(
+    id: string,
+    data: { name?: string; role?: string; teamId?: string | null },
+  ): Promise<User> {
     return db.user.update({ where: { id }, data, include: { team: true } });
   },
 

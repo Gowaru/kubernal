@@ -17,7 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useApplication } from '@/hooks/useApplications';
+import { useApplication, useArchiveApplication } from '@/hooks/useApplications';
 import { useTeam } from '@/hooks/useTeams';
 import { useTemplate } from '@/hooks/useTemplates';
 import { useDeployments } from '@/hooks/useDeployments';
@@ -56,6 +56,7 @@ export default function AppDetail(): JSX.Element {
   const { data: team } = useTeam(application?.teamId ?? '');
   const { data: template } = useTemplate(application?.templateId ?? '');
   const { data: allDeployments } = useDeployments();
+  const archiveMutation = useArchiveApplication();
   const [showDeployModal, setShowDeployModal] = useState(false);
 
   const appDeployments = useMemo<Deployment[]>(() => {
@@ -64,9 +65,10 @@ export default function AppDetail(): JSX.Element {
   }, [allDeployments, id]);
 
   const sortedDeployments = useMemo(
-    () => [...appDeployments].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    ),
+    () =>
+      [...appDeployments].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ),
     [appDeployments],
   );
 
@@ -76,7 +78,9 @@ export default function AppDetail(): JSX.Element {
 
   function AppEnvCardWithArgo({ envId }: { envId: string }): JSX.Element {
     const { data: argoStatus } = useArgoSync(id!, envId);
-    return <AppEnvCard key={envId} envId={envId} deployments={appDeployments} argoStatus={argoStatus} />;
+    return (
+      <AppEnvCard key={envId} envId={envId} deployments={appDeployments} argoStatus={argoStatus} />
+    );
   }
 
   const handleDeploy = useCallback(() => {
@@ -117,10 +121,24 @@ export default function AppDetail(): JSX.Element {
             <Rocket className="mr-2 h-4 w-4" />
             Déployer
           </Button>
-          <Button variant="outline" disabled title="Fonctionnalité à venir">
-            <Archive className="mr-2 h-4 w-4" />
-            Archiver
-          </Button>
+          {!application.archivedAt && (
+            <Button
+              variant="outline"
+              disabled={archiveMutation.isPending}
+              onClick={() => {
+                if (
+                  !confirm(
+                    `Archiver l'application "${application.name}" ? Elle ne sera plus visible dans le catalogue.`,
+                  )
+                )
+                  return;
+                archiveMutation.mutate(id!);
+              }}
+            >
+              <Archive className="mr-2 h-4 w-4" />
+              {archiveMutation.isPending ? 'Archivage…' : 'Archiver'}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -202,68 +220,70 @@ export default function AppDetail(): JSX.Element {
         <CardContent className="p-0">
           {tab === 'recent' && (
             <>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Version</TableHead>
-                    <TableHead>Environnement</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead className="hidden sm:table-cell">Commit</TableHead>
-                    <TableHead className="hidden sm:table-cell">Durée</TableHead>
-                    <TableHead>Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {appDeployments.length === 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                        Aucun déploiement pour cette application
-                      </TableCell>
+                      <TableHead>Version</TableHead>
+                      <TableHead>Environnement</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead className="hidden sm:table-cell">Commit</TableHead>
+                      <TableHead className="hidden sm:table-cell">Durée</TableHead>
+                      <TableHead>Date</TableHead>
                     </TableRow>
-                  ) : (
-                    depPag.paginatedData.map((dep) => (
-                      <TableRow key={dep.id}>
-                        <TableCell>
-                          <span className="font-mono text-sm">{dep.version}</span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">{getEnvSlug(dep) ?? dep.environmentId}</span>
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge status={dep.status} />
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <DeploymentCommitLink
-                            repositoryUrl={application.repositoryUrl}
-                            commitSha={dep.commitSha}
-                            short
-                          />
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                            <Timer className="h-3.5 w-3.5" />
-                            {formatDuration(dep.startedAt, dep.completedAt)}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {formatRelativeTime(dep.createdAt)}
-                          </span>
+                  </TableHeader>
+                  <TableBody>
+                    {appDeployments.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                          Aucun déploiement pour cette application
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            <div className="border-t border-border px-4 py-2">
-              <PaginationBar
-                pagination={depPag}
-                onPageChange={depPag.setPage}
-                onPageSizeChange={depPag.setPageSize}
-              />
-            </div>
+                    ) : (
+                      depPag.paginatedData.map((dep) => (
+                        <TableRow key={dep.id}>
+                          <TableCell>
+                            <span className="font-mono text-sm">{dep.version}</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground">
+                              {getEnvSlug(dep) ?? dep.environmentId}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge status={dep.status} />
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell">
+                            <DeploymentCommitLink
+                              repositoryUrl={application.repositoryUrl}
+                              commitSha={dep.commitSha}
+                              short
+                            />
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell">
+                            <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                              <Timer className="h-3.5 w-3.5" />
+                              {formatDuration(dep.startedAt, dep.completedAt)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground">
+                              {formatRelativeTime(dep.createdAt)}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="border-t border-border px-4 py-2">
+                <PaginationBar
+                  pagination={depPag}
+                  onPageChange={depPag.setPage}
+                  onPageSizeChange={depPag.setPageSize}
+                />
+              </div>
             </>
           )}
           {tab === 'history' && (

@@ -1,9 +1,7 @@
 import { claimNextPendingPipeline, executePipeline } from './executor.js';
 import { pipelineMetrics } from './pipeline-metrics.js';
 
-export function startPipelineWorker(
-  options?: { intervalMs?: number },
-): { stop: () => void } {
+export function startPipelineWorker(options?: { intervalMs?: number }): { stop: () => void } {
   const baseIntervalMs = options?.intervalMs ?? 5_000;
   pipelineMetrics.markRunning();
 

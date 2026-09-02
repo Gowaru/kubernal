@@ -24,7 +24,11 @@ function validateOptionalBoolean(value: unknown, field: string, defaultVal: bool
   return value;
 }
 
-function validateOptionalPositiveInt(value: unknown, field: string, max: number): number | undefined {
+function validateOptionalPositiveInt(
+  value: unknown,
+  field: string,
+  max: number,
+): number | undefined {
   if (value === undefined) return undefined;
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
     throw new Error(`deploy:manifest: params.${field} must be a positive number when provided`);
@@ -32,7 +36,10 @@ function validateOptionalPositiveInt(value: unknown, field: string, max: number)
   return Math.min(value, max);
 }
 
-function parseDeployParams(raw: Record<string, unknown>, workspaceDir?: string): {
+function parseDeployParams(
+  raw: Record<string, unknown>,
+  workspaceDir?: string,
+): {
   manifests: string[];
   manifestDir?: string;
   namespace?: string;
@@ -42,9 +49,10 @@ function parseDeployParams(raw: Record<string, unknown>, workspaceDir?: string):
   prune: boolean;
 } {
   const rawManifests = raw['manifests'];
-  const manifestDirRaw = typeof raw['manifestDir'] === 'string' && raw['manifestDir'].length > 0
-    ? raw['manifestDir']
-    : undefined;
+  const manifestDirRaw =
+    typeof raw['manifestDir'] === 'string' && raw['manifestDir'].length > 0
+      ? raw['manifestDir']
+      : undefined;
   let manifestDir: string | undefined;
   if (manifestDirRaw && workspaceDir) {
     manifestDir = resolve(workspaceDir, manifestDirRaw);
@@ -53,7 +61,7 @@ function parseDeployParams(raw: Record<string, unknown>, workspaceDir?: string):
   if (!rawManifests && !manifestDir) {
     throw new Error('deploy:manifest: params.manifests or params.manifestDir is required');
   }
-  const manifests = Array.isArray(rawManifests) ? rawManifests : (rawManifests ? [rawManifests] : []);
+  const manifests = Array.isArray(rawManifests) ? rawManifests : rawManifests ? [rawManifests] : [];
   const validManifests = manifests.every((m) => typeof m === 'string');
   if (!validManifests) {
     throw new Error('deploy:manifest: params.manifests must be a string or array of strings');
@@ -62,7 +70,8 @@ function parseDeployParams(raw: Record<string, unknown>, workspaceDir?: string):
   const namespace = validateOptionalString(raw['namespace'], 'namespace');
   const kubeconfig = validateOptionalString(raw['kubeconfig'], 'kubeconfig');
   const waitRollout = validateOptionalBoolean(raw['waitRollout'], 'waitRollout', true);
-  const rolloutTimeoutMs = validateOptionalPositiveInt(raw['rolloutTimeoutMs'], 'rolloutTimeoutMs', 1_800_000) ?? 300_000;
+  const rolloutTimeoutMs =
+    validateOptionalPositiveInt(raw['rolloutTimeoutMs'], 'rolloutTimeoutMs', 1_800_000) ?? 300_000;
   const prune = validateOptionalBoolean(raw['prune'], 'prune', false);
 
   return { manifests, manifestDir, namespace, kubeconfig, waitRollout, rolloutTimeoutMs, prune };
@@ -70,12 +79,22 @@ function parseDeployParams(raw: Record<string, unknown>, workspaceDir?: string):
 
 async function deployManifestActionExecute(context: ActionContext): Promise<ActionResult> {
   const params = parseDeployParams(context.stepParams, context.workspaceDir);
-  const { manifests: rawManifests, manifestDir, namespace: overrideNs, kubeconfig, waitRollout, rolloutTimeoutMs, prune } = params;
+  const {
+    manifests: rawManifests,
+    manifestDir,
+    namespace: overrideNs,
+    kubeconfig,
+    waitRollout,
+    rolloutTimeoutMs,
+    prune,
+  } = params;
 
   const manifests = [...rawManifests];
   if (manifestDir) {
     if (existsSync(manifestDir)) {
-      const files = readdirSync(manifestDir).filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'));
+      const files = readdirSync(manifestDir).filter(
+        (f) => f.endsWith('.yaml') || f.endsWith('.yml'),
+      );
       context.logger.info(`Loading ${files.length} manifest(s) from ${manifestDir}`);
       for (const file of files) {
         const content = readFileSync(join(manifestDir, file), 'utf-8');
@@ -134,7 +153,11 @@ async function deployManifestActionExecute(context: ActionContext): Promise<Acti
     context.logger.warn(`kubectl apply stderr: ${result.stderr.trim()}`);
   }
 
-  try { rmSync(tmpDir, { recursive: true }); } catch { /* ignore */ }
+  try {
+    rmSync(tmpDir, { recursive: true });
+  } catch {
+    /* ignore */
+  }
 
   if (waitRollout) {
     const deployments = combinedManifest
@@ -146,13 +169,22 @@ async function deployManifestActionExecute(context: ActionContext): Promise<Acti
 
     for (const dep of deployments) {
       context.logger.info(`Waiting for rollout of deployment ${dep} in ${targetNs}`);
-      const rolloutArgs = ['rollout', 'status', `deployment/${dep}`, '-n', targetNs, `--timeout=${Math.ceil(rolloutTimeoutMs / 1000)}s`];
+      const rolloutArgs = [
+        'rollout',
+        'status',
+        `deployment/${dep}`,
+        '-n',
+        targetNs,
+        `--timeout=${Math.ceil(rolloutTimeoutMs / 1000)}s`,
+      ];
       if (kubeconfig) rolloutArgs.push('--kubeconfig', kubeconfig);
       try {
         await execFileAsync('kubectl', rolloutArgs, { timeout: rolloutTimeoutMs + 30_000 });
         context.logger.info(`Rollout complete for ${dep}`);
       } catch (err) {
-        throw new Error(`Rollout failed for ${dep}: ${err instanceof Error ? err.message : String(err)}`);
+        throw new Error(
+          `Rollout failed for ${dep}: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     }
   }

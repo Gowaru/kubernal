@@ -35,7 +35,11 @@ export const webhookController = {
     if (!app) throw new NotFoundError('Application', appId);
 
     const provider = detectProviderFromPath(
-      app.repositoryUrl?.includes('gitlab.com') ? 'gitlab' : app.repositoryUrl?.includes('bitbucket.org') ? 'bitbucket' : 'github',
+      app.repositoryUrl?.includes('gitlab.com')
+        ? 'gitlab'
+        : app.repositoryUrl?.includes('bitbucket.org')
+          ? 'bitbucket'
+          : 'github',
     );
 
     const data: AppWebhookInfo = {
@@ -59,12 +63,14 @@ export const webhookController = {
       data: { webhookSecret: newSecret },
     });
 
-    auditService.log({
-      action: 'REGENERATE',
-      resource: 'Application',
-      resourceId: appId,
-      details: { field: 'webhookSecret' } as Record<string, unknown>,
-    }).catch(() => {});
+    auditService
+      .log({
+        action: 'REGENERATE',
+        resource: 'Application',
+        resourceId: appId,
+        details: { field: 'webhookSecret' } as Record<string, unknown>,
+      })
+      .catch(() => {});
 
     res.json({ data: { applicationId: appId, secret: newSecret } });
   },
@@ -81,7 +87,7 @@ export const webhookController = {
 
     if (!app.webhookSecret) {
       throw new ValidationError(
-        'Webhook non configuré pour cette application. Générer un secret depuis l\'UI.',
+        "Webhook non configuré pour cette application. Générer un secret depuis l'UI.",
       );
     }
 
@@ -119,7 +125,7 @@ export const webhookController = {
 
     const pushInfo = parsePushEvent(webhookProvider, parsedBody);
     if (!pushInfo) {
-      throw new ValidationError('Impossible d\'extraire le commit du payload');
+      throw new ValidationError("Impossible d'extraire le commit du payload");
     }
 
     const env = await db.environment.findFirst({
@@ -148,7 +154,13 @@ export const webhookController = {
     }
 
     logger.info(
-      { appId, provider: webhookProvider, commit: shortSha, branch: pushInfo.branch, deploymentId: deployment.id },
+      {
+        appId,
+        provider: webhookProvider,
+        commit: shortSha,
+        branch: pushInfo.branch,
+        deploymentId: deployment.id,
+      },
       'Webhook ingest: deployment créé',
     );
 

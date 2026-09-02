@@ -43,76 +43,83 @@ export function ApplicationTable({ filters, onFiltersChange }: ApplicationTableP
 
   const columnHelper = createColumnHelper<Application>();
 
-  const columns = useMemo(() => [
-    columnHelper.accessor('name', {
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-ml-3 h-8 gap-1"
-          onClick={() => {
-            const isAsc = column.getIsSorted() === 'asc';
-            onFiltersChange({ ...filters, sortBy: 'name', sortOrder: isAsc ? 'desc' : 'asc' });
-          }}
-        >
-          Nom
-          <ArrowUpDown className="h-3.5 w-3.5" />
-        </Button>
-      ),
-      cell: (info) => (
-        <span
-          className="font-medium cursor-pointer hover:text-primary"
-          onClick={() => navigate(`/catalogue/${info.row.original.id}`)}
-        >
-          {info.getValue()}
-        </span>
-      ),
-    }),
-    columnHelper.accessor('description', {
-      header: 'Description',
-      cell: (info) => info.getValue()?.slice(0, 60) ?? '-',
-    }),
-    columnHelper.accessor((row) => row.template?.name ?? '-', {
-      id: 'templateName',
-      header: 'Template',
-      cell: (info) => info.getValue(),
-    }),
-    columnHelper.accessor('status', {
-      header: 'Statut',
-      cell: (info) => {
-        const status = info.getValue();
-        const config = getApplicationStatus(status);
-        return (
-          <Badge variant="outline" className={`flex items-center gap-1.5 ${config.className}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} />
-            {config.label}
-          </Badge>
-        );
-      },
-    }),
-    columnHelper.accessor((row) => row.team?.name ?? row.teamId, {
-      id: 'teamName',
-      header: 'Équipe',
-      cell: (info) => info.getValue() ?? '-',
-    }),
-    columnHelper.accessor('createdAt', {
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-ml-3 h-8 gap-1"
-          onClick={() => {
-            const isAsc = column.getIsSorted() === 'asc';
-            onFiltersChange({ ...filters, sortBy: 'createdAt', sortOrder: isAsc ? 'desc' : 'asc' });
-          }}
-        >
-          Créé le
-          <ArrowUpDown className="h-3.5 w-3.5" />
-        </Button>
-      ),
-      cell: (info) => formatDate(info.getValue()),
-    }),
-  ], [navigate, filters]);
+  const columns = useMemo(
+    () => [
+      columnHelper.accessor('name', {
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="-ml-3 h-8 gap-1"
+            onClick={() => {
+              const isAsc = column.getIsSorted() === 'asc';
+              onFiltersChange({ ...filters, sortBy: 'name', sortOrder: isAsc ? 'desc' : 'asc' });
+            }}
+          >
+            Nom
+            <ArrowUpDown className="h-3.5 w-3.5" />
+          </Button>
+        ),
+        cell: (info) => (
+          <span
+            className="font-medium cursor-pointer hover:text-primary"
+            onClick={() => navigate(`/catalogue/${info.row.original.id}`)}
+          >
+            {info.getValue()}
+          </span>
+        ),
+      }),
+      columnHelper.accessor('description', {
+        header: 'Description',
+        cell: (info) => info.getValue()?.slice(0, 60) ?? '-',
+      }),
+      columnHelper.accessor((row) => row.template?.name ?? '-', {
+        id: 'templateName',
+        header: 'Template',
+        cell: (info) => info.getValue(),
+      }),
+      columnHelper.accessor('status', {
+        header: 'Statut',
+        cell: (info) => {
+          const status = info.getValue();
+          const config = getApplicationStatus(status);
+          return (
+            <Badge variant="outline" className={`flex items-center gap-1.5 ${config.className}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} />
+              {config.label}
+            </Badge>
+          );
+        },
+      }),
+      columnHelper.accessor((row) => row.team?.name ?? row.teamId, {
+        id: 'teamName',
+        header: 'Équipe',
+        cell: (info) => info.getValue() ?? '-',
+      }),
+      columnHelper.accessor('createdAt', {
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="-ml-3 h-8 gap-1"
+            onClick={() => {
+              const isAsc = column.getIsSorted() === 'asc';
+              onFiltersChange({
+                ...filters,
+                sortBy: 'createdAt',
+                sortOrder: isAsc ? 'desc' : 'asc',
+              });
+            }}
+          >
+            Créé le
+            <ArrowUpDown className="h-3.5 w-3.5" />
+          </Button>
+        ),
+        cell: (info) => formatDate(info.getValue()),
+      }),
+    ],
+    [navigate, filters],
+  );
 
   const table = useReactTable({
     data: applications,
@@ -137,7 +144,8 @@ export function ApplicationTable({ filters, onFiltersChange }: ApplicationTableP
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
-                  const responsive = header.column.id === 'description' ? 'hidden md:table-cell' : '';
+                  const responsive =
+                    header.column.id === 'description' ? 'hidden md:table-cell' : '';
                   return (
                     <TableHead key={header.id} className={responsive}>
                       {flexRender(header.column.columnDef.header, header.getContext())}
@@ -152,7 +160,9 @@ export function ApplicationTable({ filters, onFiltersChange }: ApplicationTableP
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
                   {columns.map((_, j) => (
-                    <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                    <TableCell key={j}>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
                   ))}
                 </TableRow>
               ))
@@ -160,7 +170,8 @@ export function ApplicationTable({ filters, onFiltersChange }: ApplicationTableP
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => {
-                    const responsive = cell.column.id === 'description' ? 'hidden md:table-cell' : '';
+                    const responsive =
+                      cell.column.id === 'description' ? 'hidden md:table-cell' : '';
                     return (
                       <TableCell key={cell.id} className={responsive}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -171,7 +182,10 @@ export function ApplicationTable({ filters, onFiltersChange }: ApplicationTableP
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center text-muted-foreground"
+                >
                   Aucune application trouvée
                 </TableCell>
               </TableRow>
@@ -186,7 +200,7 @@ export function ApplicationTable({ filters, onFiltersChange }: ApplicationTableP
           pageSize: filters.pageSize ?? 20,
           totalPages,
           total,
-          from: total === 0 ? 0 : ((filters.page ?? 0) * (filters.pageSize ?? 20)) + 1,
+          from: total === 0 ? 0 : (filters.page ?? 0) * (filters.pageSize ?? 20) + 1,
           to: Math.min(((filters.page ?? 0) + 1) * (filters.pageSize ?? 20), total),
         }}
         onPageChange={(page) => onFiltersChange({ ...filters, page })}

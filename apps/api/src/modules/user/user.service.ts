@@ -13,13 +13,21 @@ export const userService = {
     return user;
   },
 
-  async create(data: { email: string; name: string; role?: string; teamId?: string }): Promise<User> {
+  async create(data: {
+    email: string;
+    name: string;
+    role?: string;
+    teamId?: string;
+  }): Promise<User> {
     const existing = await userRepository.findByEmail(data.email);
     if (existing) throw new ConflictError(`User with email '${data.email}' already exists`);
     return userRepository.create(data);
   },
 
-  async update(id: string, data: { name?: string; role?: string; teamId?: string | null }): Promise<User> {
+  async update(
+    id: string,
+    data: { name?: string; role?: string; teamId?: string | null },
+  ): Promise<User> {
     await this.getById(id);
     return userRepository.update(id, data);
   },

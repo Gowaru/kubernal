@@ -46,7 +46,11 @@ function computeUptime(deployments: { status: string }[] | undefined): string {
 
 export default function Dashboard(): JSX.Element {
   const { data: apps, isLoading: appsLoading, error: appsError } = useApplications();
-  const { data: deployments, isLoading: deploymentsLoading, error: deploymentsError } = useDeployments();
+  const {
+    data: deployments,
+    isLoading: deploymentsLoading,
+    error: deploymentsError,
+  } = useDeployments();
 
   const isLoading = appsLoading || deploymentsLoading;
 
@@ -89,20 +93,47 @@ export default function Dashboard(): JSX.Element {
       ) : apps && apps.length === 0 && totalDeployments === 0 ? (
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatsCard title="Applications" value={0} icon={AppWindow} description="Applications déployées" />
-            <StatsCard title="Déploiements" value={0} icon={Rocket} description="Total des déploiements" />
-            <StatsCard title="Succès / Échecs" value="0 / 0" icon={Activity} description="Déploiements récents" />
-            <StatsCard title="Uptime" value="N/A" icon={Activity} description="Uptime moyen (7 jours)" />
+            <StatsCard
+              title="Applications"
+              value={0}
+              icon={AppWindow}
+              description="Applications déployées"
+            />
+            <StatsCard
+              title="Déploiements"
+              value={0}
+              icon={Rocket}
+              description="Total des déploiements"
+            />
+            <StatsCard
+              title="Succès / Échecs"
+              value="0 / 0"
+              icon={Activity}
+              description="Déploiements récents"
+            />
+            <StatsCard
+              title="Uptime"
+              value="N/A"
+              icon={Activity}
+              description="Uptime moyen (7 jours)"
+            />
           </div>
           <Alert>
             <Database className="h-4 w-4" />
             <AlertTitle>Aucune donnée dans la base</AlertTitle>
             <AlertDescription>
               La plateforme semble vide. Créez votre première application depuis le{' '}
-              <a href="/catalogue" className="font-medium underline underline-offset-4 hover:text-primary">
+              <a
+                href="/catalogue"
+                className="font-medium underline underline-offset-4 hover:text-primary"
+              >
                 catalogue
               </a>{' '}
-              ou exécutez <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">npm run db:seed</code> pour charger les données de démonstration.
+              ou exécutez{' '}
+              <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
+                npm run db:seed
+              </code>{' '}
+              pour charger les données de démonstration.
             </AlertDescription>
           </Alert>
         </>

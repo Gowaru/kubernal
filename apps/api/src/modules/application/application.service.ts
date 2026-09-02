@@ -44,8 +44,11 @@ export const applicationService = {
       select: { namespacePrefix: true },
     });
 
-    const hasScaffoldStep = Array.isArray(template?.steps) &&
-      (template.steps as Array<Record<string, unknown>>).some((s) => s?.['action'] === 'scaffold:project');
+    const hasScaffoldStep =
+      Array.isArray(template?.steps) &&
+      (template.steps as Array<Record<string, unknown>>).some(
+        (s) => s?.['action'] === 'scaffold:project',
+      );
 
     const { config, ...appData } = data;
 
@@ -55,7 +58,8 @@ export const applicationService = {
           ...appData,
           status: 'active',
           config: (config ?? {}) as Record<string, never>,
-          repositoryUrl: data.repositoryUrl ?? (hasScaffoldStep ? null : template?.repository ?? null),
+          repositoryUrl:
+            data.repositoryUrl ?? (hasScaffoldStep ? null : (template?.repository ?? null)),
         },
         include: { team: true, template: true, owner: true },
       });
@@ -75,12 +79,14 @@ export const applicationService = {
         where: { id: app.id },
         include: { team: true, template: true, owner: true, environments: true },
       });
-      auditService.log({
-        action: 'CREATE',
-        resource: 'Application',
-        resourceId: app.id,
-        details: { name: data.name, templateId: data.templateId } as Record<string, unknown>,
-      }).catch(() => {});
+      auditService
+        .log({
+          action: 'CREATE',
+          resource: 'Application',
+          resourceId: app.id,
+          details: { name: data.name, templateId: data.templateId } as Record<string, unknown>,
+        })
+        .catch(() => {});
       return created;
     });
   },
@@ -92,17 +98,20 @@ export const applicationService = {
       description?: string | null;
       repositoryUrl?: string | null;
       status?: string;
+      archivedAt?: Date | null;
     },
   ): Promise<Application> {
     const app = await applicationRepository.findById(id);
     if (!app) throw new NotFoundError('Application', id);
     const result = await applicationRepository.update(id, data);
-    auditService.log({
-      action: 'UPDATE',
-      resource: 'Application',
-      resourceId: id,
-      details: data as Record<string, unknown>,
-    }).catch(() => {});
+    auditService
+      .log({
+        action: 'UPDATE',
+        resource: 'Application',
+        resourceId: id,
+        details: data as Record<string, unknown>,
+      })
+      .catch(() => {});
     return result;
   },
 
@@ -110,11 +119,25 @@ export const applicationService = {
     const app = await applicationRepository.findById(id);
     if (!app) throw new NotFoundError('Application', id);
     const result = await applicationRepository.delete(id);
-    auditService.log({
-      action: 'DELETE',
-      resource: 'Application',
-      resourceId: id,
-    }).catch(() => {});
+    auditService
+      .log({
+        action: 'DELETE',
+        resource: 'Application',
+        resourceId: id,
+      })
+      .catch(() => {});
     return result;
+  },
+
+  async archive(id: string): Promise<Application> {
+    const app = await applicationRepository.findById(id);
+    if (!app) throw new NotFoundError('Application', id);
+    return applicationRepository.update(id, { archivedAt: new Date() });
+  },
+
+  async unarchive(id: string): Promise<Application> {
+    const app = await applicationRepository.findById(id);
+    if (!app) throw new NotFoundError('Application', id);
+    return applicationRepository.update(id, { archivedAt: null });
   },
 };

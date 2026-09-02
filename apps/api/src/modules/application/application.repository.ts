@@ -28,7 +28,10 @@ function buildWhere(q: AppListQuery): Prisma.ApplicationWhereInput {
   return where;
 }
 
-function buildOrderBy(sortBy?: string, sortOrder?: 'asc' | 'desc'): Prisma.ApplicationOrderByWithRelationInput {
+function buildOrderBy(
+  sortBy?: string,
+  sortOrder?: 'asc' | 'desc',
+): Prisma.ApplicationOrderByWithRelationInput {
   const order = sortOrder ?? 'desc';
   const allowed = new Set(['name', 'createdAt', 'updatedAt', 'status']);
   if (sortBy && allowed.has(sortBy)) {
@@ -95,6 +98,7 @@ export const applicationRepository = {
       description?: string | null;
       repositoryUrl?: string | null;
       status?: string;
+      archivedAt?: Date | null;
     },
   ): Promise<Application> {
     return db.application.update({ where: { id }, data });

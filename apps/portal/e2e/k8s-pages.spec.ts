@@ -37,7 +37,9 @@ test.describe('K8s Pods page', () => {
   test('loads and shows pods page', async ({ page }) => {
     await mockAllApis(page);
     await page.goto('/k8s/pods');
-    await expect(page.getByRole('heading', { name: 'Pods Kubernetes' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Pods Kubernetes' })).toBeVisible({
+      timeout: 10000,
+    });
   });
 });
 
@@ -45,7 +47,9 @@ test.describe('K8s Services page', () => {
   test('loads and shows services page', async ({ page }) => {
     await mockAllApis(page);
     await page.goto('/k8s/services');
-    await expect(page.getByRole('heading', { name: 'Services Kubernetes' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Services Kubernetes' })).toBeVisible({
+      timeout: 10000,
+    });
   });
 });
 
@@ -53,6 +57,8 @@ test.describe('K8s Events page', () => {
   test('loads and shows events page', async ({ page }) => {
     await mockAllApis(page);
     await page.goto('/k8s/events');
-    await expect(page.getByRole('heading', { name: 'Événements Kubernetes' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Événements Kubernetes' })).toBeVisible({
+      timeout: 10000,
+    });
   });
 });

@@ -55,10 +55,7 @@ export default function Catalogue(): JSX.Element {
         <ApplicationTable filters={filters} onFiltersChange={setFilters} />
       )}
 
-      <CreateApplicationModal
-        open={showCreateModal}
-        onOpenChange={setShowCreateModal}
-      />
+      <CreateApplicationModal open={showCreateModal} onOpenChange={setShowCreateModal} />
     </div>
   );
 }

@@ -45,7 +45,9 @@ export function DeploymentAccessCard({ deploymentId }: DeploymentAccessCardProps
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-status-error">Impossible de récupérer les informations d'accès.</p>
+          <p className="text-sm text-status-error">
+            Impossible de récupérer les informations d'accès.
+          </p>
         </CardContent>
       </Card>
     );

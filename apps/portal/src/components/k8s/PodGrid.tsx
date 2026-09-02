@@ -226,7 +226,8 @@ export function PodGrid({ pods, selectedPodId, onPodSelect }: PodGridProps): JSX
                 style.hoverBorder,
                 style.glow,
                 style.animate,
-                isSelected && 'ring-2 ring-k8s-running ring-offset-2 ring-offset-background scale-105',
+                isSelected &&
+                  'ring-2 ring-k8s-running ring-offset-2 ring-offset-background scale-105',
               )}
               onClick={() => onPodSelect(pod)}
               title={tooltipText}

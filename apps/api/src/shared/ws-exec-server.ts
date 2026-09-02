@@ -4,6 +4,7 @@ import { WebSocketServer, type WebSocket } from 'ws';
 import { coreApi, getK8sConfig } from './k8s-client.js';
 import { Exec } from '@kubernetes/client-node';
 import { logger } from './logger.js';
+import { authenticateUpgrade, type AuthenticatedUser } from './ws-auth.js';
 import type { KubeConfig } from '@kubernetes/client-node';
 
 const EXEC_PATH_PREFIX = '/api/v1/ws/kubernetes/pods';
@@ -24,7 +25,9 @@ interface WsExecSession {
   kc: KubeConfig;
 }
 
-function parsePath(url: string): { namespace: string; podName: string; shell: string; container: string | undefined } | null {
+function parsePath(
+  url: string,
+): { namespace: string; podName: string; shell: string; container: string | undefined } | null {
   const path = url.split('?')[0] ?? url;
   const query = url.split('?')[1] ?? '';
   const params = new URLSearchParams(query);
@@ -56,7 +59,10 @@ function parsePath(url: string): { namespace: string; podName: string; shell: st
 function resetInactivityTimer(session: WsExecSession): void {
   if (session.inactivityTimer) clearTimeout(session.inactivityTimer);
   session.inactivityTimer = setTimeout(() => {
-    logger.info({ namespace: session.namespace, pod: session.podName }, 'WS exec session timed out');
+    logger.info(
+      { namespace: session.namespace, pod: session.podName },
+      'WS exec session timed out',
+    );
     sendJson(session.ws, { type: 'exit', code: -1 });
     cleanup(session);
   }, INACTIVITY_TIMEOUT_MS);
@@ -66,15 +72,35 @@ function cleanup(session: WsExecSession): void {
   if (session.closed) return;
   session.closed = true;
   if (session.inactivityTimer) clearTimeout(session.inactivityTimer);
-  try { session.ws.close(); } catch { /* ignore */ }
-  try { session.stdin.destroy(); } catch { /* ignore */ }
-  try { session.stdout.destroy(); } catch { /* ignore */ }
-  try { session.stderr.destroy(); } catch { /* ignore */ }
+  try {
+    session.ws.close();
+  } catch {
+    /* ignore */
+  }
+  try {
+    session.stdin.destroy();
+  } catch {
+    /* ignore */
+  }
+  try {
+    session.stdout.destroy();
+  } catch {
+    /* ignore */
+  }
+  try {
+    session.stderr.destroy();
+  } catch {
+    /* ignore */
+  }
 }
 
 function sendJson(ws: WebSocket, msg: Record<string, unknown>): void {
   if (ws.readyState !== ws.OPEN) return;
-  try { ws.send(JSON.stringify(msg)); } catch { /* ignore */ }
+  try {
+    ws.send(JSON.stringify(msg));
+  } catch {
+    /* ignore */
+  }
 }
 
 function sendData(ws: WebSocket, type: string, data: Buffer): void {
@@ -101,7 +127,10 @@ async function attemptExec(
 
       if (elapsed < FALLBACK_THRESHOLD_MS && s.status === 'Failure') {
         settled = true;
-        logger.warn({ namespace, pod: podName, shell, code: s.code }, 'Shell exec failed immediately, fallback needed');
+        logger.warn(
+          { namespace, pod: podName, shell, code: s.code },
+          'Shell exec failed immediately, fallback needed',
+        );
         resolve(false);
         return;
       }
@@ -151,7 +180,7 @@ async function attemptExec(
 export function createWsExecServer(server: HttpServer): { close: () => void } {
   const wss = new WebSocketServer({ noServer: true });
 
-  server.on('upgrade', (req, socket, head) => {
+  server.on('upgrade', async (req, socket, head) => {
     const url = req.url ?? '';
 
     if (!url.startsWith(EXEC_PATH_PREFIX)) {
@@ -159,15 +188,29 @@ export function createWsExecServer(server: HttpServer): { close: () => void } {
       return;
     }
 
+    const user = await authenticateUpgrade(req, { requiredRole: 'developer' });
+    if (!user) {
+      logger.warn({ url }, 'WS exec upgrade rejected: unauthorized');
+      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    (req as typeof req & { wsUser?: AuthenticatedUser }).wsUser = user;
+
     wss.handleUpgrade(req, socket, head, (ws) => {
       wss.emit('connection', ws, req);
     });
   });
 
   wss.on('connection', async (ws: WebSocket, req) => {
+    const wsUser = (req as typeof req & { wsUser?: AuthenticatedUser }).wsUser;
     const parsed = parsePath(req.url ?? '');
     if (!parsed) {
-      sendJson(ws, { type: 'error', message: 'Invalid path. Expected /api/v1/ws/kubernetes/pods/:namespace/:name/exec' });
+      sendJson(ws, {
+        type: 'error',
+        message: 'Invalid path. Expected /api/v1/ws/kubernetes/pods/:namespace/:name/exec',
+      });
       ws.close();
       return;
     }
@@ -216,7 +259,12 @@ export function createWsExecServer(server: HttpServer): { close: () => void } {
     ws.on('message', (raw) => {
       resetInactivityTimer(session);
       try {
-        const msg = JSON.parse(raw.toString()) as { type: string; data?: string; cols?: number; rows?: number };
+        const msg = JSON.parse(raw.toString()) as {
+          type: string;
+          data?: string;
+          cols?: number;
+          rows?: number;
+        };
         if (msg.type === 'stdin' && msg.data) {
           const buf = Buffer.from(msg.data, 'base64');
           stdin.write(buf);
@@ -249,7 +297,16 @@ export function createWsExecServer(server: HttpServer): { close: () => void } {
       }
     }
 
-    logger.info({ namespace, pod: podName, shell: currentShell, container: container ?? '(default)' }, 'WS exec session started');
+    logger.info(
+      {
+        namespace,
+        pod: podName,
+        shell: currentShell,
+        container: container ?? '(default)',
+        user: wsUser?.email,
+      },
+      'WS exec session started',
+    );
   });
 
   logger.info('WebSocket exec server attached');

@@ -34,21 +34,9 @@ export function AppStatsCards({ deployments }: AppStatsCardsProps): JSX.Element 
 
   return (
     <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
-      <StatsCard
-        title="Déploiements"
-        value={totalDeployments}
-        icon={GitBranch}
-      />
-      <StatsCard
-        title="Envs actifs"
-        value={`${uniqueEnvs}/3`}
-        icon={CheckCircle2}
-      />
-      <StatsCard
-        title="Versions"
-        value={uniqueVersions}
-        icon={Tag}
-      />
+      <StatsCard title="Déploiements" value={totalDeployments} icon={GitBranch} />
+      <StatsCard title="Envs actifs" value={`${uniqueEnvs}/3`} icon={CheckCircle2} />
+      <StatsCard title="Versions" value={uniqueVersions} icon={Tag} />
       <StatsCard
         title="Succès"
         value={`${successRate}%`}

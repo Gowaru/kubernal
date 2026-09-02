@@ -6,9 +6,9 @@ import { PodTooltip } from '@/components/k8s/PodTooltip';
 import { PodLogDrawer } from '@/components/k8s/PodLogDrawer';
 import { PodTerminalDrawer } from '@/components/k8s/PodTerminalDrawer';
 import { useAllK8sPods } from '@/hooks/useAllK8sPods';
+import { useClusterInfo } from '@/hooks/useClusterInfo';
 import { usePagination } from '@/hooks/usePagination';
 import { PaginationBar } from '@/components/ui/pagination-bar';
-import { MOCK_CLUSTER } from '@/mocks/k8s-data';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -61,6 +61,7 @@ interface TerminalDrawerState {
 
 export default function K8sPodsPage(): JSX.Element {
   const { data: pods = [], isLoading, error } = useAllK8sPods();
+  const { data: clusterInfo } = useClusterInfo();
 
   useEffect(() => {
     if (error) {
@@ -96,17 +97,27 @@ export default function K8sPodsPage(): JSX.Element {
   const stats = useMemo(() => {
     const running = pods.filter((p) => p.status === 'Running').length;
     const pending = pods.filter((p) => p.status === 'Pending').length;
-    const failed = pods.filter((p) => p.status === 'Failed' || p.status === 'CrashLoopBackOff').length;
+    const failed = pods.filter(
+      (p) => p.status === 'Failed' || p.status === 'CrashLoopBackOff',
+    ).length;
     return { total: pods.length, running, pending, failed };
   }, [pods]);
 
   return (
     <div className="space-y-6">
       <K8sContextBar
-        cluster={MOCK_CLUSTER}
-        namespace={MOCK_CLUSTER.namespace}
-        branch="main"
-        revision="a3f7c1e"
+        cluster={
+          clusterInfo ?? {
+            name: '...',
+            namespace: 'default',
+            apiServerUrl: '',
+            version: '...',
+            nodeCount: 0,
+          }
+        }
+        namespace={clusterInfo?.namespace ?? 'default'}
+        branch=""
+        revision=""
       />
 
       <div className="flex items-center gap-4">
@@ -117,7 +128,8 @@ export default function K8sPodsPage(): JSX.Element {
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Pods Kubernetes</h2>
             <p className="text-xs text-muted-foreground">
-              {stats.total} pods · {stats.running} en cours · {stats.pending} en attente · {stats.failed} échoués
+              {stats.total} pods · {stats.running} en cours · {stats.pending} en attente ·{' '}
+              {stats.failed} échoués
             </p>
           </div>
         </div>
@@ -165,99 +177,100 @@ export default function K8sPodsPage(): JSX.Element {
             <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-border rounded-lg m-4">
               <Box className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-1">Aucun pod</h3>
-              <p className="text-muted-foreground text-sm">Aucun pod ne correspond à vos critères</p>
+              <p className="text-muted-foreground text-sm">
+                Aucun pod ne correspond à vos critères
+              </p>
             </div>
           ) : (
             <>
-            <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Namespace</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead className="text-center">Redémarrages</TableHead>
-                  <TableHead>Noeud</TableHead>
-                  <TableHead>Âge</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {podsPag.paginatedData.map((pod) => (
-                  <PodTooltip key={pod.id} pod={pod}>
-                    <TableRow
-                      className="cursor-pointer"
-                      onClick={() => setSelectedPod(pod)}
-                    >
-                      <TableCell className="font-mono text-xs">{pod.name}</TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground">
-                        {pod.namespace}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            'text-[10px] font-medium',
-                            STATUS_PILLS[pod.status] ?? STATUS_PILLS.Unknown,
-                          )}
-                        >
-                          {STATUS_LABELS[pod.status] ?? pod.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span
-                          className={cn(
-                            'text-xs font-mono',
-                            pod.restarts > 3 && 'text-k8s-failed font-semibold',
-                          )}
-                        >
-                          {pod.restarts}
-                        </span>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground">
-                        {pod.nodeName}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{pod.age}</TableCell>
-                      <TableCell className="text-right">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                disabled={pod.status !== 'Running'}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setTerminalState({
-                                    namespace: pod.namespace,
-                                    podName: pod.name,
-                                    containers: pod.containers,
-                                  });
-                                }}
-                              >
-                                <Terminal className="h-3.5 w-3.5" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="left">
-                              {pod.status === 'Running' ? 'Terminal interactif' : 'Pod non disponible'}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nom</TableHead>
+                      <TableHead>Namespace</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead className="text-center">Redémarrages</TableHead>
+                      <TableHead>Noeud</TableHead>
+                      <TableHead>Âge</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  </PodTooltip>
-                ))}
-              </TableBody>
-            </Table>
-            </div>
-            <div className="border-t border-border px-4 py-2">
-              <PaginationBar
-                pagination={podsPag}
-                onPageChange={podsPag.setPage}
-                onPageSizeChange={podsPag.setPageSize}
-              />
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {podsPag.paginatedData.map((pod) => (
+                      <PodTooltip key={pod.id} pod={pod}>
+                        <TableRow className="cursor-pointer" onClick={() => setSelectedPod(pod)}>
+                          <TableCell className="font-mono text-xs">{pod.name}</TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground">
+                            {pod.namespace}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                'text-[10px] font-medium',
+                                STATUS_PILLS[pod.status] ?? STATUS_PILLS.Unknown,
+                              )}
+                            >
+                              {STATUS_LABELS[pod.status] ?? pod.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span
+                              className={cn(
+                                'text-xs font-mono',
+                                pod.restarts > 3 && 'text-k8s-failed font-semibold',
+                              )}
+                            >
+                              {pod.restarts}
+                            </span>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground">
+                            {pod.nodeName}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{pod.age}</TableCell>
+                          <TableCell className="text-right">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    disabled={pod.status !== 'Running'}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setTerminalState({
+                                        namespace: pod.namespace,
+                                        podName: pod.name,
+                                        containers: pod.containers,
+                                      });
+                                    }}
+                                  >
+                                    <Terminal className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="left">
+                                  {pod.status === 'Running'
+                                    ? 'Terminal interactif'
+                                    : 'Pod non disponible'}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                        </TableRow>
+                      </PodTooltip>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="border-t border-border px-4 py-2">
+                <PaginationBar
+                  pagination={podsPag}
+                  onPageChange={podsPag.setPage}
+                  onPageSizeChange={podsPag.setPageSize}
+                />
+              </div>
             </>
           )}
         </CardContent>

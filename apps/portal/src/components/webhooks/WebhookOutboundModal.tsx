@@ -1,5 +1,11 @@
 import { useState, useEffect, type JSX } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -62,42 +68,57 @@ export function WebhookOutboundModal({
   }, [config, open]);
 
   const toggleEvent = (ev: string): void => {
-    setSelectedEvents((prev) =>
-      prev.includes(ev) ? prev.filter((e) => e !== ev) : [...prev, ev],
-    );
+    setSelectedEvents((prev) => (prev.includes(ev) ? prev.filter((e) => e !== ev) : [...prev, ev]));
   };
 
   const handleSubmit = async (): Promise<void> => {
     setError(null);
-    if (!url) { setError('URL requise'); return; }
-    try { new URL(url); } catch { setError('URL invalide'); return; }
-    if (selectedEvents.length === 0) { setError('Sélectionnez au moins un événement'); return; }
+    if (!url) {
+      setError('URL requise');
+      return;
+    }
+    try {
+      new URL(url);
+    } catch {
+      setError('URL invalide');
+      return;
+    }
+    if (selectedEvents.length === 0) {
+      setError('Sélectionnez au moins un événement');
+      return;
+    }
 
     if (isEditing) {
-      update.mutate({
-        id: config.id,
-        data: { name, url, secret: secret || null, events: selectedEvents, enabled },
-      }, {
-        onSuccess: () => {
-          toast.success('Webhook mis à jour');
-          onSaved();
+      update.mutate(
+        {
+          id: config.id,
+          data: { name, url, secret: secret || null, events: selectedEvents, enabled },
         },
-        onError: (e) => setError(e.message),
-      });
+        {
+          onSuccess: () => {
+            toast.success('Webhook mis à jour');
+            onSaved();
+          },
+          onError: (e) => setError(e.message),
+        },
+      );
     } else {
-      create.mutate({
-        applicationId,
-        name,
-        url,
-        secret: secret || undefined,
-        events: selectedEvents,
-      }, {
-        onSuccess: () => {
-          toast.success('Webhook créé');
-          onSaved();
+      create.mutate(
+        {
+          applicationId,
+          name,
+          url,
+          secret: secret || undefined,
+          events: selectedEvents,
         },
-        onError: (e) => setError(e.message),
-      });
+        {
+          onSuccess: () => {
+            toast.success('Webhook créé');
+            onSaved();
+          },
+          onError: (e) => setError(e.message),
+        },
+      );
     }
   };
 
@@ -113,15 +134,30 @@ export function WebhookOutboundModal({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="wh-name">Nom</Label>
-            <Input id="wh-name" placeholder="Ex: Slack #déploiements" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input
+              id="wh-name"
+              placeholder="Ex: Slack #déploiements"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="wh-url">URL du webhook Slack</Label>
-            <Input id="wh-url" placeholder="https://hooks.slack.com/services/..." value={url} onChange={(e) => setUrl(e.target.value)} />
+            <Input
+              id="wh-url"
+              placeholder="https://hooks.slack.com/services/..."
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="wh-secret">Secret (optionnel)</Label>
-            <Input id="wh-secret" placeholder="Pour signature HMAC" value={secret} onChange={(e) => setSecret(e.target.value)} />
+            <Input
+              id="wh-secret"
+              placeholder="Pour signature HMAC"
+              value={secret}
+              onChange={(e) => setSecret(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label>Événements</Label>
@@ -142,7 +178,9 @@ export function WebhookOutboundModal({
 
           {error && <p className="text-sm text-status-error">{error}</p>}
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Annuler
+            </Button>
             <Button onClick={handleSubmit} disabled={create.isPending || update.isPending}>
               {isEditing ? 'Mettre à jour' : 'Créer'}
             </Button>

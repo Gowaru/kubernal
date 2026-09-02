@@ -36,9 +36,7 @@ const REGISTRY: Record<string, PipelineAction> = {
 export function getAction(name: string): PipelineAction {
   const action = REGISTRY[name];
   if (!action) {
-    throw new Error(
-      `Unknown action: ${name}. Known: ${Object.keys(REGISTRY).join(', ')}`,
-    );
+    throw new Error(`Unknown action: ${name}. Known: ${Object.keys(REGISTRY).join(', ')}`);
   }
   const maxRetries = RETRY_CONFIG[name] ?? 0;
   return { ...action, maxRetries };

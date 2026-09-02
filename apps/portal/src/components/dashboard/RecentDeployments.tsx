@@ -42,9 +42,7 @@ export function RecentDeployments(): JSX.Element {
             ))}
           </div>
         ) : recent.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            Aucun déploiement récent
-          </p>
+          <p className="py-6 text-center text-sm text-muted-foreground">Aucun déploiement récent</p>
         ) : (
           <div className="divide-y divide-border">
             {recent.map((dep) => {

@@ -31,28 +31,60 @@ async function mockAuth(page: import('@playwright/test').Page, user: typeof mock
 async function mockAllApi(page: import('@playwright/test').Page, user: typeof mockAdmin) {
   await mockAuth(page, user);
   await page.route('**/api/pipelines/worker/status', (route) => {
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { running: false, total: 0 } }) });
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: { running: false, total: 0 } }),
+    });
   });
   await page.route('**/api/pipelines**', (route) => {
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [], total: 0, page: 1, pageSize: 10 }) });
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [], total: 0, page: 1, pageSize: 10 }),
+    });
   });
   await page.route('**/api/applications**', (route) => {
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [], total: 0, page: 1, pageSize: 10 }) });
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [], total: 0, page: 1, pageSize: 10 }),
+    });
   });
   await page.route('**/api/deployments**', (route) => {
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [], total: 0, page: 1, pageSize: 10 }) });
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [], total: 0, page: 1, pageSize: 10 }),
+    });
   });
   await page.route('**/api/teams**', (route) => {
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) });
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [] }),
+    });
   });
   await page.route('**/api/policies**', (route) => {
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [], total: 0 }) });
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [], total: 0 }),
+    });
   });
   await page.route('**/api/events**', (route) => {
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) });
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [] }),
+    });
   });
   await page.route('**/api/k8s/**', (route) => {
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) });
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [] }),
+    });
   });
 }
 
@@ -62,7 +94,10 @@ test.describe('Auth flow', () => {
       route.fulfill({
         status: 401,
         contentType: 'application/json',
-        body: JSON.stringify({ success: false, error: { code: 'UNAUTHORIZED', message: 'Authentication required' } }),
+        body: JSON.stringify({
+          success: false,
+          error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
+        }),
       });
     });
     await page.goto('/');

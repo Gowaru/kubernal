@@ -24,7 +24,8 @@ export default function NotFound(): JSX.Element {
             </p>
             <h1 className="text-3xl font-bold tracking-tight">Page introuvable</h1>
             <p className="text-sm text-muted-foreground max-w-md">
-              L'URL demandée n'existe pas ou a été déplacée. Vérifiez l'orthographe ou revenez à une page connue.
+              L'URL demandée n'existe pas ou a été déplacée. Vérifiez l'orthographe ou revenez à une
+              page connue.
             </p>
           </div>
 

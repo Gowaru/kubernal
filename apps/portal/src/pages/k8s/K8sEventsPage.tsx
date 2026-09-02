@@ -4,7 +4,7 @@ import { AlertTriangle, Search, Filter } from 'lucide-react';
 import { K8sContextBar } from '@/components/k8s/K8sContextBar';
 import { K8sEventFeed } from '@/components/k8s/K8sEventFeed';
 import { useK8sEvents } from '@/hooks/useK8sEvents';
-import { MOCK_CLUSTER } from '@/mocks/k8s-data';
+import { useClusterInfo } from '@/hooks/useClusterInfo';
 import { cn } from '@/lib/utils';
 import { usePagination } from '@/hooks/usePagination';
 import { PaginationBar } from '@/components/ui/pagination-bar';
@@ -38,7 +38,8 @@ function formatRelativeTime(iso: string): string {
 }
 
 export default function K8sEventsPage(): JSX.Element {
-  const { data: events = [], isLoading, error } = useK8sEvents(MOCK_CLUSTER.namespace);
+  const { data: clusterInfo } = useClusterInfo();
+  const { data: events = [], isLoading, error } = useK8sEvents(clusterInfo?.namespace ?? 'default');
 
   useEffect(() => {
     if (error) {
@@ -64,11 +65,10 @@ export default function K8sEventsPage(): JSX.Element {
   }, [events, search, typeFilter]);
 
   const sorted = useMemo(
-    () => [...filtered].sort(
-      (a, b) =>
-        new Date(b.lastTimestamp).getTime() -
-        new Date(a.lastTimestamp).getTime(),
-    ),
+    () =>
+      [...filtered].sort(
+        (a, b) => new Date(b.lastTimestamp).getTime() - new Date(a.lastTimestamp).getTime(),
+      ),
     [filtered],
   );
 
@@ -83,10 +83,18 @@ export default function K8sEventsPage(): JSX.Element {
   return (
     <div className="space-y-6">
       <K8sContextBar
-        cluster={MOCK_CLUSTER}
-        namespace={MOCK_CLUSTER.namespace}
-        branch="main"
-        revision="a3f7c1e"
+        cluster={
+          clusterInfo ?? {
+            name: '...',
+            namespace: 'default',
+            apiServerUrl: '',
+            version: '...',
+            nodeCount: 0,
+          }
+        }
+        namespace={clusterInfo?.namespace ?? 'default'}
+        branch=""
+        revision=""
       />
 
       <div className="flex items-center gap-4">
@@ -143,71 +151,73 @@ export default function K8sEventsPage(): JSX.Element {
               <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-border rounded-lg m-4">
                 <AlertTriangle className="h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-1">Aucun événement</h3>
-                <p className="text-muted-foreground text-sm">Aucun événement ne correspond à vos critères</p>
+                <p className="text-muted-foreground text-sm">
+                  Aucun événement ne correspond à vos critères
+                </p>
               </div>
             ) : (
               <>
-              <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Raison</TableHead>
-                    <TableHead>Objet</TableHead>
-                    <TableHead>Message</TableHead>
-                    <TableHead className="text-center">Count</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Dernier</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {eventsPag.paginatedData.map((event: K8sEvent) => (
-                      <TableRow key={event.id}>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              'text-[10px] font-medium',
-                              event.type === 'Warning'
-                                ? 'bg-k8s-pending/20 text-k8s-pending border-k8s-pending/30'
-                                : 'bg-k8s-running/20 text-k8s-running border-k8s-running/30',
-                            )}
-                          >
-                            {event.type === 'Warning' ? 'Avertissement' : 'Normal'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs font-medium">
-                          {event.reason}
-                        </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground truncate max-w-45">
-                          {event.involvedObject}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground truncate max-w-62.5">
-                          {event.message}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span className="text-xs font-mono text-muted-foreground">
-                            {event.count}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {event.source}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {formatRelativeTime(event.lastTimestamp)}
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Raison</TableHead>
+                        <TableHead>Objet</TableHead>
+                        <TableHead>Message</TableHead>
+                        <TableHead className="text-center">Count</TableHead>
+                        <TableHead>Source</TableHead>
+                        <TableHead>Dernier</TableHead>
                       </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-              </div>
-              <div className="border-t border-border px-4 py-2">
-                <PaginationBar
-                  pagination={eventsPag}
-                  onPageChange={eventsPag.setPage}
-                  onPageSizeChange={eventsPag.setPageSize}
-                />
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {eventsPag.paginatedData.map((event: K8sEvent) => (
+                        <TableRow key={event.id}>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                'text-[10px] font-medium',
+                                event.type === 'Warning'
+                                  ? 'bg-k8s-pending/20 text-k8s-pending border-k8s-pending/30'
+                                  : 'bg-k8s-running/20 text-k8s-running border-k8s-running/30',
+                              )}
+                            >
+                              {event.type === 'Warning' ? 'Avertissement' : 'Normal'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs font-medium">
+                            {event.reason}
+                          </TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground truncate max-w-45">
+                            {event.involvedObject}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground truncate max-w-62.5">
+                            {event.message}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="text-xs font-mono text-muted-foreground">
+                              {event.count}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {event.source}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {formatRelativeTime(event.lastTimestamp)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="border-t border-border px-4 py-2">
+                  <PaginationBar
+                    pagination={eventsPag}
+                    onPageChange={eventsPag.setPage}
+                    onPageSizeChange={eventsPag.setPageSize}
+                  />
+                </div>
               </>
             )}
           </CardContent>

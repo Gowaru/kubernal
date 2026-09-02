@@ -12,7 +12,9 @@ export async function deserializeUser(
       return next();
     }
 
-    const userId = (req.session as unknown as Record<string, unknown> | undefined)?.userId as string | undefined;
+    const userId = (req.session as unknown as Record<string, unknown> | undefined)?.userId as
+      | string
+      | undefined;
     if (!userId) {
       return next();
     }

@@ -5,10 +5,7 @@ import type { ActionContext, ActionResult, PipelineAction } from './types.js';
 
 const execFileAsync = promisify(execFile);
 
-function validateParam(
-  params: Record<string, unknown>,
-  key: string,
-): string {
+function validateParam(params: Record<string, unknown>, key: string): string {
   const value = params[key];
   if (typeof value !== 'string' || value.length === 0) {
     throw new Error(`tag:git: missing required param '${key}'`);
@@ -37,9 +34,7 @@ export const tagGitAction: PipelineAction = {
       environment?: string;
     };
 
-    const tagName = environment
-      ? `deploy-${environment}-${version}`
-      : `deploy-${version}`;
+    const tagName = environment ? `deploy-${environment}-${version}` : `deploy-${version}`;
 
     context.logger.info(`tag:git: creating tag '${tagName}' on ${commitSha.slice(0, 7)}`);
 

@@ -20,7 +20,16 @@ import { useCreateDeployment } from '@/hooks/useDeployments';
 import { useEnvironments } from '@/hooks/useEnvironments';
 import { useNextVersion, type BumpType } from '@/hooks/useNextVersion';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Rocket, CheckCircle2, Sparkles, Box, Globe, GitCommit, Puzzle } from 'lucide-react';
+import {
+  Loader2,
+  Rocket,
+  CheckCircle2,
+  Sparkles,
+  Box,
+  Globe,
+  GitCommit,
+  Puzzle,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import type { Application } from '@kubernal/shared-types';
 
@@ -80,10 +89,7 @@ export function DeploymentModal({
   const [notes, setNotes] = useState('');
   const [options, setOptions] = useState<string[]>([]);
 
-  const { data: nextVersion } = useNextVersion(
-    appId || undefined,
-    { bump },
-  );
+  const { data: nextVersion } = useNextVersion(appId || undefined, { bump });
 
   const version = nextVersion?.version ?? '';
 
@@ -263,13 +269,15 @@ export function DeploymentModal({
                   disabled={!appId || appEnvironments.length === 0}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={
-                      !appId
-                        ? "Sélectionnez d'abord une application"
-                        : appEnvironments.length === 0
-                          ? "Aucun environnement — créez l'application d'abord"
-                          : 'Sélectionner un environnement'
-                    } />
+                    <SelectValue
+                      placeholder={
+                        !appId
+                          ? "Sélectionnez d'abord une application"
+                          : appEnvironments.length === 0
+                            ? "Aucun environnement — créez l'application d'abord"
+                            : 'Sélectionner un environnement'
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {appEnvironments.map((env) => (
@@ -293,9 +301,7 @@ export function DeploymentModal({
                         checked={options.includes(opt.id)}
                         onCheckedChange={(checked) => {
                           setOptions(
-                            checked
-                              ? [...options, opt.id]
-                              : options.filter((o) => o !== opt.id),
+                            checked ? [...options, opt.id] : options.filter((o) => o !== opt.id),
                           );
                         }}
                       />
@@ -320,8 +326,14 @@ export function DeploymentModal({
               <Button variant="outline" size="sm" onClick={handleClose}>
                 Annuler
               </Button>
-              <Button size="sm" onClick={handleSubmit} disabled={!isValid || createDeployment.isPending}>
-                {createDeployment.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+              <Button
+                size="sm"
+                onClick={handleSubmit}
+                disabled={!isValid || createDeployment.isPending}
+              >
+                {createDeployment.isPending && (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                )}
                 <Rocket className="mr-1.5 h-3.5 w-3.5" />
                 Lancer le déploiement
               </Button>
@@ -333,9 +345,7 @@ export function DeploymentModal({
           <>
             <DialogHeader>
               <DialogTitle>Déploiement en cours</DialogTitle>
-              <DialogDescription>
-                Veuillez patienter pendant le déploiement…
-              </DialogDescription>
+              <DialogDescription>Veuillez patienter pendant le déploiement…</DialogDescription>
             </DialogHeader>
 
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
@@ -366,9 +376,7 @@ export function DeploymentModal({
           <>
             <DialogHeader>
               <DialogTitle>Déploiement réussi</DialogTitle>
-              <DialogDescription>
-                Le déploiement a été effectué avec succès.
-              </DialogDescription>
+              <DialogDescription>Le déploiement a été effectué avec succès.</DialogDescription>
             </DialogHeader>
 
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
@@ -380,15 +388,12 @@ export function DeploymentModal({
                 <strong className="text-foreground">
                   {appEnvironments.find((e) => e.id === environmentId)?.name ?? environmentSlug}
                 </strong>{' '}
-                avec la version{' '}
-                <strong className="font-mono text-foreground">{version}</strong>.
+                avec la version <strong className="font-mono text-foreground">{version}</strong>.
               </p>
             </div>
 
             <DialogFooter>
-              <Button onClick={handleSuccessDone}>
-                Terminé
-              </Button>
+              <Button onClick={handleSuccessDone}>Terminé</Button>
             </DialogFooter>
           </>
         )}

@@ -11,7 +11,13 @@ interface PodTerminalProps {
   onStatusChange?: (status: string) => void;
 }
 
-export function PodTerminal({ namespace, podName, container, shell, onStatusChange }: PodTerminalProps): JSX.Element {
+export function PodTerminal({
+  namespace,
+  podName,
+  container,
+  shell,
+  onStatusChange,
+}: PodTerminalProps): JSX.Element {
   const { terminalRef, status, shellEffectif, connect, disconnect, fit, clear } = useTerminal();
 
   useEffect(() => {
@@ -43,18 +49,20 @@ export function PodTerminal({ namespace, podName, container, shell, onStatusChan
     error: 'Erreur',
   }[status];
 
-  const statusIcon = status === 'connecting' ? (
-    <Loader2 className="h-3 w-3 animate-spin" />
-  ) : status === 'fallback' ? (
-    <TriangleAlert className="h-3 w-3 text-status-warning" />
-  ) : null;
+  const statusIcon =
+    status === 'connecting' ? (
+      <Loader2 className="h-3 w-3 animate-spin" />
+    ) : status === 'fallback' ? (
+      <TriangleAlert className="h-3 w-3 text-status-warning" />
+    ) : null;
 
   return (
-    <div className={cn(
-      'relative rounded-lg overflow-hidden border border-border',
-      status === 'connected' && 'border-k8s-running/30',
-      status === 'error' && 'border-status-error/30',
-    )}
+    <div
+      className={cn(
+        'relative rounded-lg overflow-hidden border border-border',
+        status === 'connected' && 'border-k8s-running/30',
+        status === 'error' && 'border-status-error/30',
+      )}
     >
       <div className="flex items-center justify-between px-3 py-1.5 bg-terminal-bg border-b border-border">
         <div className="flex items-center gap-2 text-xs">
@@ -62,14 +70,15 @@ export function PodTerminal({ namespace, podName, container, shell, onStatusChan
           <span className="font-mono text-muted-foreground">{podName}</span>
           <span className="text-muted-foreground/50">—</span>
           <span className="font-mono text-muted-foreground/70">{shellEffectif}</span>
-          <span className={cn(
-            'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium',
-            status === 'connected' && 'bg-k8s-running/10 text-k8s-running',
-            status === 'connecting' && 'bg-k8s-pending/10 text-k8s-pending',
-            status === 'error' && 'bg-status-error/10 text-status-error',
-            status === 'fallback' && 'bg-status-warning/10 text-status-warning',
-            status === 'disconnected' && 'bg-muted text-muted-foreground',
-          )}
+          <span
+            className={cn(
+              'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium',
+              status === 'connected' && 'bg-k8s-running/10 text-k8s-running',
+              status === 'connecting' && 'bg-k8s-pending/10 text-k8s-pending',
+              status === 'error' && 'bg-status-error/10 text-status-error',
+              status === 'fallback' && 'bg-status-warning/10 text-status-warning',
+              status === 'disconnected' && 'bg-muted text-muted-foreground',
+            )}
           >
             {statusIcon}
             {statusLabel}
@@ -102,10 +111,7 @@ export function PodTerminal({ namespace, podName, container, shell, onStatusChan
           )}
         </div>
       </div>
-      <div
-        ref={terminalRef}
-        className="h-[55vh] bg-terminal-bg p-0"
-      />
+      <div ref={terminalRef} className="h-[55vh] bg-terminal-bg p-0" />
     </div>
   );
 }

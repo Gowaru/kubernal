@@ -1,4 +1,10 @@
-import { useQuery, useMutation, useQueryClient, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type UseQueryResult,
+  type UseMutationResult,
+} from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { WebhookConfig, WebhookDelivery } from '@kubernal/shared-types';
 
@@ -21,7 +27,9 @@ type UpdateWebhookInput = {
 type ApiListResponse<T> = { data: T[] };
 type ApiItemResponse<T> = { data: T };
 
-export function useWebhookOutboundConfigs(applicationId: string): UseQueryResult<WebhookConfig[], Error> {
+export function useWebhookOutboundConfigs(
+  applicationId: string,
+): UseQueryResult<WebhookConfig[], Error> {
   return useQuery<WebhookConfig[]>({
     queryKey: ['webhook-outbound', applicationId],
     queryFn: async () => {
@@ -34,7 +42,11 @@ export function useWebhookOutboundConfigs(applicationId: string): UseQueryResult
   });
 }
 
-export function useCreateWebhookOutbound(): UseMutationResult<WebhookConfig, Error, CreateWebhookInput> {
+export function useCreateWebhookOutbound(): UseMutationResult<
+  WebhookConfig,
+  Error,
+  CreateWebhookInput
+> {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input) => {
@@ -47,11 +59,18 @@ export function useCreateWebhookOutbound(): UseMutationResult<WebhookConfig, Err
   });
 }
 
-export function useUpdateWebhookOutbound(): UseMutationResult<WebhookConfig, Error, { id: string; data: UpdateWebhookInput }> {
+export function useUpdateWebhookOutbound(): UseMutationResult<
+  WebhookConfig,
+  Error,
+  { id: string; data: UpdateWebhookInput }
+> {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }) => {
-      const r = await apiClient.patch<ApiItemResponse<WebhookConfig>>(`/webhooks-outbound/${id}`, data);
+      const r = await apiClient.patch<ApiItemResponse<WebhookConfig>>(
+        `/webhooks-outbound/${id}`,
+        data,
+      );
       return r.data.data;
     },
     onSuccess: () => {

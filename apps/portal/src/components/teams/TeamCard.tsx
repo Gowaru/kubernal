@@ -22,17 +22,13 @@ export function TeamCard({ team, appCount = 0 }: TeamCardProps): JSX.Element {
               <h3 className="font-semibold group-hover:text-accent transition-colors">
                 {team.name}
               </h3>
-              <p className="text-xs text-muted-foreground">
-                {team.namespacePrefix}
-              </p>
+              <p className="text-xs text-muted-foreground">{team.namespacePrefix}</p>
             </div>
           </div>
         </div>
 
         {team.description && (
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-            {team.description}
-          </p>
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{team.description}</p>
         )}
 
         <div className="grid grid-cols-2 gap-3">

@@ -16,10 +16,7 @@ export const createApplicationSchema = z.object({
   repositoryUrl: z
     .string()
     .trim()
-    .regex(
-      REPO_URL_REGEX,
-      'Doit être une URL GitHub, GitLab ou Bitbucket (.git)',
-    )
+    .regex(REPO_URL_REGEX, 'Doit être une URL GitHub, GitLab ou Bitbucket (.git)')
     .optional(),
   config: z.record(z.string(), z.unknown()).optional().default({}),
 });
@@ -35,10 +32,7 @@ export const updateApplicationSchema = z.object({
   repositoryUrl: z
     .string()
     .trim()
-    .regex(
-      REPO_URL_REGEX,
-      'Doit être une URL GitHub, GitLab ou Bitbucket (.git)',
-    )
+    .regex(REPO_URL_REGEX, 'Doit être une URL GitHub, GitLab ou Bitbucket (.git)')
     .nullable()
     .optional(),
   status: z.enum(['creating', 'active', 'failed', 'archived']).optional(),

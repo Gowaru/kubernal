@@ -23,7 +23,11 @@ function SeverityBadge({ severity }: { severity: string }): JSX.Element {
   const key = severity.toUpperCase() as SeverityKey;
   const cfg = SEVERITY_CONFIG[key];
   if (!cfg) {
-    return <Badge variant="outline" className="text-xs">{severity}</Badge>;
+    return (
+      <Badge variant="outline" className="text-xs">
+        {severity}
+      </Badge>
+    );
   }
   return (
     <Badge variant="outline" className={`text-xs ${cfg.color}`}>
@@ -33,7 +37,9 @@ function SeverityBadge({ severity }: { severity: string }): JSX.Element {
 }
 
 export function CveDrawer({ deploymentId, open, onClose }: CveDrawerProps): JSX.Element {
-  const { data: vulnerabilities, isLoading } = useDeploymentVulnerabilities(deploymentId ?? undefined);
+  const { data: vulnerabilities, isLoading } = useDeploymentVulnerabilities(
+    deploymentId ?? undefined,
+  );
   const [filter, setFilter] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
@@ -55,7 +61,12 @@ export function CveDrawer({ deploymentId, open, onClose }: CveDrawerProps): JSX.
   const filters = ['Toutes', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
 
   return (
-    <Sheet open={open} onOpenChange={(openState) => { if (!openState) onClose(); }}>
+    <Sheet
+      open={open}
+      onOpenChange={(openState) => {
+        if (!openState) onClose();
+      }}
+    >
       <SheetContent className="sm:max-w-lg w-full overflow-y-auto">
         <SheetHeader className="mb-4">
           <SheetTitle className="flex items-center gap-2">
@@ -109,10 +120,7 @@ export function CveDrawer({ deploymentId, open, onClose }: CveDrawerProps): JSX.
 
             <div className="space-y-2">
               {filtered.map((vuln) => (
-                <div
-                  key={vuln.id}
-                  className="rounded-lg border border-border p-3 space-y-1.5"
-                >
+                <div key={vuln.id} className="rounded-lg border border-border p-3 space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <code className="text-xs font-mono font-medium text-foreground">
                       {vuln.cveId}

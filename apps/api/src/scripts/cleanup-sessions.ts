@@ -14,9 +14,7 @@ async function cleanupSessions(): Promise<void> {
   const pool = new Pool({ connectionString: databaseUrl });
 
   try {
-    const result = await pool.query(
-      `DELETE FROM "${TABLE_NAME}" WHERE "expire" < NOW()`,
-    );
+    const result = await pool.query(`DELETE FROM "${TABLE_NAME}" WHERE "expire" < NOW()`);
     const count = result.rowCount ?? 0;
     console.log(`[cleanup-sessions] ${count} expired session(s) deleted`);
   } catch (err) {

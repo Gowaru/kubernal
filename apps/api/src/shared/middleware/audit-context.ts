@@ -1,13 +1,11 @@
 import type { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'node:crypto';
 import { auditService } from '../../modules/audit/audit.service.js';
-import { logger } from '../logger.js';
 
 type AuditedRequest = Request & {
   requestId: string;
   actor: { id: string; email: string } | null;
   realIp: string;
-  log: typeof logger;
 };
 
 const SENSITIVE_BODY_KEYS = new Set(['secret', 'password', 'token', 'apiKey', 'webhookSecret']);
@@ -32,8 +30,8 @@ export function auditContext(req: Request, _res: Response, next: NextFunction): 
   const augmented = req as AuditedRequest;
   augmented.requestId = randomUUID();
   augmented.actor = req.user ? { id: req.user.id, email: req.user.email } : null;
-  augmented.realIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? 'unknown';
-  augmented.log = logger.child({ requestId: augmented.requestId, actor: augmented.actor?.email });
+  augmented.realIp =
+    (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? 'unknown';
   _res.setHeader('X-Request-Id', augmented.requestId);
 
   const originalJson = _res.json.bind(_res);
@@ -51,20 +49,22 @@ export function auditContext(req: Request, _res: Response, next: NextFunction): 
         const resourceName = resourceSegments[0] ?? 'unknown';
         const rid = resourceSegments[1] ?? undefined;
 
-        auditService.log({
-          action: action as 'CREATE' | 'UPDATE' | 'DELETE',
-          resource: resourceName,
-          resourceId: rid,
-          details: {
-            params: req.params,
-            body: sanitizeBody(req.body),
-            statusCode: _res.statusCode,
-          },
-          actorId: augmented.actor?.id,
-          actorEmail: augmented.actor?.email,
-          ip: augmented.realIp,
-          userAgent: (req.headers['user-agent'] as string) ?? null,
-        }).catch(() => {});
+        auditService
+          .log({
+            action: action as 'CREATE' | 'UPDATE' | 'DELETE',
+            resource: resourceName,
+            resourceId: rid,
+            details: {
+              params: req.params,
+              body: sanitizeBody(req.body),
+              statusCode: _res.statusCode,
+            },
+            actorId: augmented.actor?.id,
+            actorEmail: augmented.actor?.email,
+            ip: augmented.realIp,
+            userAgent: (req.headers['user-agent'] as string) ?? null,
+          })
+          .catch(() => {});
       }
     }
     return originalJson.call(_res, body);

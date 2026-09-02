@@ -8,8 +8,15 @@ import {
   dockerPush,
   dockerPull,
 } from '../shared/build/ghcr.js';
-import { scanImage, DEFAULT_SEVERITY_THRESHOLD, type TrivyScanResult } from '../shared/build/trivy.js';
-import { ensureGHCRPullSecretInNamespace, type PullSecretResult } from '../shared/build/k8s-pull-secret.js';
+import {
+  scanImage,
+  DEFAULT_SEVERITY_THRESHOLD,
+  type TrivyScanResult,
+} from '../shared/build/trivy.js';
+import {
+  ensureGHCRPullSecretInNamespace,
+  type PullSecretResult,
+} from '../shared/build/k8s-pull-secret.js';
 import { execSync } from 'node:child_process';
 
 const DEMO_OWNER = 'gowaru';
@@ -78,12 +85,16 @@ function printScanResult(result: TrivyScanResult): void {
   process.stdout.write(`  │   MEDIUM:   ${result.bySeverity.MEDIUM}\n`);
   process.stdout.write(`  │   LOW:      ${result.bySeverity.LOW}\n`);
   process.stdout.write(`  │\n`);
-  process.stdout.write(`  │ Passed: ${result.passed ? 'YES (no CRITICAL)' : 'NO (CRITICAL found or scan failed)'}\n`);
+  process.stdout.write(
+    `  │ Passed: ${result.passed ? 'YES (no CRITICAL)' : 'NO (CRITICAL found or scan failed)'}\n`,
+  );
   if (result.vulnerabilities.length > 0) {
     process.stdout.write(`  │\n`);
     process.stdout.write(`  │ Top 5 vulnerabilities:\n`);
     for (const v of result.vulnerabilities.slice(0, 5)) {
-      process.stdout.write(`  │   - [${v.severity}] ${v.cveId} ${v.library}@${v.installedVersion} → ${v.fixedVersion ?? 'no fix'}\n`);
+      process.stdout.write(
+        `  │   - [${v.severity}] ${v.cveId} ${v.library}@${v.installedVersion} → ${v.fixedVersion ?? 'no fix'}\n`,
+      );
       process.stdout.write(`  │     ${v.title.slice(0, 100)}\n`);
     }
   }
@@ -116,7 +127,9 @@ async function main(): Promise<void> {
 
   if (!ghcrPassword) {
     process.stdout.write('\n  ERROR: GITHUB_TOKEN or GHCR_TOKEN env var is required\n');
-    process.stdout.write('  export GITHUB_TOKEN=ghp_xxx (GitHub PAT with write:packages scope)\n\n');
+    process.stdout.write(
+      '  export GITHUB_TOKEN=ghp_xxx (GitHub PAT with write:packages scope)\n\n',
+    );
     process.exit(1);
   }
 
@@ -172,12 +185,20 @@ async function main(): Promise<void> {
   const scanResult = scanStep.value as TrivyScanResult | undefined;
 
   process.stdout.write('\n  Creating imagePullSecret in kind cluster...\n');
-  const secretStep = runStep(`5.1 kubectl create secret docker-registry ghcr-pull -n ${DEMO_NAMESPACE}`, () => {
-    const result = ensureGHCRPullSecretInNamespace(DEMO_NAMESPACE, DEMO_OWNER, ghcrPassword, 'ghcr-pull');
-    printPullSecretResult(result);
-    if (result.error) throw new Error(result.error);
-    return result;
-  });
+  const secretStep = runStep(
+    `5.1 kubectl create secret docker-registry ghcr-pull -n ${DEMO_NAMESPACE}`,
+    () => {
+      const result = ensureGHCRPullSecretInNamespace(
+        DEMO_NAMESPACE,
+        DEMO_OWNER,
+        ghcrPassword,
+        'ghcr-pull',
+      );
+      printPullSecretResult(result);
+      if (result.error) throw new Error(result.error);
+      return result;
+    },
+  );
   steps.push(secretStep.step);
 
   process.stdout.write('\n  Testing pull from kind cluster...\n');
@@ -227,7 +248,9 @@ spec:
       throw new Error('Timeout waiting for image pull (30s)');
     } finally {
       try {
-        execSync(`kubectl delete pod ${podName} -n ${DEMO_NAMESPACE} --grace-period=0 --force`, { stdio: 'pipe' });
+        execSync(`kubectl delete pod ${podName} -n ${DEMO_NAMESPACE} --grace-period=0 --force`, {
+          stdio: 'pipe',
+        });
       } catch {
         // ignore cleanup errors
       }
@@ -242,9 +265,13 @@ spec:
   process.stdout.write(`\n  Total duration: ${Date.now() - start}ms\n`);
 
   if (scanResult) {
-    process.stdout.write(`\n  Image GHCR URL:    https://github.com/${DEMO_OWNER === 'gowaru' ? 'Gowaru' : DEMO_OWNER}/pkgs/container/${imageRef.replace(/^ghcr\.io\//, '').replace(':', '%3A')}\n`);
+    process.stdout.write(
+      `\n  Image GHCR URL:    https://github.com/${DEMO_OWNER === 'gowaru' ? 'Gowaru' : DEMO_OWNER}/pkgs/container/${imageRef.replace(/^ghcr\.io\//, '').replace(':', '%3A')}\n`,
+    );
     process.stdout.write(`  Trivy scanner:     ${scanResult.scanner}\n`);
-    process.stdout.write(`  Vulnerabilities:   ${scanResult.total} (${scanResult.bySeverity.CRITICAL} CRITICAL, ${scanResult.bySeverity.HIGH} HIGH)\n`);
+    process.stdout.write(
+      `  Vulnerabilities:   ${scanResult.total} (${scanResult.bySeverity.CRITICAL} CRITICAL, ${scanResult.bySeverity.HIGH} HIGH)\n`,
+    );
   }
   process.stdout.write('\n' + '━'.repeat(78) + '\n\n');
 

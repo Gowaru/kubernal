@@ -94,7 +94,8 @@ export function DeploymentDiffDrawer({
                 <p className="text-sm font-medium">{data.summary}</p>
                 {data.isPromotion && (
                   <p className="text-xs text-status-warning mt-1">
-                    ⚠️ Promotion inter-environnements ({data.from.environmentType} → {data.to.environmentType})
+                    ⚠️ Promotion inter-environnements ({data.from.environmentType} →{' '}
+                    {data.to.environmentType})
                   </p>
                 )}
               </div>
@@ -106,9 +107,7 @@ export function DeploymentDiffDrawer({
                 </div>
 
                 {data.changes.length === 0 && data.durationDelta === 0 ? (
-                  <p className="text-sm text-muted-foreground italic">
-                    Aucun changement détecté.
-                  </p>
+                  <p className="text-sm text-muted-foreground italic">Aucun changement détecté.</p>
                 ) : (
                   <div className="space-y-2">
                     {data.changes.map((change) => (
@@ -138,25 +137,19 @@ export function DeploymentDiffDrawer({
                     {data.durationDelta !== null && data.durationDelta !== 0 && (
                       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-md border border-border bg-muted/20 px-3 py-2 text-xs">
                         <div className="flex flex-col">
-                          <span className="text-[10px] uppercase text-muted-foreground">
-                            durée
-                          </span>
+                          <span className="text-[10px] uppercase text-muted-foreground">durée</span>
                           <span className="font-mono text-foreground">
                             {duration(data.from as unknown as Deployment)}
                           </span>
                         </div>
                         <ArrowRight className="h-3 w-3 text-muted-foreground" />
                         <div className="flex flex-col">
-                          <span className="text-[10px] uppercase text-muted-foreground">
-                            durée
-                          </span>
+                          <span className="text-[10px] uppercase text-muted-foreground">durée</span>
                           <span className="font-mono text-foreground">
                             {duration(data.to as unknown as Deployment)}{' '}
                             <span
                               className={
-                                data.durationDelta > 0
-                                  ? 'text-status-error'
-                                  : 'text-status-success'
+                                data.durationDelta > 0 ? 'text-status-error' : 'text-status-success'
                               }
                             >
                               ({data.durationDelta > 0 ? '+' : ''}

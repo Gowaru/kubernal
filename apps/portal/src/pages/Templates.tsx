@@ -47,10 +47,7 @@ export default function Templates(): JSX.Element {
         </Button>
       </div>
 
-      <CreateTemplateModal
-        open={showCreateModal}
-        onOpenChange={setShowCreateModal}
-      />
+      <CreateTemplateModal open={showCreateModal} onOpenChange={setShowCreateModal} />
 
       <div className="flex items-center gap-3">
         <div className="relative flex-1">

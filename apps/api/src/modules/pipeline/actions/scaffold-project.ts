@@ -1,10 +1,5 @@
 import { execFile } from 'node:child_process';
-import {
-  existsSync,
-  readFileSync,
-  readdirSync,
-  statSync,
-} from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { mkdir, readFile, writeFile, cp, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -17,13 +12,35 @@ const execFileAsync = promisify(execFile);
 const META_KEYS = new Set(['skeleton', 'subdir', 'gitInit', 'branch', 'force']);
 
 const BINARY_EXTENSIONS = new Set([
-  '.png', '.jpg', '.jpeg', '.gif', '.ico', '.svg',
-  '.woff', '.woff2', '.ttf', '.eot',
-  '.zip', '.gz', '.tar', '.bz2',
-  '.pdf', '.doc', '.docx', '.xls', '.xlsx',
-  '.mp3', '.mp4', '.avi', '.mov',
-  '.keystore', '.jks', '.p12', '.pfx',
-  '.ico', '.cur',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+  '.ico',
+  '.svg',
+  '.woff',
+  '.woff2',
+  '.ttf',
+  '.eot',
+  '.zip',
+  '.gz',
+  '.tar',
+  '.bz2',
+  '.pdf',
+  '.doc',
+  '.docx',
+  '.xls',
+  '.xlsx',
+  '.mp3',
+  '.mp4',
+  '.avi',
+  '.mov',
+  '.keystore',
+  '.jks',
+  '.p12',
+  '.pfx',
+  '.ico',
+  '.cur',
 ]);
 
 function isBinaryFile(filePath: string): boolean {
@@ -52,9 +69,8 @@ interface ScaffoldParams {
 }
 
 function parseScaffoldParams(raw: Record<string, unknown>): ScaffoldParams {
-  const skeleton = typeof raw['skeleton'] === 'string' && raw['skeleton'].length > 0
-    ? raw['skeleton']
-    : '';
+  const skeleton =
+    typeof raw['skeleton'] === 'string' && raw['skeleton'].length > 0 ? raw['skeleton'] : '';
   const subdir = typeof raw['subdir'] === 'string' ? raw['subdir'] : '';
   const gitInit = raw['gitInit'] === true;
   const branch = typeof raw['branch'] === 'string' ? raw['branch'] : 'main';
@@ -68,7 +84,11 @@ function parseScaffoldParams(raw: Record<string, unknown>): ScaffoldParams {
   return { skeleton, subdir, gitInit, branch, force, variables };
 }
 
-async function cloneRepo(url: string, dest: string, logger: ActionContext['logger']): Promise<void> {
+async function cloneRepo(
+  url: string,
+  dest: string,
+  logger: ActionContext['logger'],
+): Promise<void> {
   logger.info(`Cloning ${url} into ${dest}`);
   await execFileAsync('git', ['clone', '--depth', '1', url, dest], {
     maxBuffer: 16 * 1024 * 1024,
@@ -94,10 +114,14 @@ async function gitInitAndPush(
   }
   await execFileAsync('git', ['add', '-A'], { cwd: repoDir, timeout: 30_000 });
   try {
-    await execFileAsync('git', ['commit', '-m', `Add Kubernal platform scaffolding for ${appName}`], {
-      cwd: repoDir,
-      timeout: 30_000,
-    });
+    await execFileAsync(
+      'git',
+      ['commit', '-m', `Add Kubernal platform scaffolding for ${appName}`],
+      {
+        cwd: repoDir,
+        timeout: 30_000,
+      },
+    );
     logger.info('git commit');
   } catch {
     logger.info('Nothing to commit');
@@ -105,11 +129,17 @@ async function gitInitAndPush(
   const remotes = await execFileAsync('git', ['remote'], { cwd: repoDir, timeout: 10_000 });
   if (!remotes.stdout.trim()) {
     const sshUrl = remoteUrl.replace(/^https:\/\/github\.com\//, 'git@github.com:');
-    await execFileAsync('git', ['remote', 'add', 'origin', sshUrl], { cwd: repoDir, timeout: 10_000 });
+    await execFileAsync('git', ['remote', 'add', 'origin', sshUrl], {
+      cwd: repoDir,
+      timeout: 10_000,
+    });
     logger.info(`git remote add origin ${sshUrl}`);
   }
   try {
-    await execFileAsync('git', ['push', '-u', 'origin', branch], { cwd: repoDir, timeout: 120_000 });
+    await execFileAsync('git', ['push', '-u', 'origin', branch], {
+      cwd: repoDir,
+      timeout: 120_000,
+    });
     logger.info(`git push to origin/${branch}`);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -205,7 +235,9 @@ export const scaffoldProjectAction: PipelineAction = {
     }
 
     if (alreadyScaffolded && !force) {
-      context.logger.info(`Scaffolding already completed for template ${application.templateId}, skipping`);
+      context.logger.info(
+        `Scaffolding already completed for template ${application.templateId}, skipping`,
+      );
       return {
         output: {
           skipped: true,
@@ -222,7 +254,9 @@ export const scaffoldProjectAction: PipelineAction = {
         select: { repository: true },
       });
       if (!template?.repository) {
-        throw new Error('scaffold:project: no skeleton URL provided and template has no repository');
+        throw new Error(
+          'scaffold:project: no skeleton URL provided and template has no repository',
+        );
       }
       skeletonUrl = template.repository;
     }
@@ -291,7 +325,13 @@ export const scaffoldProjectAction: PipelineAction = {
     let gitPushed = false;
     if (gitInit && application.repositoryUrl) {
       try {
-        await gitInitAndPush(workspaceRepo, application.repositoryUrl, branch, application.name, context.logger);
+        await gitInitAndPush(
+          workspaceRepo,
+          application.repositoryUrl,
+          branch,
+          application.name,
+          context.logger,
+        );
         gitPushed = true;
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);

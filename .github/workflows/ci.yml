@@ -49,6 +49,8 @@ jobs:
 
       - name: Generate Prisma client
         run: npx prisma generate --schema=apps/api/prisma/schema.prisma
+        env:
+          DATABASE_URL: postgresql://kubernal:ci_test@localhost:5432/kubernal_idp
 
       - run: npm run lint
       - run: npm run typecheck

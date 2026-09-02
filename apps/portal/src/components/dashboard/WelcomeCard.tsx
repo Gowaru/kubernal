@@ -22,7 +22,8 @@ export function WelcomeCard(): JSX.Element {
               Bienvenue sur <span className="text-accent">Kubernal</span>
             </h1>
             <p className="text-muted-foreground">
-              Plateforme interne de déploiement — gérez vos applications, environnements et déploiements.
+              Plateforme interne de déploiement — gérez vos applications, environnements et
+              déploiements.
             </p>
           </div>
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 ring-1 ring-accent/20">

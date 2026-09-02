@@ -23,15 +23,22 @@ import { useSidebar } from './SidebarStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useDeployments } from '@/hooks/useDeployments';
 import { useK8sEvents } from '@/hooks/useK8sEvents';
-import { MOCK_CLUSTER } from '@/mocks/k8s-data';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { useClusterInfo } from '@/hooks/useClusterInfo';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const iconMap: Record<string, typeof LayoutDashboard> = {
-  LayoutDashboard, LayoutGrid, Rocket, Eye, Cloud, Users, FileJson, Shield, Settings, Box, Network, AlertTriangle,
+  LayoutDashboard,
+  LayoutGrid,
+  Rocket,
+  Eye,
+  Cloud,
+  Users,
+  FileJson,
+  Shield,
+  Settings,
+  Box,
+  Network,
+  AlertTriangle,
 };
 
 function getInitials(name: string): string {
@@ -54,10 +61,12 @@ const SHORTCUT_MAP: Record<string, string> = {
 };
 
 export function Sidebar(): JSX.Element {
-  const { collapsed, mobileOpen, toggle, setMobileOpen, pendingApprovals, setPendingApprovals } = useSidebar();
+  const { collapsed, mobileOpen, toggle, setMobileOpen, pendingApprovals, setPendingApprovals } =
+    useSidebar();
   const { user, logout, hasRole } = useAuth();
   const { data: deployments } = useDeployments();
-  const { data: k8sEvents = [] } = useK8sEvents(MOCK_CLUSTER.namespace);
+  const { data: clusterInfo } = useClusterInfo();
+  const { data: k8sEvents = [] } = useK8sEvents(clusterInfo?.namespace ?? 'default');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -109,10 +118,7 @@ export function Sidebar(): JSX.Element {
         <img
           src="/other-logo-kubernal.png"
           alt="Kubernal"
-          className={cn(
-            'shrink-0 transition-all duration-300',
-            collapsed ? 'h-8 w-8' : 'h-9 w-9',
-          )}
+          className={cn('shrink-0 transition-all duration-300', collapsed ? 'h-8 w-8' : 'h-9 w-9')}
         />
         {!collapsed && (
           <div className="flex flex-col">
@@ -136,92 +142,94 @@ export function Sidebar(): JSX.Element {
               </p>
             )}
             <div className="space-y-0.5">
-              {section.items.filter(item => !item.requiredRole || hasRole(item.requiredRole)).map((item) => {
-                const Icon = iconMap[item.icon];
-                const showBadge = item.badge === 'pending' && pendingApprovals > 0;
-                return (
-                  <Tooltip
-                    key={item.href}
-                    delayDuration={collapsed ? 100 : 1000000}
-                  >
-                    <TooltipTrigger asChild>
-                      <NavLink
-                        to={item.href}
-                        end={item.href === '/'}
-                        onClick={() => setMobileOpen(false)}
-                        className={({ isActive }) =>
-                          cn(
-                            'group relative flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium transition-all duration-200',
-                            collapsed && 'justify-center px-0',
-                            isActive
-                              ? 'text-accent'
-                              : 'text-sidebar-foreground hover:text-sidebar-accent-foreground',
-                          )
-                        }
-                      >
-                        {({ isActive }) => (
-                          <>
-                            {/* Active indicator */}
-                            <span
-                              className={cn(
-                                'absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-accent transition-all duration-200',
-                                isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-40',
-                              )}
-                            />
+              {section.items
+                .filter((item) => !item.requiredRole || hasRole(item.requiredRole))
+                .map((item) => {
+                  const Icon = iconMap[item.icon];
+                  const showBadge = item.badge === 'pending' && pendingApprovals > 0;
+                  return (
+                    <Tooltip key={item.href} delayDuration={collapsed ? 100 : 1000000}>
+                      <TooltipTrigger asChild>
+                        <NavLink
+                          to={item.href}
+                          end={item.href === '/'}
+                          onClick={() => setMobileOpen(false)}
+                          className={({ isActive }) =>
+                            cn(
+                              'group relative flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium transition-all duration-200',
+                              collapsed && 'justify-center px-0',
+                              isActive
+                                ? 'text-accent'
+                                : 'text-sidebar-foreground hover:text-sidebar-accent-foreground',
+                            )
+                          }
+                        >
+                          {({ isActive }) => (
+                            <>
+                              {/* Active indicator */}
+                              <span
+                                className={cn(
+                                  'absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-accent transition-all duration-200',
+                                  isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-40',
+                                )}
+                              />
 
-                            <div
-                              className={cn(
-                                'flex items-center justify-center rounded-lg p-1.5 transition-all duration-200',
-                                isActive
-                                  ? 'bg-accent/10 text-accent'
-                                  : 'text-sidebar-foreground group-hover:bg-sidebar-accent group-hover:text-sidebar-accent-foreground',
-                                collapsed && 'p-2',
-                              )}
-                            >
-                              <Icon className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden="true" />
-                            </div>
-
-                            {!collapsed && (
-                              <div className="flex flex-1 items-center justify-between min-w-0">
-                                <span>{item.label}</span>
-                                <div className="flex items-center gap-1.5">
-                                  {showBadge && (
-                                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-status-error px-1.5 text-[10px] font-bold text-white">
-                                      {pendingApprovals}
-                                    </span>
-                                  )}
-                                  {item.badge === 'warning' && warningEventCount > 0 && (
-                                    <span className="ml-auto bg-status-warning/10 text-status-warning text-xs font-medium px-2 py-0.5 rounded-full">
-                                      {warningEventCount}
-                                    </span>
-                                  )}
-                                  <span className="text-[10px] text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors">
-                                    {item.shortcut}
-                                  </span>
-                                </div>
+                              <div
+                                className={cn(
+                                  'flex items-center justify-center rounded-lg p-1.5 transition-all duration-200',
+                                  isActive
+                                    ? 'bg-accent/10 text-accent'
+                                    : 'text-sidebar-foreground group-hover:bg-sidebar-accent group-hover:text-sidebar-accent-foreground',
+                                  collapsed && 'p-2',
+                                )}
+                              >
+                                <Icon
+                                  className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-0.5"
+                                  aria-hidden="true"
+                                />
                               </div>
-                            )}
 
-                            {collapsed && showBadge && (
-                              <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-status-error ring-2 ring-sidebar-background" />
-                            )}
-                          </>
-                        )}
-                      </NavLink>
-                    </TooltipTrigger>
-                    {collapsed && (
-                      <TooltipContent side="right" className="flex items-center gap-2">
-                        <span>{item.label}</span>
-                        {showBadge && (
-                          <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-status-error px-1 text-[9px] font-bold text-white">
-                            {pendingApprovals}
-                          </span>
-                        )}
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                );
-              })}
+                              {!collapsed && (
+                                <div className="flex flex-1 items-center justify-between min-w-0">
+                                  <span>{item.label}</span>
+                                  <div className="flex items-center gap-1.5">
+                                    {showBadge && (
+                                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-status-error px-1.5 text-[10px] font-bold text-white">
+                                        {pendingApprovals}
+                                      </span>
+                                    )}
+                                    {item.badge === 'warning' && warningEventCount > 0 && (
+                                      <span className="ml-auto bg-status-warning/10 text-status-warning text-xs font-medium px-2 py-0.5 rounded-full">
+                                        {warningEventCount}
+                                      </span>
+                                    )}
+                                    <span className="text-[10px] text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors">
+                                      {item.shortcut}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {collapsed && showBadge && (
+                                <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-status-error ring-2 ring-sidebar-background" />
+                              )}
+                            </>
+                          )}
+                        </NavLink>
+                      </TooltipTrigger>
+                      {collapsed && (
+                        <TooltipContent side="right" className="flex items-center gap-2">
+                          <span>{item.label}</span>
+                          {showBadge && (
+                            <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-status-error px-1 text-[9px] font-bold text-white">
+                              {pendingApprovals}
+                            </span>
+                          )}
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  );
+                })}
             </div>
           </div>
         ))}
@@ -252,14 +260,15 @@ export function Sidebar(): JSX.Element {
               <p className="text-sm font-medium truncate text-sidebar-accent-foreground">
                 {user?.name ?? '...'}
               </p>
-              <p className="text-[11px] text-muted-foreground truncate">
-                {user?.role ?? '...'}
-              </p>
+              <p className="text-[11px] text-muted-foreground truncate">{user?.role ?? '...'}</p>
             </div>
             <button
               className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
               aria-label="Déconnexion"
-              onClick={async () => { await logout(); navigate('/login'); }}
+              onClick={async () => {
+                await logout();
+                navigate('/login');
+              }}
             >
               <LogOut className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -294,7 +303,10 @@ export function Sidebar(): JSX.Element {
             className="fixed inset-0 bg-overlay/60 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
-          <aside aria-label="Barre latérale de navigation" className="relative h-full w-64 shadow-xl">
+          <aside
+            aria-label="Barre latérale de navigation"
+            className="relative h-full w-64 shadow-xl"
+          >
             {sidebarContent}
           </aside>
         </div>

@@ -16,7 +16,11 @@ interface PaginationBarProps {
   onPageSizeChange: (size: number) => void;
 }
 
-export function PaginationBar({ pagination, onPageChange, onPageSizeChange }: PaginationBarProps): JSX.Element {
+export function PaginationBar({
+  pagination,
+  onPageChange,
+  onPageSizeChange,
+}: PaginationBarProps): JSX.Element {
   const { page, pageSize, totalPages, total, from, to } = pagination;
 
   return (

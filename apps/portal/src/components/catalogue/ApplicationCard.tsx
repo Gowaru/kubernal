@@ -46,11 +46,7 @@ export function ApplicationCard({ application, onDeploy }: ApplicationCardProps)
         </div>
       </CardContent>
       <CardFooter className="border-t border-border px-5 py-3">
-        <Button
-          size="sm"
-          className="w-full gap-2"
-          onClick={() => onDeploy(application)}
-        >
+        <Button size="sm" className="w-full gap-2" onClick={() => onDeploy(application)}>
           <Rocket className="h-4 w-4" />
           Déployer
         </Button>

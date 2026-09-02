@@ -14,7 +14,9 @@ interface DataTablePaginationProps<TData> {
   table: Table<TData>;
 }
 
-export function DataTablePagination<TData>({ table }: DataTablePaginationProps<TData>): JSX.Element {
+export function DataTablePagination<TData>({
+  table,
+}: DataTablePaginationProps<TData>): JSX.Element {
   const pageIndex = table.getState().pagination.pageIndex;
   const pageCount = table.getPageCount();
   const totalRows = table.getFilteredRowModel().rows.length;
@@ -29,10 +31,7 @@ export function DataTablePagination<TData>({ table }: DataTablePaginationProps<T
       </p>
 
       <div className="flex items-center gap-2">
-        <Select
-          value={String(pageSize)}
-          onValueChange={(v) => table.setPageSize(Number(v))}
-        >
+        <Select value={String(pageSize)} onValueChange={(v) => table.setPageSize(Number(v))}>
           <SelectTrigger className="h-7 w-[70px] text-xs">
             <SelectValue />
           </SelectTrigger>

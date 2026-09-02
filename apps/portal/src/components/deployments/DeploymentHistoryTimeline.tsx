@@ -116,9 +116,7 @@ export function DeploymentHistoryTimeline({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Aucun déploiement pour cette application.
-          </p>
+          <p className="text-sm text-muted-foreground">Aucun déploiement pour cette application.</p>
         </CardContent>
       </Card>
     );
@@ -188,7 +186,7 @@ export function DeploymentHistoryTimeline({
                         }`}
                       >
                         <span
-                          className={`absolute -left-[31px] top-3 flex h-4 w-4 items-center justify-center rounded-full border-2 ${
+                          className={`absolute -left-7.75 top-3 flex h-4 w-4 items-center justify-center rounded-full border-2 ${
                             isSelected
                               ? 'border-primary bg-primary text-primary-foreground'
                               : 'border-border bg-background'

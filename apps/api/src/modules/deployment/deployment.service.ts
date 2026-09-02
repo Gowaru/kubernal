@@ -51,12 +51,14 @@ export const deploymentService = {
     status?: string;
   }): Promise<Deployment> {
     const result = await deploymentRepository.create(data);
-    auditService.log({
-      action: 'CREATE',
-      resource: 'Deployment',
-      resourceId: result.id,
-      details: { ...data, status: result.status } as Record<string, unknown>,
-    }).catch(() => {});
+    auditService
+      .log({
+        action: 'CREATE',
+        resource: 'Deployment',
+        resourceId: result.id,
+        details: { ...data, status: result.status } as Record<string, unknown>,
+      })
+      .catch(() => {});
     return result;
   },
 
@@ -75,34 +77,44 @@ export const deploymentService = {
 
     const updated = await deploymentRepository.updateStatus(id, newStatus, completedAt);
 
-    auditService.log({
-      action: 'TRANSITION',
-      resource: 'Deployment',
-      resourceId: id,
-      details: { from: current, to: newStatus } as Record<string, unknown>,
-    }).catch(() => {});
+    auditService
+      .log({
+        action: 'TRANSITION',
+        resource: 'Deployment',
+        resourceId: id,
+        details: { from: current, to: newStatus } as Record<string, unknown>,
+      })
+      .catch(() => {});
 
     const full = await db.deployment.findUnique({
       where: { id },
-      include: { application: { select: { id: true, name: true } }, environment: { select: { id: true, name: true, type: true } } },
+      include: {
+        application: { select: { id: true, name: true } },
+        environment: { select: { id: true, name: true, type: true } },
+      },
     });
 
     if (full) {
-      const eventMap: Record<string, 'started' | 'success' | 'failure' | 'rolled_back' | 'cancelled'> = {
+      const eventMap: Record<
+        string,
+        'started' | 'success' | 'failure' | 'rolled_back' | 'cancelled'
+      > = {
         healthy: 'success',
         rolled_back: 'rolled_back',
         failed: 'failure',
         cancelled: 'cancelled',
       };
-      webhookOutboundService.dispatch(eventMap[newStatus] ?? 'started', {
-        applicationId: full.application.id,
-        applicationName: full.application.name,
-        version: full.version,
-        environmentName: full.environment.name,
-        environmentType: full.environment.type,
-        commitSha: full.commitSha,
-        deploymentId: full.id,
-      }).catch(() => {});
+      webhookOutboundService
+        .dispatch(eventMap[newStatus] ?? 'started', {
+          applicationId: full.application.id,
+          applicationName: full.application.name,
+          version: full.version,
+          environmentName: full.environment.name,
+          environmentType: full.environment.type,
+          commitSha: full.commitSha,
+          deploymentId: full.id,
+        })
+        .catch(() => {});
     }
 
     return updated;
@@ -115,12 +127,14 @@ export const deploymentService = {
       throw new InvalidTransitionError(deployment.status, 'deploying');
     }
     const result = await deploymentRepository.approve(id, approvedById);
-    auditService.log({
-      action: 'APPROVE',
-      resource: 'Deployment',
-      resourceId: id,
-      details: { approvedById } as Record<string, unknown>,
-    }).catch(() => {});
+    auditService
+      .log({
+        action: 'APPROVE',
+        resource: 'Deployment',
+        resourceId: id,
+        details: { approvedById } as Record<string, unknown>,
+      })
+      .catch(() => {});
     return result;
   },
 
@@ -146,12 +160,14 @@ export const deploymentService = {
       trigger: 'manual',
       status: target.requiresApproval ? 'pending' : 'building',
     });
-    auditService.log({
-      action: 'PROMOTE',
-      resource: 'Deployment',
-      resourceId: result.id,
-      details: { sourceId: id, targetEnvType } as Record<string, unknown>,
-    }).catch(() => {});
+    auditService
+      .log({
+        action: 'PROMOTE',
+        resource: 'Deployment',
+        resourceId: result.id,
+        details: { sourceId: id, targetEnvType } as Record<string, unknown>,
+      })
+      .catch(() => {});
     return result;
   },
 
@@ -174,10 +190,7 @@ export const deploymentService = {
       this.getById(toId) as Promise<DeploymentWithRelations>,
     ]);
     if (from.applicationId !== to.applicationId) {
-      throw new InvalidTransitionError(
-        'cross-application compare',
-        'same application only',
-      );
+      throw new InvalidTransitionError('cross-application compare', 'same application only');
     }
     return summarizeDiff(
       {
@@ -192,7 +205,9 @@ export const deploymentService = {
         createdAt: from.createdAt,
         environmentId: from.environmentId,
         environmentType: from.environment.type,
-        violations: Array.isArray(from.policyViolations) ? from.policyViolations as unknown[] : undefined,
+        violations: Array.isArray(from.policyViolations)
+          ? (from.policyViolations as unknown[])
+          : undefined,
       },
       {
         id: to.id,
@@ -206,7 +221,9 @@ export const deploymentService = {
         createdAt: to.createdAt,
         environmentId: to.environmentId,
         environmentType: to.environment.type,
-        violations: Array.isArray(to.policyViolations) ? to.policyViolations as unknown[] : undefined,
+        violations: Array.isArray(to.policyViolations)
+          ? (to.policyViolations as unknown[])
+          : undefined,
       },
     );
   },

@@ -1,5 +1,13 @@
 import { existsSync } from 'node:fs';
-import { KubeConfig, CoreV1Api, AppsV1Api, RbacAuthorizationV1Api, CustomObjectsApi, Exec, Log } from '@kubernetes/client-node';
+import {
+  KubeConfig,
+  CoreV1Api,
+  AppsV1Api,
+  RbacAuthorizationV1Api,
+  CustomObjectsApi,
+  Exec,
+  Log,
+} from '@kubernetes/client-node';
 import { logger } from './logger.js';
 
 const kc = new KubeConfig();
@@ -40,7 +48,7 @@ export const TEAM_ENVIRONMENTS: TeamEnvironment[] = [
 ];
 
 export function getTeamNamespaceNames(prefix: string): string[] {
-  return TEAM_ENVIRONMENTS.map(e => `${prefix}-${e.type}`);
+  return TEAM_ENVIRONMENTS.map((e) => `${prefix}-${e.type}`);
 }
 
 function parseCpu(cpu: string): number {
@@ -71,7 +79,7 @@ export function splitQuota(cpu: string, memory: string): ResourceSplit[] {
   const cpuMc = parseCpu(cpu);
   const memMi = parseMemory(memory);
 
-  return TEAM_ENVIRONMENTS.map(e => ({
+  return TEAM_ENVIRONMENTS.map((e) => ({
     cpu: formatCpu(Math.round(cpuMc * e.cpuFactor)),
     memory: formatMemory(Math.round(memMi * e.memoryFactor)),
   }));
@@ -86,7 +94,10 @@ export function getNamespaceLabels(teamName: string, teamId: string): Record<str
   };
 }
 
-export async function ensureNamespace(namespace: string, labels: Record<string, string>): Promise<void> {
+export async function ensureNamespace(
+  namespace: string,
+  labels: Record<string, string>,
+): Promise<void> {
   try {
     await coreApi.readNamespace({ name: namespace });
     logger.info({ namespace }, 'Namespace already exists');
@@ -121,7 +132,7 @@ export async function ensureResourceQuota(
         'requests.memory': memory,
         'limits.cpu': cpu,
         'limits.memory': memory,
-        'persistentvolumeclaims': '10',
+        persistentvolumeclaims: '10',
         'count/deployments.apps': '50',
         'count/services': '50',
       },
@@ -131,7 +142,8 @@ export async function ensureResourceQuota(
   try {
     await coreApi.readNamespacedResourceQuota({ namespace, name });
     await coreApi.replaceNamespacedResourceQuota({
-      namespace, name,
+      namespace,
+      name,
       body: manifest,
     });
     logger.info({ namespace, quota: name }, 'ResourceQuota updated');

@@ -9,7 +9,11 @@ function validateString(value: unknown, field: string): string {
   return value;
 }
 
-function validateOptionalStringArray(value: unknown, field: string, defaultVal: string[]): string[] {
+function validateOptionalStringArray(
+  value: unknown,
+  field: string,
+  defaultVal: string[],
+): string[] {
   if (value === undefined) return defaultVal;
   if (!Array.isArray(value) || !value.every((v) => typeof v === 'string')) {
     throw new Error(`scan:image: params.${field} must be an array of strings`);
@@ -31,7 +35,10 @@ function parseScanParams(raw: Record<string, unknown>): {
   exitCode: boolean;
 } {
   const image = validateString(raw['image'], 'image');
-  const severity = validateOptionalStringArray(raw['severity'], 'severity', ['CRITICAL', 'HIGH']) as Severity[];
+  const severity = validateOptionalStringArray(raw['severity'], 'severity', [
+    'CRITICAL',
+    'HIGH',
+  ]) as Severity[];
   const exitCode = validateOptionalBoolean(raw['exitCode'], 'exitCode', true);
 
   return { image, severity, exitCode };
@@ -65,7 +72,9 @@ async function scanImageActionExecute(context: ActionContext): Promise<ActionRes
     }));
 
     await db.deploymentVulnerability.createMany({ data: vulnRecords });
-    context.logger.info(`Stored ${vulnRecords.length} vulnerabilities for deployment ${context.deploymentId}`);
+    context.logger.info(
+      `Stored ${vulnRecords.length} vulnerabilities for deployment ${context.deploymentId}`,
+    );
   }
 
   const output = {
@@ -80,7 +89,9 @@ async function scanImageActionExecute(context: ActionContext): Promise<ActionRes
     threshold,
   };
 
-  context.logger.info(`Scan complete: ${total} vulns (CRITICAL: ${bySeverity.CRITICAL}, HIGH: ${bySeverity.HIGH}), passed: ${passed}`);
+  context.logger.info(
+    `Scan complete: ${total} vulns (CRITICAL: ${bySeverity.CRITICAL}, HIGH: ${bySeverity.HIGH}), passed: ${passed}`,
+  );
 
   if (exitCode && !passed) {
     const msg = `scan:image: found ${total} vulnerabilities (CRITICAL: ${bySeverity.CRITICAL}, HIGH: ${bySeverity.HIGH}) exceeding threshold`;

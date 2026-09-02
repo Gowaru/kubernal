@@ -30,7 +30,7 @@ export default function LoginPage(): JSX.Element {
 
   useEffect(() => {
     if (oidcError) {
-      toast.error('Erreur d\'authentification', {
+      toast.error("Erreur d'authentification", {
         description: decodeURIComponent(oidcError),
         duration: 5000,
       });
@@ -77,18 +77,24 @@ export default function LoginPage(): JSX.Element {
       <div className="relative hidden w-1/2 overflow-hidden lg:flex lg:flex-col lg:items-center lg:justify-center">
         {/* Gradient mesh background */}
         <div className="absolute inset-0 bg-panel-dark">
-          <div className="absolute inset-0 opacity-30" style={{
-            backgroundImage: `
+          <div
+            className="absolute inset-0 opacity-30"
+            style={{
+              backgroundImage: `
               radial-gradient(ellipse 80% 60% at 20% 50%, color-mix(in oklch, var(--accent) 40%, transparent), transparent),
               radial-gradient(ellipse 60% 50% at 80% 30%, color-mix(in oklch, var(--accent) 20%, transparent), transparent),
               radial-gradient(ellipse 50% 40% at 50% 80%, color-mix(in oklch, var(--status-info) 15%, transparent), transparent)
             `,
-          }} />
+            }}
+          />
           {/* Subtle grid pattern */}
-          <div className="absolute inset-0 opacity-[0.03]" style={{
-            backgroundImage: `linear-gradient(var(--panel-foreground) 1px, transparent 1px), linear-gradient(90deg, var(--panel-foreground) 1px, transparent 1px)`,
-            backgroundSize: '60px 60px',
-          }} />
+          <div
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage: `linear-gradient(var(--panel-foreground) 1px, transparent 1px), linear-gradient(90deg, var(--panel-foreground) 1px, transparent 1px)`,
+              backgroundSize: '60px 60px',
+            }}
+          />
         </div>
 
         {/* Content */}
@@ -99,11 +105,10 @@ export default function LoginPage(): JSX.Element {
             className="mb-8 h-20 w-20 rounded-2xl border border-panel-foreground/10 bg-panel-foreground/5 p-3 backdrop-blur-sm object-contain"
           />
 
-          <h1 className="text-4xl font-bold tracking-tight text-panel-foreground">
-            Kubernal
-          </h1>
+          <h1 className="text-4xl font-bold tracking-tight text-panel-foreground">Kubernal</h1>
           <p className="mt-3 max-w-sm text-base text-panel-foreground/50 leading-relaxed">
-            Infrastructure Development Platform — Déployez, pilotez et observez vos applications Kubernetes.
+            Infrastructure Development Platform — Déployez, pilotez et observez vos applications
+            Kubernetes.
           </p>
 
           <div className="mt-12 grid grid-cols-3 gap-8 text-sm text-panel-foreground/40">
@@ -137,21 +142,15 @@ export default function LoginPage(): JSX.Element {
 
           {/* Header */}
           <div className="space-y-2">
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-              Connexion
-            </h2>
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground">Connexion</h2>
             <p className="text-sm text-muted-foreground">
               Entrez vos identifiants pour accéder à votre espace.
             </p>
           </div>
 
           {/* GitHub SSO */}
-          <Button
-            variant="outline"
-            className="h-11 w-full text-sm font-medium"
-            asChild
-          >
-              <a href="/api/auth/oidc/github">
+          <Button variant="outline" className="h-11 w-full text-sm font-medium" asChild>
+            <a href="/api/auth/oidc/github">
               <Github className="h-4 w-4" />
               Continuer avec GitHub
             </a>
@@ -163,9 +162,7 @@ export default function LoginPage(): JSX.Element {
               <Separator className="w-full" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-3 text-muted-foreground tracking-widest">
-                ou
-              </span>
+              <span className="bg-background px-3 text-muted-foreground tracking-widest">ou</span>
             </div>
           </div>
 
@@ -179,7 +176,10 @@ export default function LoginPage(): JSX.Element {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); setEmailError(''); }}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setEmailError('');
+                }}
                 placeholder="vous@exemple.com"
                 required
                 autoComplete="email"
@@ -189,36 +189,38 @@ export default function LoginPage(): JSX.Element {
                 className="h-11 bg-card border-border/60 transition-colors focus:border-accent focus:ring-accent/20"
               />
               {emailError && (
-                <p id="email-error" className="text-xs text-destructive mt-1">{emailError}</p>
+                <p id="email-error" className="text-xs text-destructive mt-1">
+                  {emailError}
+                </p>
               )}
             </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-medium text-foreground">
-                    Mot de passe
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      required
-                      autoComplete="current-password"
-                      disabled={isLoading}
-                      className="h-11 bg-card border-border/60 pr-10 transition-colors focus:border-accent focus:ring-accent/20"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium text-foreground">
+                Mot de passe
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                  disabled={isLoading}
+                  className="h-11 bg-card border-border/60 pr-10 transition-colors focus:border-accent focus:ring-accent/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -228,7 +230,10 @@ export default function LoginPage(): JSX.Element {
                   onCheckedChange={(checked) => setRememberMe(!!checked)}
                   disabled={isLoading}
                 />
-                <Label htmlFor="remember-me" className="cursor-pointer font-normal text-sm text-muted-foreground">
+                <Label
+                  htmlFor="remember-me"
+                  className="cursor-pointer font-normal text-sm text-muted-foreground"
+                >
                   Se souvenir de moi
                 </Label>
               </div>

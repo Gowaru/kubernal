@@ -46,7 +46,10 @@ export function QuickActions(): JSX.Element {
           <Button
             variant="outline"
             className="w-full justify-start gap-3 h-11"
-            onClick={() => { queryClient.invalidateQueries(); toast.success('Données rafraîchies'); }}
+            onClick={() => {
+              queryClient.invalidateQueries();
+              toast.success('Données rafraîchies');
+            }}
           >
             <RefreshCw className="h-4 w-4 text-status-warning" />
             Rafraîchir
@@ -54,10 +57,7 @@ export function QuickActions(): JSX.Element {
         </CardContent>
       </Card>
 
-      <DeploymentModal
-        open={showDeployModal}
-        onOpenChange={setShowDeployModal}
-      />
+      <DeploymentModal open={showDeployModal} onOpenChange={setShowDeployModal} />
     </>
   );
 }

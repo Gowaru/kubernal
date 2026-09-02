@@ -50,7 +50,11 @@ export function usePodLogs(
       wsRef.current.onmessage = null;
       wsRef.current.onclose = null;
       wsRef.current.onerror = null;
-      try { wsRef.current.close(); } catch { /* ignore */ }
+      try {
+        wsRef.current.close();
+      } catch {
+        /* ignore */
+      }
       wsRef.current = null;
     }
   }, []);
@@ -148,7 +152,18 @@ export function usePodLogs(
         }, 1000);
       }
     };
-  }, [isActive, namespace, podName, container, tailLines, cleanupWs, cleanupPoll, cleanupReconnect, appendLines, fallbackToPoll]);
+  }, [
+    isActive,
+    namespace,
+    podName,
+    container,
+    tailLines,
+    cleanupWs,
+    cleanupPoll,
+    cleanupReconnect,
+    appendLines,
+    fallbackToPoll,
+  ]);
 
   const startPoll = useCallback(() => {
     if (!isActive) return;
@@ -179,7 +194,16 @@ export function usePodLogs(
       if (!followRef.current) return;
       void fetchLogs();
     }, 3000);
-  }, [isActive, namespace, podName, tailLines, container, cleanupWs, cleanupPoll, cleanupReconnect]);
+  }, [
+    isActive,
+    namespace,
+    podName,
+    tailLines,
+    container,
+    cleanupWs,
+    cleanupPoll,
+    cleanupReconnect,
+  ]);
 
   useEffect(() => {
     if (!isActive) {

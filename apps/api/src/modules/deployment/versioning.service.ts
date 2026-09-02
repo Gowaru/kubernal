@@ -27,7 +27,10 @@ function bumpStrictSemver(current: string, bump: 'major' | 'minor' | 'patch'): s
 
 function shortSha(sha: string | undefined): string | null {
   if (!sha) return null;
-  return sha.replace(/[^0-9a-f]/gi, '').slice(0, 7).toLowerCase();
+  return sha
+    .replace(/[^0-9a-f]/gi, '')
+    .slice(0, 7)
+    .toLowerCase();
 }
 
 function prereleaseForBranch(branch: string | undefined): string | null {

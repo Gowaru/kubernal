@@ -44,16 +44,16 @@ const formSchema = z.object({
     .string()
     .min(1, 'Le nom est requis')
     .max(52, 'Maximum 52 caractères')
-    .regex(APP_NAME_REGEX, 'Lettres, chiffres et tirets uniquement (pas d\u0027espaces ni caractères spéciaux)'),
+    .regex(
+      APP_NAME_REGEX,
+      'Lettres, chiffres et tirets uniquement (pas d\u0027espaces ni caractères spéciaux)',
+    ),
   description: z.string().optional(),
   repositoryUrl: z
     .string()
     .trim()
     .optional()
-    .refine(
-      (v) => !v || REPO_URL_REGEX.test(v),
-      'URL invalide (GitHub, GitLab ou Bitbucket)',
-    ),
+    .refine((v) => !v || REPO_URL_REGEX.test(v), 'URL invalide (GitHub, GitLab ou Bitbucket)'),
   teamId: z.string().min(1, "L'équipe est requise"),
   templateId: z.string().min(1, 'Le template est requis'),
 });
@@ -87,7 +87,10 @@ function hasParams(template: { parameters?: unknown } | undefined): boolean {
   return Object.keys(getParamDefs(template)).length > 0;
 }
 
-export function CreateApplicationModal({ open, onOpenChange }: CreateApplicationModalProps): JSX.Element {
+export function CreateApplicationModal({
+  open,
+  onOpenChange,
+}: CreateApplicationModalProps): JSX.Element {
   const { user: currentUser } = useAuth();
   const { data: teams } = useTeams();
   const { data: templates } = useTemplates();
@@ -162,7 +165,10 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
     const paramDefs = getParamDefs(selectedTemplate);
     const newErrors: Record<string, string> = {};
     for (const [key, def] of Object.entries(paramDefs)) {
-      if (def.required && (formConfig[key] === undefined || formConfig[key] === '' || formConfig[key] === null)) {
+      if (
+        def.required &&
+        (formConfig[key] === undefined || formConfig[key] === '' || formConfig[key] === null)
+      ) {
         newErrors[key] = `Le champ "${def.label || key}" est requis`;
       }
     }
@@ -216,10 +222,11 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
   };
 
   const selectedTeam = teams?.find((t) => t.id === form.teamId);
-  const anyTemplateHasParams = templates?.some((t) => {
-    if (!t.parameters || typeof t.parameters !== 'object') return false;
-    return Object.keys(t.parameters as TemplateParameters).length > 0;
-  }) ?? false;
+  const anyTemplateHasParams =
+    templates?.some((t) => {
+      if (!t.parameters || typeof t.parameters !== 'object') return false;
+      return Object.keys(t.parameters as TemplateParameters).length > 0;
+    }) ?? false;
   const totalSteps = anyTemplateHasParams ? 3 : 2;
 
   const paramDefs = getParamDefs(selectedTemplate);
@@ -247,9 +254,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                   required
                   maxLength={52}
                 />
-                {errors.name && (
-                  <p className="text-xs text-status-error">{errors.name}</p>
-                )}
+                {errors.name && <p className="text-xs text-status-error">{errors.name}</p>}
               </div>
 
               <div className="space-y-2">
@@ -294,7 +299,8 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                   <p className="text-xs text-status-error">{errors.repositoryUrl}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  Lien direct vers les commits et les diffs. Si vide, le dépôt du template sera utilisé.
+                  Lien direct vers les commits et les diffs. Si vide, le dépôt du template sera
+                  utilisé.
                 </p>
               </div>
             </div>
@@ -315,9 +321,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
           <>
             <DialogHeader>
               <DialogTitle>Nouvelle application</DialogTitle>
-              <DialogDescription>
-                Étape 2 sur {totalSteps} — Équipe et template
-              </DialogDescription>
+              <DialogDescription>Étape 2 sur {totalSteps} — Équipe et template</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-2">
@@ -335,9 +339,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.teamId && (
-                  <p className="text-xs text-status-error">{errors.teamId}</p>
-                )}
+                {errors.teamId && <p className="text-xs text-status-error">{errors.teamId}</p>}
               </div>
 
               <div className="space-y-2">
@@ -362,15 +364,32 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
               <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-2">
                 <p className="text-sm font-medium">Récapitulatif</p>
                 <div className="text-sm text-muted-foreground space-y-1">
-                  <p>Nom : <span className="text-foreground">{form.name}</span></p>
+                  <p>
+                    Nom : <span className="text-foreground">{form.name}</span>
+                  </p>
                   {form.description && (
-                    <p>Description : <span className="text-foreground">{form.description}</span></p>
+                    <p>
+                      Description : <span className="text-foreground">{form.description}</span>
+                    </p>
                   )}
                   {form.repositoryUrl && (
-                    <p>Dépôt : <span className="text-foreground font-mono text-xs">{form.repositoryUrl}</span></p>
+                    <p>
+                      Dépôt :{' '}
+                      <span className="text-foreground font-mono text-xs">
+                        {form.repositoryUrl}
+                      </span>
+                    </p>
                   )}
-                  <p>Équipe : <span className="text-foreground">{selectedTeam?.name ?? form.teamId}</span></p>
-                  <p>Template : <span className="text-foreground">{selectedTemplate?.name ?? form.templateId}</span></p>
+                  <p>
+                    Équipe :{' '}
+                    <span className="text-foreground">{selectedTeam?.name ?? form.teamId}</span>
+                  </p>
+                  <p>
+                    Template :{' '}
+                    <span className="text-foreground">
+                      {selectedTemplate?.name ?? form.templateId}
+                    </span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -387,7 +406,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </>
                 ) : (
-                  'Créer l\'application'
+                  "Créer l'application"
                 )}
               </Button>
             </DialogFooter>
@@ -398,9 +417,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
           <>
             <DialogHeader>
               <DialogTitle>Nouvelle application</DialogTitle>
-              <DialogDescription>
-                Étape 3 sur 3 — Configuration du template
-              </DialogDescription>
+              <DialogDescription>Étape 3 sur 3 — Configuration du template</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-2">
@@ -436,7 +453,10 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                         onChange={(e) => setConfigField(key, e.target.checked)}
                         className="h-4 w-4 rounded border-border bg-muted text-primary focus:ring-primary"
                       />
-                      <Label htmlFor={`param-${key}`} className="text-sm text-muted-foreground cursor-pointer">
+                      <Label
+                        htmlFor={`param-${key}`}
+                        className="text-sm text-muted-foreground cursor-pointer"
+                      >
                         Activer
                       </Label>
                     </div>
@@ -449,15 +469,17 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                       onChange={(e) =>
                         setConfigField(
                           key,
-                          def.type === 'number' ? (e.target.value ? Number(e.target.value) : '') : e.target.value,
+                          def.type === 'number'
+                            ? e.target.value
+                              ? Number(e.target.value)
+                              : ''
+                            : e.target.value,
                         )
                       }
                       disabled={def.disabled}
                     />
                   )}
-                  {errors[key] && (
-                    <p className="text-xs text-status-error">{errors[key]}</p>
-                  )}
+                  {errors[key] && <p className="text-xs text-status-error">{errors[key]}</p>}
                 </div>
               ))}
             </div>
@@ -467,9 +489,7 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
                 <ChevronLeft className="mr-2 h-4 w-4" />
                 Retour
               </Button>
-              <Button onClick={handleNext}>
-                Créer l'application
-              </Button>
+              <Button onClick={handleNext}>Créer l'application</Button>
             </DialogFooter>
           </>
         )}
@@ -496,26 +516,19 @@ export function CreateApplicationModal({ open, onOpenChange }: CreateApplication
           <>
             <DialogHeader>
               <DialogTitle>Application créée !</DialogTitle>
-              <DialogDescription>
-                L'application a été créée avec succès.
-              </DialogDescription>
+              <DialogDescription>L'application a été créée avec succès.</DialogDescription>
             </DialogHeader>
 
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
               <CheckCircle2 className="h-16 w-16 text-status-success" />
               <p className="text-sm text-muted-foreground text-center max-w-xs">
-                L'application{' '}
-                <strong className="text-foreground">{form.name}</strong>{' '}
-                a été créée dans l'équipe{' '}
-                <strong className="text-foreground">{selectedTeam?.name}</strong>
-                .
+                L'application <strong className="text-foreground">{form.name}</strong> a été créée
+                dans l'équipe <strong className="text-foreground">{selectedTeam?.name}</strong>.
               </p>
             </div>
 
             <DialogFooter>
-              <Button onClick={handleSuccessDone}>
-                Terminé
-              </Button>
+              <Button onClick={handleSuccessDone}>Terminé</Button>
             </DialogFooter>
           </>
         )}

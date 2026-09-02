@@ -38,13 +38,19 @@ function buildDeploymentManifest(dep: DeploymentWithRelations): V1Deployment {
       replicas: 2,
       selector: { matchLabels: { app: dep.application.name, env: dep.environment.type } },
       template: {
-        metadata: { labels: { app: dep.application.name, env: dep.environment.type, version: dep.version } },
+        metadata: {
+          labels: { app: dep.application.name, env: dep.environment.type, version: dep.version },
+        },
         spec: {
           containers: [
             {
               name: dep.application.name,
               image: PLACEHOLDER_IMAGE,
-              command: ['sh', '-c', `while true; do echo "[idp] ${dep.application.name} ${dep.version} on ${dep.environment.type}"; sleep 10; done`],
+              command: [
+                'sh',
+                '-c',
+                `while true; do echo "[idp] ${dep.application.name} ${dep.version} on ${dep.environment.type}"; sleep 10; done`,
+              ],
               resources: {
                 requests: { cpu: '50m', memory: '64Mi' },
                 limits: { cpu: '200m', memory: '256Mi' },
@@ -65,7 +71,11 @@ function buildServiceManifest(dep: DeploymentWithRelations): V1Service {
     metadata: {
       name,
       namespace: dep.environment.namespace,
-      labels: { app: dep.application.name, env: dep.environment.type, 'managed-by': 'kubernal-idp' },
+      labels: {
+        app: dep.application.name,
+        env: dep.environment.type,
+        'managed-by': 'kubernal-idp',
+      },
     },
     spec: {
       type: 'ClusterIP',
@@ -130,7 +140,10 @@ export const deploymentExecutor = {
 
     let k8sDep;
     try {
-      k8sDep = await appsApi.readNamespacedDeployment({ name, namespace: dep.environment.namespace });
+      k8sDep = await appsApi.readNamespacedDeployment({
+        name,
+        namespace: dep.environment.namespace,
+      });
     } catch (err: unknown) {
       if (await isK8sNotFound(err)) {
         await this.ensureK8sResources(dep);

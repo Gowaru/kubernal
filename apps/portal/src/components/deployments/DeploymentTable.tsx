@@ -81,107 +81,103 @@ export function DeploymentTable(): JSX.Element {
 
   const columnHelper = createColumnHelper<EnrichedDeployment>();
 
-  const columns = useMemo(() => [
-    columnHelper.accessor('applicationName', {
-      header: 'Application',
-      cell: (info) => (
-        <span className="font-medium">
-          {info.getValue()}
-        </span>
-      ),
-    }),
-    columnHelper.accessor('version', {
-      header: 'Version',
-      cell: (info) => {
-        const v = info.getValue() as string;
-        return (
-          <span className="flex items-center gap-1.5 text-sm text-muted-foreground font-mono">
-            <GitBranch className="h-3.5 w-3.5" />
-            {v ?? '-'}
-          </span>
-        );
-      },
-    }),
-    columnHelper.accessor('environmentType', {
-      header: 'Environnement',
-      cell: (info) => {
-        const env = info.getValue() as string;
-        const label = environmentOptions.find((o) => o.value === env)?.label ?? env;
-        return (
-          <span className="text-sm">{label || '-'}</span>
-        );
-      },
-    }),
-    columnHelper.accessor('status', {
-      header: 'Statut',
-      cell: (info) => <StatusBadge status={info.getValue() as string} />,
-    }),
-    columnHelper.accessor('trigger', {
-      header: 'Déclencheur',
-      cell: (info) => {
-        const trigger = info.getValue() as string;
-        return (
-          <span className="text-sm text-muted-foreground">
-            {triggerLabels[trigger] ?? trigger}
-          </span>
-        );
-      },
-    }),
-    columnHelper.accessor('startedAt', {
-      header: 'Durée',
-      cell: (info) => {
-        const row = info.row.original;
-        return (
-          <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Timer className="h-3.5 w-3.5" />
-            {formatDuration(row.startedAt, row.completedAt)}
-          </span>
-        );
-      },
-    }),
-    columnHelper.accessor('createdAt', {
-      header: 'Créé le',
-      cell: (info) => (
-        <span className="text-sm text-muted-foreground">
-          {formatDate(info.getValue())}
-        </span>
-      ),
-    }),
-    columnHelper.display({
-      id: 'actions',
-      header: 'Actions',
-      cell: (info) => {
-        const row = info.row.original;
-        const status = (row.status as string).toUpperCase();
-        const isPending = status === 'PENDING';
-        return (
-          <div className="flex items-center gap-2">
-            {isPending && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => approveDeployment.mutate({ id: row.id, approvedById: users?.[0]?.id ?? '' }, {
-                  onSuccess: () => toast.success('Déploiement approuvé'),
-                  onError: () => toast.error("Erreur lors de l'approbation"),
-                })}
-                disabled={approveDeployment.isPending || !users?.length}
-                title={!users?.length ? 'Aucun utilisateur' : undefined}
-              >
-                Approuver
+  const columns = useMemo(
+    () => [
+      columnHelper.accessor('applicationName', {
+        header: 'Application',
+        cell: (info) => <span className="font-medium">{info.getValue()}</span>,
+      }),
+      columnHelper.accessor('version', {
+        header: 'Version',
+        cell: (info) => {
+          const v = info.getValue() as string;
+          return (
+            <span className="flex items-center gap-1.5 text-sm text-muted-foreground font-mono">
+              <GitBranch className="h-3.5 w-3.5" />
+              {v ?? '-'}
+            </span>
+          );
+        },
+      }),
+      columnHelper.accessor('environmentType', {
+        header: 'Environnement',
+        cell: (info) => {
+          const env = info.getValue() as string;
+          const label = environmentOptions.find((o) => o.value === env)?.label ?? env;
+          return <span className="text-sm">{label || '-'}</span>;
+        },
+      }),
+      columnHelper.accessor('status', {
+        header: 'Statut',
+        cell: (info) => <StatusBadge status={info.getValue() as string} />,
+      }),
+      columnHelper.accessor('trigger', {
+        header: 'Déclencheur',
+        cell: (info) => {
+          const trigger = info.getValue() as string;
+          return (
+            <span className="text-sm text-muted-foreground">
+              {triggerLabels[trigger] ?? trigger}
+            </span>
+          );
+        },
+      }),
+      columnHelper.accessor('startedAt', {
+        header: 'Durée',
+        cell: (info) => {
+          const row = info.row.original;
+          return (
+            <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Timer className="h-3.5 w-3.5" />
+              {formatDuration(row.startedAt, row.completedAt)}
+            </span>
+          );
+        },
+      }),
+      columnHelper.accessor('createdAt', {
+        header: 'Créé le',
+        cell: (info) => (
+          <span className="text-sm text-muted-foreground">{formatDate(info.getValue())}</span>
+        ),
+      }),
+      columnHelper.display({
+        id: 'actions',
+        header: 'Actions',
+        cell: (info) => {
+          const row = info.row.original;
+          const status = (row.status as string).toUpperCase();
+          const isPending = status === 'PENDING';
+          return (
+            <div className="flex items-center gap-2">
+              {isPending && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    approveDeployment.mutate(
+                      { id: row.id, approvedById: users?.[0]?.id ?? '' },
+                      {
+                        onSuccess: () => toast.success('Déploiement approuvé'),
+                        onError: () => toast.error("Erreur lors de l'approbation"),
+                      },
+                    )
+                  }
+                  disabled={approveDeployment.isPending || !users?.length}
+                  title={!users?.length ? 'Aucun utilisateur' : undefined}
+                >
+                  Approuver
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={() => navigate(`/deployments/${row.id}`)}>
+                <ExternalLink className="h-4 w-4" />
               </Button>
-            )}
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => navigate(`/deployments/${row.id}`)}
-            >
-              <ExternalLink className="h-4 w-4" />
-            </Button>
-          </div>
-        );
-      },
-    }),
-  ], [navigate, approveDeployment, users]);
+            </div>
+          );
+        },
+      }),
+    ],
+    [navigate, approveDeployment, users],
+  );
 
   const table = useReactTable({
     data: enrichedDeployments,
@@ -233,7 +229,9 @@ export function DeploymentTable(): JSX.Element {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
-                  const responsive = ['trigger', 'startedAt', 'createdAt'].includes(header.column.id)
+                  const responsive = ['trigger', 'startedAt', 'createdAt'].includes(
+                    header.column.id,
+                  )
                     ? 'hidden sm:table-cell'
                     : '';
                   return (
@@ -250,7 +248,9 @@ export function DeploymentTable(): JSX.Element {
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
                   {columns.map((_, j) => (
-                    <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                    <TableCell key={j}>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
                   ))}
                 </TableRow>
               ))
@@ -265,7 +265,9 @@ export function DeploymentTable(): JSX.Element {
                   }}
                 >
                   {row.getVisibleCells().map((cell) => {
-                    const responsive = ['trigger', 'startedAt', 'createdAt'].includes(cell.column.id)
+                    const responsive = ['trigger', 'startedAt', 'createdAt'].includes(
+                      cell.column.id,
+                    )
                       ? 'hidden sm:table-cell'
                       : '';
                     return (
@@ -278,8 +280,13 @@ export function DeploymentTable(): JSX.Element {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                  {envFilter ? 'Aucun déploiement pour cet environnement' : 'Aucun déploiement trouvé'}
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center text-muted-foreground"
+                >
+                  {envFilter
+                    ? 'Aucun déploiement pour cet environnement'
+                    : 'Aucun déploiement trouvé'}
                 </TableCell>
               </TableRow>
             )}

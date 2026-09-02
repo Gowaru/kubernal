@@ -1,4 +1,10 @@
-import { useQuery, useMutation, useQueryClient, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type UseQueryResult,
+  type UseMutationResult,
+} from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { GoldenPathTemplate } from '@kubernal/shared-types';
 
@@ -32,7 +38,11 @@ type CreateTemplateInput = {
   version?: string;
 };
 
-export function useCreateTemplate(): UseMutationResult<GoldenPathTemplate, Error, CreateTemplateInput> {
+export function useCreateTemplate(): UseMutationResult<
+  GoldenPathTemplate,
+  Error,
+  CreateTemplateInput
+> {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (tmpl: CreateTemplateInput) => {

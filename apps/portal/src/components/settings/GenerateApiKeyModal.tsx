@@ -19,20 +19,13 @@ import {
 } from '@/components/ui/select';
 import { Key, Copy, Check, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
-
-export interface ApiKey {
-  id: string;
-  name: string;
-  key: string;
-  created: string;
-  lastUsed: string;
-  expires: string | null;
-}
+import type { ApiKeyCreated } from '@kubernal/shared-types';
+import { useCreateApiKey } from '@/hooks/useApiKeys';
 
 interface GenerateApiKeyModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onKeyGenerated: (key: ApiKey) => void;
+  onKeyGenerated: (key: ApiKeyCreated) => void;
 }
 
 const expiryOptions = [
@@ -42,29 +35,6 @@ const expiryOptions = [
   { value: 'never', label: 'Jamais' },
 ];
 
-function generateRandomHex(length: number): string {
-  return Array.from({ length }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-}
-
-function generateApiKey(name: string, expiry: string): ApiKey {
-  const fullKey = `kpl_${generateRandomHex(32)}`;
-  const created = new Date().toISOString().split('T')[0];
-  const expires =
-    expiry === 'never'
-      ? null
-      : new Date(Date.now() + parseInt(expiry, 10) * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split('T')[0];
-  return {
-    id: crypto.randomUUID(),
-    name: name.trim(),
-    key: fullKey,
-    created,
-    lastUsed: '—',
-    expires,
-  };
-}
-
 function formatExpires(expiry: string): string {
   if (expiry === 'never') return 'Jamais';
   return new Date(Date.now() + parseInt(expiry, 10) * 24 * 60 * 60 * 1000).toLocaleDateString(
@@ -72,13 +42,18 @@ function formatExpires(expiry: string): string {
   );
 }
 
-export function GenerateApiKeyModal({ open, onOpenChange, onKeyGenerated }: GenerateApiKeyModalProps): JSX.Element {
+export function GenerateApiKeyModal({
+  open,
+  onOpenChange,
+  onKeyGenerated,
+}: GenerateApiKeyModalProps): JSX.Element {
   const [step, setStep] = useState<'form' | 'generated'>('form');
   const [name, setName] = useState('');
   const [expiry, setExpiry] = useState('90');
   const [generatedKey, setGeneratedKey] = useState<string>('');
   const [generatedName, setGeneratedName] = useState<string>('');
   const [copied, setCopied] = useState(false);
+  const createMutation = useCreateApiKey();
 
   const reset = useCallback(() => {
     setStep('form');
@@ -99,11 +74,23 @@ export function GenerateApiKeyModal({ open, onOpenChange, onKeyGenerated }: Gene
       toast.error('Le nom de la clé est requis');
       return;
     }
-    const apiKey = generateApiKey(name, expiry);
-    setGeneratedKey(apiKey.key);
-    setGeneratedName(apiKey.name);
-    setStep('generated');
-    onKeyGenerated(apiKey);
+    const expiresInDays = expiry === 'never' ? undefined : parseInt(expiry, 10);
+    createMutation.mutate(
+      { name: name.trim(), expiresInDays },
+      {
+        onSuccess: (created) => {
+          setGeneratedKey(created.plainKey);
+          setGeneratedName(created.name);
+          setStep('generated');
+          onKeyGenerated(created);
+        },
+        onError: (err) => {
+          toast.error('Erreur lors de la création de la clé', {
+            description: err.message,
+          });
+        },
+      },
+    );
   };
 
   const handleCopy = (): void => {
@@ -169,10 +156,12 @@ export function GenerateApiKeyModal({ open, onOpenChange, onKeyGenerated }: Gene
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={handleClose}>
+              <Button variant="outline" onClick={handleClose} disabled={createMutation.isPending}>
                 Annuler
               </Button>
-              <Button onClick={handleGenerate}>Générer la clé</Button>
+              <Button onClick={handleGenerate} disabled={createMutation.isPending}>
+                {createMutation.isPending ? 'Création...' : 'Générer la clé'}
+              </Button>
             </DialogFooter>
           </>
         )}
@@ -211,7 +200,11 @@ export function GenerateApiKeyModal({ open, onOpenChange, onKeyGenerated }: Gene
                     className="shrink-0"
                     aria-label="Copier la clé"
                   >
-                    {copied ? <Check className="h-4 w-4 text-status-success" /> : <Copy className="h-4 w-4" />}
+                    {copied ? (
+                      <Check className="h-4 w-4 text-status-success" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>

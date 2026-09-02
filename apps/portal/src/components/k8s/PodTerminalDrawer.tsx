@@ -20,7 +20,13 @@ interface PodTerminalDrawerProps {
   containers: K8sContainerStatus[];
 }
 
-export function PodTerminalDrawer({ open, onClose, namespace, podName, containers }: PodTerminalDrawerProps): JSX.Element {
+export function PodTerminalDrawer({
+  open,
+  onClose,
+  namespace,
+  podName,
+  containers,
+}: PodTerminalDrawerProps): JSX.Element {
   const [selectedContainer, setSelectedContainer] = useState<string>('');
   const [selectedShell, setSelectedShell] = useState('/bin/bash');
   const [connected, setConnected] = useState(false);
@@ -96,7 +102,9 @@ export function PodTerminalDrawer({ open, onClose, namespace, podName, container
                           </SelectTrigger>
                           <SelectContent>
                             {containers.map((c) => (
-                              <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>
+                              <SelectItem key={c.name} value={c.name}>
+                                {c.name}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>

@@ -11,7 +11,13 @@ interface StatsCardProps {
   trend?: { value: number; positive: boolean };
 }
 
-export function StatsCard({ title, value, description, icon: Icon, trend }: StatsCardProps): JSX.Element {
+export function StatsCard({
+  title,
+  value,
+  description,
+  icon: Icon,
+  trend,
+}: StatsCardProps): JSX.Element {
   return (
     <Card>
       <CardContent className="p-6">
@@ -20,7 +26,12 @@ export function StatsCard({ title, value, description, icon: Icon, trend }: Stat
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
             <p className="text-3xl font-bold">{value}</p>
             {trend && (
-              <p className={cn('text-xs', trend.positive ? 'text-status-success' : 'text-status-error')}>
+              <p
+                className={cn(
+                  'text-xs',
+                  trend.positive ? 'text-status-success' : 'text-status-error',
+                )}
+              >
                 {trend.positive ? '↑' : '↓'} {trend.value}%
               </p>
             )}
@@ -29,9 +40,7 @@ export function StatsCard({ title, value, description, icon: Icon, trend }: Stat
             <Icon className="h-6 w-6 text-primary" />
           </div>
         </div>
-        {description && (
-          <p className="mt-2 text-xs text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="mt-2 text-xs text-muted-foreground">{description}</p>}
       </CardContent>
     </Card>
   );

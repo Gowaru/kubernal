@@ -5,7 +5,10 @@ import { createWsLogServer } from './shared/ws-log-server.js';
 import { disconnectDatabase } from './shared/database.js';
 import { logger } from './shared/logger.js';
 import { Pool } from 'pg';
-import { startDeploymentWorker, stopDeploymentWorker } from './modules/deployment/deployment.worker.js';
+import {
+  startDeploymentWorker,
+  stopDeploymentWorker,
+} from './modules/deployment/deployment.worker.js';
 
 const PORT = parseInt(process.env.PORT ?? '4000', 10);
 
@@ -46,7 +49,11 @@ const shutdown = async (signal: string): Promise<void> => {
   });
 };
 
-process.on('SIGTERM', () => { void shutdown('SIGTERM'); });
-process.on('SIGINT', () => { void shutdown('SIGINT'); });
+process.on('SIGTERM', () => {
+  void shutdown('SIGTERM');
+});
+process.on('SIGINT', () => {
+  void shutdown('SIGINT');
+});
 
 export default app;

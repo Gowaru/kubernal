@@ -6,7 +6,9 @@ export function useArgoSync(appId: string, envId: string): UseQueryResult<ArgoAp
   return useQuery<ArgoAppStatus>({
     queryKey: ['k8s-argo-sync', appId, envId],
     queryFn: async () => {
-      const { data } = await apiClient.get<{ data: ArgoAppStatus }>('/kubernetes/argo', { params: { application: `${appId}-${envId}` } });
+      const { data } = await apiClient.get<{ data: ArgoAppStatus }>('/kubernetes/argo', {
+        params: { application: `${appId}-${envId}` },
+      });
       return data.data;
     },
     staleTime: 30_000,

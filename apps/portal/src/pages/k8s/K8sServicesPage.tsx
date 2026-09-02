@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { Network, Search, Filter } from 'lucide-react';
 import { K8sContextBar } from '@/components/k8s/K8sContextBar';
 import { useK8sServices } from '@/hooks/useK8sServices';
-import { MOCK_CLUSTER } from '@/mocks/k8s-data';
+import { useClusterInfo } from '@/hooks/useClusterInfo';
 import { cn } from '@/lib/utils';
 import { usePagination } from '@/hooks/usePagination';
 import { PaginationBar } from '@/components/ui/pagination-bar';
@@ -55,6 +55,7 @@ function formatPorts(
 
 export default function K8sServicesPage(): JSX.Element {
   const { data: services = [], isLoading, error } = useK8sServices();
+  const { data: clusterInfo } = useClusterInfo();
 
   useEffect(() => {
     if (error) {
@@ -95,10 +96,18 @@ export default function K8sServicesPage(): JSX.Element {
   return (
     <div className="space-y-6">
       <K8sContextBar
-        cluster={MOCK_CLUSTER}
-        namespace={MOCK_CLUSTER.namespace}
-        branch="main"
-        revision="a3f7c1e"
+        cluster={
+          clusterInfo ?? {
+            name: '...',
+            namespace: 'default',
+            apiServerUrl: '',
+            version: '...',
+            nodeCount: 0,
+          }
+        }
+        namespace={clusterInfo?.namespace ?? 'default'}
+        branch=""
+        revision=""
       />
 
       <div className="flex items-center gap-4">
@@ -109,7 +118,8 @@ export default function K8sServicesPage(): JSX.Element {
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Services Kubernetes</h2>
             <p className="text-xs text-muted-foreground">
-              {stats.total} services · {stats.lb} LoadBalancer · {stats.np} NodePort · {stats.cip} ClusterIP
+              {stats.total} services · {stats.lb} LoadBalancer · {stats.np} NodePort · {stats.cip}{' '}
+              ClusterIP
             </p>
           </div>
         </div>
@@ -157,89 +167,90 @@ export default function K8sServicesPage(): JSX.Element {
             <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-border rounded-lg m-4">
               <Network className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-1">Aucun service</h3>
-              <p className="text-muted-foreground text-sm">Aucun service ne correspond à vos critères</p>
+              <p className="text-muted-foreground text-sm">
+                Aucun service ne correspond à vos critères
+              </p>
             </div>
           ) : (
             <>
-            <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>ClusterIP</TableHead>
-                  <TableHead>Ports</TableHead>
-                  <TableHead>Sélecteur</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Âge</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {svcPag.paginatedData.map((svc) => (
-                  <TableRow key={`${svc.namespace}/${svc.name}`}>
-                    <TableCell>
-                      <div>
-                        <span className="font-mono text-xs font-medium">{svc.name}</span>
-                        <p className="text-[10px] text-muted-foreground font-mono">{svc.namespace}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          'text-[10px] font-medium',
-                          TYPE_COLORS[svc.type],
-                        )}
-                      >
-                        {svc.type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
-                      {svc.clusterIP}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
-                      {formatPorts(svc.ports)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {Object.entries(svc.selector).map(([k, v]) => (
-                          <span
-                            key={k}
-                            className="inline-flex items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground"
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nom</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>ClusterIP</TableHead>
+                      <TableHead>Ports</TableHead>
+                      <TableHead>Sélecteur</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>Âge</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {svcPag.paginatedData.map((svc) => (
+                      <TableRow key={`${svc.namespace}/${svc.name}`}>
+                        <TableCell>
+                          <div>
+                            <span className="font-mono text-xs font-medium">{svc.name}</span>
+                            <p className="text-[10px] text-muted-foreground font-mono">
+                              {svc.namespace}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={cn('text-[10px] font-medium', TYPE_COLORS[svc.type])}
                           >
-                            {k}={v}
-                          </span>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          'text-[10px] font-medium',
-                          svc.status === 'Active'
-                            ? 'bg-k8s-running/20 text-k8s-running border-k8s-running/30'
-                            : 'bg-k8s-pending/20 text-k8s-pending border-k8s-pending/30',
-                        )}
-                      >
-                        {svc.status === 'Active' ? 'Actif' : 'En attente'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {formatAge(svc.createdAt)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            </div>
-            <div className="border-t border-border px-4 py-2">
-              <PaginationBar
-                pagination={svcPag}
-                onPageChange={svcPag.setPage}
-                onPageSizeChange={svcPag.setPageSize}
-              />
-            </div>
+                            {svc.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground">
+                          {svc.clusterIP}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground">
+                          {formatPorts(svc.ports)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {Object.entries(svc.selector).map(([k, v]) => (
+                              <span
+                                key={k}
+                                className="inline-flex items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground"
+                              >
+                                {k}={v}
+                              </span>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'text-[10px] font-medium',
+                              svc.status === 'Active'
+                                ? 'bg-k8s-running/20 text-k8s-running border-k8s-running/30'
+                                : 'bg-k8s-pending/20 text-k8s-pending border-k8s-pending/30',
+                            )}
+                          >
+                            {svc.status === 'Active' ? 'Actif' : 'En attente'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {formatAge(svc.createdAt)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="border-t border-border px-4 py-2">
+                <PaginationBar
+                  pagination={svcPag}
+                  onPageChange={svcPag.setPage}
+                  onPageSizeChange={svcPag.setPageSize}
+                />
+              </div>
             </>
           )}
         </CardContent>

@@ -2,12 +2,32 @@ import { useState, useMemo, useCallback, useEffect, type JSX } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowUp, GitBranch, User, Calendar, Timer, CheckCircle2, Loader2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowUp,
+  GitBranch,
+  User,
+  Calendar,
+  Timer,
+  CheckCircle2,
+  Loader2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useDeployment, useDeploymentViolations, useApproveDeployment } from '@/hooks/useDeployments';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  useDeployment,
+  useDeploymentViolations,
+  useApproveDeployment,
+} from '@/hooks/useDeployments';
 import { useApplications } from '@/hooks/useApplications';
 import { useUsers } from '@/hooks/useUsers';
 import { useEnvironments } from '@/hooks/useEnvironments';
@@ -82,13 +102,20 @@ export default function DeploymentDetail(): JSX.Element {
     return app?.repositoryUrl ?? null;
   }, [applications, deployment]);
 
-  const appId = (appName || 'unknown').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const appId = (appName || 'unknown')
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
   const envId = deployment?.environment?.type ?? 'prod';
   const namespace = deployment?.environment?.namespace ?? `prod-${appId}`;
   const k8sName = k8sResourceName(appId, envId);
   const clusterReady = !!clusterInfo && clusterInfo.name !== 'unknown' && clusterInfo.nodeCount > 0;
 
-  const { data: pods } = useK8sPods(namespace, undefined, `app=${appId},env=${envId},version=${deployment?.version ?? ''}`);
+  const { data: pods } = useK8sPods(
+    namespace,
+    undefined,
+    `app=${appId},env=${envId},version=${deployment?.version ?? ''}`,
+  );
   const { data: argoStatus } = useArgoSync(appId, envId);
   const { data: claimsData } = useCrossplaneClaims(namespace);
   const { data: hpaData } = useHPA(namespace);
@@ -114,9 +141,11 @@ export default function DeploymentDetail(): JSX.Element {
     const flow: Record<string, 'staging' | 'prod'> = { dev: 'staging', staging: 'prod' };
     const nextType = flow[deployment.environment.type];
     if (!nextType) return null;
-    return environments.find(
-      (e) => e.applicationId === deployment.applicationId && e.type === nextType,
-    ) ?? null;
+    return (
+      environments.find(
+        (e) => e.applicationId === deployment.applicationId && e.type === nextType,
+      ) ?? null
+    );
   }, [deployment, environments]);
 
   const defaultArgoStatus = argoStatus ?? {
@@ -144,7 +173,11 @@ export default function DeploymentDetail(): JSX.Element {
         onSuccess: () => {
           queryClient.setQueryData(['deployments', id], (old: Deployment | undefined) => {
             if (!old) return old;
-            return { ...old, status: 'deploying', approvedBy: { id: userId, name: userName, email: userEmail } };
+            return {
+              ...old,
+              status: 'deploying',
+              approvedBy: { id: userId, name: userName, email: userEmail },
+            };
           });
         },
         onError: () => {
@@ -198,10 +231,7 @@ export default function DeploymentDetail(): JSX.Element {
         </Button>
         <div className="flex items-center gap-2">
           {isHealthy && nextEnv && (
-            <Button
-              variant="outline"
-              onClick={() => setShowPromoteModal(true)}
-            >
+            <Button variant="outline" onClick={() => setShowPromoteModal(true)}>
               <ArrowUp className="mr-2 h-4 w-4" />
               Promouvoir vers {nextEnv.type === 'staging' ? 'Staging' : 'Production'}
             </Button>
@@ -240,7 +270,10 @@ export default function DeploymentDetail(): JSX.Element {
           />
         </div>
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5"><GitBranch className="h-3.5 w-3.5" />{triggerLabels[deployment.trigger] ?? deployment.trigger}</span>
+          <span className="flex items-center gap-1.5">
+            <GitBranch className="h-3.5 w-3.5" />
+            {triggerLabels[deployment.trigger] ?? deployment.trigger}
+          </span>
           <span>·</span>
           <span className="font-mono">
             <DeploymentCommitLink
@@ -254,7 +287,10 @@ export default function DeploymentDetail(): JSX.Element {
           {deployment.approvedBy && (
             <>
               <span>·</span>
-              <span className="flex items-center gap-1.5"><User className="h-3.5 w-3.5" />Approuvé par {deployment.approvedBy.name}</span>
+              <span className="flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5" />
+                Approuvé par {deployment.approvedBy.name}
+              </span>
             </>
           )}
         </div>
@@ -263,6 +299,7 @@ export default function DeploymentDetail(): JSX.Element {
           namespace={namespace}
           deploymentName={k8sName}
           clusterReady={clusterReady}
+          deploymentStatus={deployment.status}
         />
       </div>
 
@@ -333,7 +370,12 @@ export default function DeploymentDetail(): JSX.Element {
                   <CardTitle className="text-base">Scale (HPA)</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <ScaleControl hpa={hpaData.hpa} namespace={namespace} deploymentName={k8sName} clusterReady={clusterReady} />
+                  <ScaleControl
+                    hpa={hpaData.hpa}
+                    namespace={namespace}
+                    deploymentName={k8sName}
+                    clusterReady={clusterReady}
+                  />
                 </CardContent>
               </Card>
             </>
@@ -342,20 +384,24 @@ export default function DeploymentDetail(): JSX.Element {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <Timer className="h-4 w-4" />Exécution
+                <Timer className="h-4 w-4" />
+                Exécution
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Calendar className="h-3 w-3" />Démarré : {formatDate(deployment.startedAt)}
+                <Calendar className="h-3 w-3" />
+                Démarré : {formatDate(deployment.startedAt)}
               </div>
               {deployment.completedAt && (
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Calendar className="h-3 w-3" />Terminé : {formatDate(deployment.completedAt)}
+                  <Calendar className="h-3 w-3" />
+                  Terminé : {formatDate(deployment.completedAt)}
                 </div>
               )}
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Timer className="h-3 w-3" />Durée : {formatDuration(deployment.startedAt, deployment.completedAt)}
+                <Timer className="h-3 w-3" />
+                Durée : {formatDuration(deployment.startedAt, deployment.completedAt)}
               </div>
             </CardContent>
           </Card>
@@ -373,9 +419,7 @@ export default function DeploymentDetail(): JSX.Element {
         </Card>
       )}
 
-      {violations && violations.length > 0 && (
-        <ViolationsList violations={violations} />
-      )}
+      {violations && violations.length > 0 && <ViolationsList violations={violations} />}
 
       {deployment.artifacts.length > 0 && (
         <Card>
@@ -396,7 +440,12 @@ export default function DeploymentDetail(): JSX.Element {
 
       <PodLogDrawer pod={selectedPod} onClose={() => setSelectedPod(null)} />
 
-      <Dialog open={showApproveModal} onOpenChange={(open) => { if (!open) setShowApproveModal(false); }}>
+      <Dialog
+        open={showApproveModal}
+        onOpenChange={(open) => {
+          if (!open) setShowApproveModal(false);
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           {approveStep === 'confirm' && (
             <>
@@ -410,9 +459,7 @@ export default function DeploymentDetail(): JSX.Element {
                 <Button variant="outline" onClick={() => setShowApproveModal(false)}>
                   Annuler
                 </Button>
-                <Button onClick={handleApprove}>
-                  Confirmer l'approbation
-                </Button>
+                <Button onClick={handleApprove}>Confirmer l'approbation</Button>
               </DialogFooter>
             </>
           )}
@@ -439,7 +486,9 @@ export default function DeploymentDetail(): JSX.Element {
                 <p className="text-xs text-muted-foreground">
                   {approveProgress < 40 && 'Vérification des politiques...'}
                   {approveProgress >= 40 && approveProgress < 70 && 'Analyse des violations...'}
-                  {approveProgress >= 70 && approveProgress < 90 && 'Validation des règles de déploiement...'}
+                  {approveProgress >= 70 &&
+                    approveProgress < 90 &&
+                    'Validation des règles de déploiement...'}
                   {approveProgress >= 90 && 'Finalisation...'}
                 </p>
               </div>
@@ -449,16 +498,24 @@ export default function DeploymentDetail(): JSX.Element {
             <>
               <DialogHeader>
                 <DialogTitle>Déploiement approuvé !</DialogTitle>
-                <DialogDescription>Le déploiement a été approuvé et est en cours d'exécution.</DialogDescription>
+                <DialogDescription>
+                  Le déploiement a été approuvé et est en cours d'exécution.
+                </DialogDescription>
               </DialogHeader>
               <div className="flex flex-col items-center justify-center py-8 space-y-4">
                 <CheckCircle2 className="h-16 w-16 text-status-success" />
                 <p className="text-sm text-muted-foreground text-center max-w-xs">
-                  Le déploiement <strong className="text-foreground">{deployment.version}</strong> a été approuvé avec succès.
+                  Le déploiement <strong className="text-foreground">{deployment.version}</strong> a
+                  été approuvé avec succès.
                 </p>
               </div>
               <DialogFooter>
-                <Button onClick={() => { setShowApproveModal(false); setApproveStep('confirm'); }}>
+                <Button
+                  onClick={() => {
+                    setShowApproveModal(false);
+                    setApproveStep('confirm');
+                  }}
+                >
                   Terminé
                 </Button>
               </DialogFooter>

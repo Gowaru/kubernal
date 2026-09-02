@@ -4,7 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useWebhookOutboundConfigs, useDeleteWebhookOutbound, useTestWebhookOutbound, useWebhookDeliveries } from '@/hooks/useWebhookOutbound';
+import {
+  useWebhookOutboundConfigs,
+  useDeleteWebhookOutbound,
+  useTestWebhookOutbound,
+  useWebhookDeliveries,
+} from '@/hooks/useWebhookOutbound';
 import { WebhookOutboundModal } from './WebhookOutboundModal';
 import { toast } from 'sonner';
 import { formatRelativeTime } from '@/lib/utils';
@@ -32,7 +37,8 @@ function DeliveryIcon({ status }: { status: WebhookDelivery['status'] }): JSX.El
 function DeliveryList({ configId }: { configId: string }): JSX.Element {
   const { data: deliveries, isLoading } = useWebhookDeliveries(configId);
   if (isLoading) return <Skeleton className="h-12 w-full" />;
-  if (!deliveries?.length) return <p className="text-xs text-muted-foreground py-2">Aucune livraison</p>;
+  if (!deliveries?.length)
+    return <p className="text-xs text-muted-foreground py-2">Aucune livraison</p>;
   return (
     <div className="space-y-1 max-h-32 overflow-y-auto">
       {deliveries.slice(0, 5).map((d) => (
@@ -40,7 +46,9 @@ function DeliveryList({ configId }: { configId: string }): JSX.Element {
           <DeliveryIcon status={d.status} />
           <span className="font-mono">{d.event}</span>
           {d.responseStatus && (
-            <Badge variant="outline" className="text-[10px] px-1 py-0">{d.responseStatus}</Badge>
+            <Badge variant="outline" className="text-[10px] px-1 py-0">
+              {d.responseStatus}
+            </Badge>
           )}
           <span className="ml-auto">{formatRelativeTime(d.createdAt)}</span>
         </div>
@@ -64,28 +72,52 @@ function ConfigRow({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{config.name}</span>
-          {!config.enabled && <Badge variant="outline" className="text-[10px]">Désactivé</Badge>}
+          {!config.enabled && (
+            <Badge variant="outline" className="text-[10px]">
+              Désactivé
+            </Badge>
+          )}
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7" title="Tester" onClick={() => {
-            test.mutate(config.id, {
-              onSuccess: () => toast.success('Webhook de test envoyé'),
-              onError: () => toast.error('Échec du test'),
-            });
-          }} disabled={test.isPending}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            title="Tester"
+            onClick={() => {
+              test.mutate(config.id, {
+                onSuccess: () => toast.success('Webhook de test envoyé'),
+                onError: () => toast.error('Échec du test'),
+              });
+            }}
+            disabled={test.isPending}
+          >
             <Play className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" title="Modifier" onClick={() => onEdit(config)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            title="Modifier"
+            onClick={() => onEdit(config)}
+          >
             <ExternalLink className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-status-error" title="Supprimer" onClick={() => {
-            if (window.confirm('Supprimer ce webhook ?')) {
-              del.mutate(config.id, {
-                onSuccess: () => toast.success('Webhook supprimé'),
-                onError: () => toast.error('Échec de la suppression'),
-              });
-            }
-          }} disabled={del.isPending}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-status-error"
+            title="Supprimer"
+            onClick={() => {
+              if (window.confirm('Supprimer ce webhook ?')) {
+                del.mutate(config.id, {
+                  onSuccess: () => toast.success('Webhook supprimé'),
+                  onError: () => toast.error('Échec de la suppression'),
+                });
+              }
+            }}
+            disabled={del.isPending}
+          >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -93,7 +125,9 @@ function ConfigRow({
       <code className="block text-xs font-mono text-muted-foreground truncate">{config.url}</code>
       <div className="flex items-center gap-1.5 flex-wrap">
         {config.events.map((ev) => (
-          <Badge key={ev} variant="secondary" className="text-[10px]">{EVENT_LABELS[ev] ?? ev}</Badge>
+          <Badge key={ev} variant="secondary" className="text-[10px]">
+            {EVENT_LABELS[ev] ?? ev}
+          </Badge>
         ))}
       </div>
       <DeliveryList configId={config.id} />
@@ -131,11 +165,15 @@ export function WebhookOutboundCard({ applicationId }: WebhookOutboundCardProps)
               <Bell className="h-4 w-4" />
               Webhooks sortants
             </CardTitle>
-            <CardDescription>
-              Notifications Slack sur les événements de déploiement
-            </CardDescription>
+            <CardDescription>Notifications Slack sur les événements de déploiement</CardDescription>
           </div>
-          <Button size="sm" onClick={() => { setEditingConfig(null); setModalOpen(true); }}>
+          <Button
+            size="sm"
+            onClick={() => {
+              setEditingConfig(null);
+              setModalOpen(true);
+            }}
+          >
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             Ajouter
           </Button>
@@ -150,7 +188,10 @@ export function WebhookOutboundCard({ applicationId }: WebhookOutboundCardProps)
               <ConfigRow
                 key={c.id}
                 config={c}
-                onEdit={(cfg) => { setEditingConfig(cfg); setModalOpen(true); }}
+                onEdit={(cfg) => {
+                  setEditingConfig(cfg);
+                  setModalOpen(true);
+                }}
               />
             ))
           )}

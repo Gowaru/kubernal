@@ -66,7 +66,11 @@ function validateOptionalString(value: unknown, field: string): string | undefin
   return value;
 }
 
-function validateOptionalPositiveInt(value: unknown, field: string, max: number): number | undefined {
+function validateOptionalPositiveInt(
+  value: unknown,
+  field: string,
+  max: number,
+): number | undefined {
   if (value === undefined) return undefined;
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
     throw new Error(`push:image: params.${field} must be a positive number when provided`);
@@ -92,8 +96,12 @@ function parsePushImageParams(raw: Record<string, unknown>): PushImageParams {
     throw new Error('push:image: params.password is required when username is provided');
   }
   const insecure = validateBoolean(raw['insecure'], 'insecure', false);
-  const retryCount = validateOptionalPositiveInt(raw['retryCount'], 'retryCount', MAX_RETRY_COUNT) ?? DEFAULT_RETRY_COUNT;
-  const retryDelayMs = validateOptionalPositiveInt(raw['retryDelayMs'], 'retryDelayMs', 60_000) ?? DEFAULT_RETRY_DELAY_MS;
+  const retryCount =
+    validateOptionalPositiveInt(raw['retryCount'], 'retryCount', MAX_RETRY_COUNT) ??
+    DEFAULT_RETRY_COUNT;
+  const retryDelayMs =
+    validateOptionalPositiveInt(raw['retryDelayMs'], 'retryDelayMs', 60_000) ??
+    DEFAULT_RETRY_DELAY_MS;
 
   return {
     image,
@@ -122,9 +130,13 @@ async function ensureDockerAvailable(logger: ActionContext['logger']): Promise<v
   } catch (err: unknown) {
     const failure = readExecFileError(err);
     if (failure.code === 'ENOENT') {
-      throw new Error('push:image: docker CLI not found in PATH. Install Docker to use this action.');
+      throw new Error(
+        'push:image: docker CLI not found in PATH. Install Docker to use this action.',
+      );
     }
-    throw new Error(`push:image: failed to invoke docker --version: ${failure.stderr || '<no stderr>'}`);
+    throw new Error(
+      `push:image: failed to invoke docker --version: ${failure.stderr || '<no stderr>'}`,
+    );
   }
   logger.info('docker CLI detected');
 }
@@ -148,7 +160,9 @@ function parseDigestFromPushOutput(stdout: string): string | null {
   const lines = stdout.split('\n');
   for (let i = lines.length - 1; i >= 0; i--) {
     const line = lines[i]?.trim() ?? '';
-    const m = line.match(/^([a-z0-9]+(?:[._-][a-z0-9]+)*\/)?[a-z0-9]+(?:[._-][a-z0-9]+)*@sha256:[a-f0-9]{64}$/i);
+    const m = line.match(
+      /^([a-z0-9]+(?:[._-][a-z0-9]+)*\/)?[a-z0-9]+(?:[._-][a-z0-9]+)*@sha256:[a-f0-9]{64}$/i,
+    );
     if (m && m[0]) {
       return m[0];
     }
@@ -156,7 +170,11 @@ function parseDigestFromPushOutput(stdout: string): string | null {
   return null;
 }
 
-async function dockerTag(source: string, target: string, logger: ActionContext['logger']): Promise<void> {
+async function dockerTag(
+  source: string,
+  target: string,
+  logger: ActionContext['logger'],
+): Promise<void> {
   const args = ['tag', source, target];
   logger.info(`docker tag: ${source} -> ${target}`);
   const result = await execFileAsync('docker', args, { timeout: 30_000 });
@@ -165,14 +183,22 @@ async function dockerTag(source: string, target: string, logger: ActionContext['
   }
 }
 
-async function dockerLogin(registry: string, username: string, password: string, insecure: boolean, logger: ActionContext['logger']): Promise<void> {
+async function dockerLogin(
+  registry: string,
+  username: string,
+  password: string,
+  insecure: boolean,
+  logger: ActionContext['logger'],
+): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const args = ['login', registry, '-u', username, '--password-stdin'];
     if (insecure) args.push('--insecure');
     logger.info(`docker login: ${registry} (user: ${username})`);
     const child = spawn('docker', args, { stdio: ['pipe', 'pipe', 'pipe'], timeout: 60_000 });
     let stderr = '';
-    child.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString(); });
+    child.stderr.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString();
+    });
     child.on('error', reject);
     child.on('close', (code) => {
       if (code === 0) {
@@ -187,7 +213,11 @@ async function dockerLogin(registry: string, username: string, password: string,
   });
 }
 
-async function dockerPush(image: string, timeoutMs: number, logger: ActionContext['logger']): Promise<{ stdout: string; stderr: string }> {
+async function dockerPush(
+  image: string,
+  timeoutMs: number,
+  logger: ActionContext['logger'],
+): Promise<{ stdout: string; stderr: string }> {
   const args = ['push', image];
   logger.info(`docker push: ${image}`);
   const result = await execFileAsync('docker', args, {
@@ -219,7 +249,9 @@ async function executeWithRetry<T>(
       lastError = err instanceof Error ? err : new Error(String(err));
       const isLastAttempt = attempt === retryCount;
       if (!isLastAttempt) {
-        logger.warn(`${operationName}: attempt ${attempt}/${retryCount} failed: ${lastError.message}. Retrying in ${retryDelayMs}ms...`);
+        logger.warn(
+          `${operationName}: attempt ${attempt}/${retryCount} failed: ${lastError.message}. Retrying in ${retryDelayMs}ms...`,
+        );
         await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
       } else {
         logger.error(`${operationName}: all ${retryCount} attempts failed`);
@@ -246,7 +278,14 @@ export const pushImageAction: PipelineAction = {
 
     if (params.username) {
       await executeWithRetry(
-        () => dockerLogin(registry, params.username!, params.password!, params.insecure, context.logger),
+        () =>
+          dockerLogin(
+            registry,
+            params.username!,
+            params.password!,
+            params.insecure,
+            context.logger,
+          ),
         params.retryCount,
         params.retryDelayMs,
         context.logger,
@@ -281,7 +320,7 @@ export const pushImageAction: PipelineAction = {
 
     context.logger.info(
       `push:image: pushed '${targetImage}' in ${durationMs}ms` +
-      (imageId ? ` (id=${imageId})` : ' (id not parsed)'),
+        (imageId ? ` (id=${imageId})` : ' (id not parsed)'),
     );
 
     const stdoutTruncated = truncate(pushResult.stdout, MAX_OUTPUT_BYTES);
@@ -298,9 +337,7 @@ export const pushImageAction: PipelineAction = {
         stdoutTruncated,
         stderrTruncated,
       },
-      artifacts: [
-        { name: 'image', url: `docker://${targetImage}` },
-      ],
+      artifacts: [{ name: 'image', url: `docker://${targetImage}` }],
     };
   },
 };

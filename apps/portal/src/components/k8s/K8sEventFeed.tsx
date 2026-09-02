@@ -27,13 +27,23 @@ export function K8sEventFeed({ events, maxItems = 5 }: K8sEventFeedProps): JSX.E
 
   return (
     <div className="flex flex-col gap-1.5">
-      {sorted.map(event => {
+      {sorted.map((event) => {
         const isWarning = event.type === 'Warning';
         const Icon = isWarning ? AlertTriangle : CheckCircle2;
 
         return (
-          <div key={event.id} className="flex items-start gap-2 px-2 py-1.5 rounded-md hover:bg-secondary/50 transition-colors">
-            <span className={cn('flex items-center justify-center rounded-full h-5 w-5 shrink-0', isWarning ? 'bg-k8s-pending/20 text-k8s-pending' : 'bg-k8s-running/20 text-k8s-running')}>
+          <div
+            key={event.id}
+            className="flex items-start gap-2 px-2 py-1.5 rounded-md hover:bg-secondary/50 transition-colors"
+          >
+            <span
+              className={cn(
+                'flex items-center justify-center rounded-full h-5 w-5 shrink-0',
+                isWarning
+                  ? 'bg-k8s-pending/20 text-k8s-pending'
+                  : 'bg-k8s-running/20 text-k8s-running',
+              )}
+            >
               <Icon className="h-3 w-3" />
             </span>
             <div className="flex-1 min-w-0">
@@ -41,7 +51,9 @@ export function K8sEventFeed({ events, maxItems = 5 }: K8sEventFeedProps): JSX.E
               <p className="text-[10px] text-muted-foreground truncate">{event.message}</p>
             </div>
             <div className="flex flex-col items-end gap-0.5 shrink-0">
-              <span className="text-[10px] text-muted-foreground">{formatRelativeTime(event.lastTimestamp)}</span>
+              <span className="text-[10px] text-muted-foreground">
+                {formatRelativeTime(event.lastTimestamp)}
+              </span>
               {event.count > 1 && (
                 <span className="text-[10px] text-muted-foreground font-mono">×{event.count}</span>
               )}

@@ -60,52 +60,64 @@ export default function Environments(): JSX.Element {
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16">
           <Server className="h-12 w-12 text-muted-foreground/40 mb-3" />
           <h3 className="text-lg font-medium">Aucun environnement</h3>
-          <p className="text-sm text-muted-foreground mt-1">Les environnements sont créés automatiquement lors du déploiement.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Les environnements sont créés automatiquement lors du déploiement.
+          </p>
         </div>
       ) : (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {Object.entries(grouped).map(([type, environments]) => {
-          const config = envTypeConfig[type] ?? { label: type, icon: Cloud, color: 'text-muted-foreground' };
-          const Icon = config.icon;
-          return (
-            <Card key={type} className="group transition-all duration-200 hover:border-accent/30">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <Icon className={`h-5 w-5 ${config.color}`} />
-                    {config.label}
-                  </CardTitle>
-                  <Badge variant="outline" className="bg-status-success/10 text-status-success border-status-success/20">
-                    {environments.length} app{environments.length > 1 ? 's' : ''}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Server className="h-4 w-4" />
-                  kubernal cluster
-                </div>
-                <div className="space-y-2">
-                  {environments.map((env) => (
-                    <div
-                      key={env.id}
-                      className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2 text-sm"
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Object.entries(grouped).map(([type, environments]) => {
+            const config = envTypeConfig[type] ?? {
+              label: type,
+              icon: Cloud,
+              color: 'text-muted-foreground',
+            };
+            const Icon = config.icon;
+            return (
+              <Card key={type} className="group transition-all duration-200 hover:border-accent/30">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <Icon className={`h-5 w-5 ${config.color}`} />
+                      {config.label}
+                    </CardTitle>
+                    <Badge
+                      variant="outline"
+                      className="bg-status-success/10 text-status-success border-status-success/20"
                     >
-                      <span className="font-medium">{env.name}</span>
-                      <div className="flex items-center gap-2">
-                        <code className="text-xs text-muted-foreground">{env.namespace}</code>
-                        {env.requiresApproval && (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-status-warning" aria-label="Approbation requise" />
-                        )}
+                      {environments.length} app{environments.length > 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Server className="h-4 w-4" />
+                    kubernal cluster
+                  </div>
+                  <div className="space-y-2">
+                    {environments.map((env) => (
+                      <div
+                        key={env.id}
+                        className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2 text-sm"
+                      >
+                        <span className="font-medium">{env.name}</span>
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs text-muted-foreground">{env.namespace}</code>
+                          {env.requiresApproval && (
+                            <CheckCircle2
+                              className="h-3.5 w-3.5 text-status-warning"
+                              aria-label="Approbation requise"
+                            />
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       )}
     </div>
   );

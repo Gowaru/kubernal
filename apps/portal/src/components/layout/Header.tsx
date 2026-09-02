@@ -6,12 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggle } from './ThemeToggle';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useApplications } from '@/hooks/useApplications';
 
 const CLUSTERS = ['kubernal-prod', 'kubernal-staging', 'kubernal-dev'];
@@ -81,7 +76,12 @@ export function Header(): JSX.Element {
         const target = e.target as HTMLElement | null;
         if (target) {
           const tag = target.tagName;
-          if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable) {
+          if (
+            tag === 'INPUT' ||
+            tag === 'TEXTAREA' ||
+            tag === 'SELECT' ||
+            target.isContentEditable
+          ) {
             return;
           }
         }
@@ -194,7 +194,10 @@ export function Header(): JSX.Element {
                           </p>
                         </div>
                         {isActive && (
-                          <CornerDownLeft className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+                          <CornerDownLeft
+                            className="h-3.5 w-3.5 text-muted-foreground shrink-0"
+                            aria-hidden="true"
+                          />
                         )}
                       </button>
                     </li>
@@ -206,15 +209,23 @@ export function Header(): JSX.Element {
           {results.length > 0 && (
             <div className="flex items-center gap-3 border-t border-border bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
               <span className="flex items-center gap-1">
-                <kbd className="rounded bg-background border border-border px-1.5 py-0.5 font-mono">↑</kbd>
-                <kbd className="rounded bg-background border border-border px-1.5 py-0.5 font-mono">↓</kbd>
+                <kbd className="rounded bg-background border border-border px-1.5 py-0.5 font-mono">
+                  ↑
+                </kbd>
+                <kbd className="rounded bg-background border border-border px-1.5 py-0.5 font-mono">
+                  ↓
+                </kbd>
                 naviguer
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="rounded bg-background border border-border px-1.5 py-0.5 font-mono">↵</kbd>
+                <kbd className="rounded bg-background border border-border px-1.5 py-0.5 font-mono">
+                  ↵
+                </kbd>
                 ouvrir
               </span>
-              <span className="ml-auto">{results.length} résultat{results.length > 1 ? 's' : ''}</span>
+              <span className="ml-auto">
+                {results.length} résultat{results.length > 1 ? 's' : ''}
+              </span>
             </div>
           )}
         </DialogContent>
@@ -225,7 +236,9 @@ export function Header(): JSX.Element {
       {/* Cluster selector */}
       <div className="hidden lg:flex items-center gap-2">
         <span className="h-2 w-2 rounded-full bg-k8s-running shrink-0" />
-        <label htmlFor="cluster-select" className="sr-only">Cluster</label>
+        <label htmlFor="cluster-select" className="sr-only">
+          Cluster
+        </label>
         <select
           id="cluster-select"
           value={currentCluster}
@@ -244,7 +257,9 @@ export function Header(): JSX.Element {
       {/* Namespace picker */}
       <div className="hidden lg:flex items-center gap-1.5">
         <Server className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-        <label htmlFor="namespace-select" className="sr-only">Namespace</label>
+        <label htmlFor="namespace-select" className="sr-only">
+          Namespace
+        </label>
         <select
           id="namespace-select"
           value={currentNamespace}
@@ -261,7 +276,12 @@ export function Header(): JSX.Element {
       <span className="hidden lg:block text-muted-foreground/30">·</span>
 
       {/* Notifications */}
-      <Button variant="ghost" size="icon" className="relative h-8 w-8 shrink-0" aria-label="Notifications">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="relative h-8 w-8 shrink-0"
+        aria-label="Notifications"
+      >
         <Bell className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
         {notificationCount > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-k8s-failed px-1 text-[9px] font-bold text-white">

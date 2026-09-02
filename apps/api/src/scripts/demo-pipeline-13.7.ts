@@ -92,11 +92,20 @@ function printHeader(title: string): void {
 
 function fmtStepResult(step: DemoStep): string {
   const icon =
-    step.status === 'ok' ? '✓' : step.status === 'skipped' ? '⊘' : step.status === 'failed' ? '✗' : '…';
+    step.status === 'ok'
+      ? '✓'
+      : step.status === 'skipped'
+        ? '⊘'
+        : step.status === 'failed'
+          ? '✗'
+          : '…';
   return `  ${icon} ${step.name.padEnd(45)} ${step.status.toUpperCase().padEnd(8)} (${step.durationMs}ms)`;
 }
 
-function runStep<T>(name: string, fn: () => T | Promise<T>): Promise<{ step: DemoStep; value?: T; error?: unknown }> {
+function runStep<T>(
+  name: string,
+  fn: () => T | Promise<T>,
+): Promise<{ step: DemoStep; value?: T; error?: unknown }> {
   const start = Date.now();
   return Promise.resolve()
     .then(() => fn())
@@ -272,7 +281,9 @@ async function main(): Promise<void> {
   });
   steps.push(preReq.step);
   if (preReq.error) {
-    process.stderr.write(`\nFatal: pre-requisites failed — ${preReq.error instanceof Error ? preReq.error.message : String(preReq.error)}\n\n`);
+    process.stderr.write(
+      `\nFatal: pre-requisites failed — ${preReq.error instanceof Error ? preReq.error.message : String(preReq.error)}\n\n`,
+    );
     process.exit(1);
   }
 
@@ -317,9 +328,7 @@ async function main(): Promise<void> {
           name: 'Deploy sample namespace',
           action: 'deploy:manifest',
           input: {
-            manifests: [
-              'apiVersion: v1\nkind: Namespace\nmetadata:\n  name: e2e-13-7-ns\n',
-            ],
+            manifests: ['apiVersion: v1\nkind: Namespace\nmetadata:\n  name: e2e-13-7-ns\n'],
             waitRollout: false,
           },
         },
@@ -348,7 +357,9 @@ async function main(): Promise<void> {
   });
   steps.push(setup.step);
   if (setup.error || !setup.value) {
-    process.stderr.write(`\nFatal: setup failed — ${setup.error instanceof Error ? setup.error.message : String(setup.error)}\n\n`);
+    process.stderr.write(
+      `\nFatal: setup failed — ${setup.error instanceof Error ? setup.error.message : String(setup.error)}\n\n`,
+    );
     process.exit(1);
   }
   const { template, deployment } = setup.value;
@@ -371,9 +382,10 @@ async function main(): Promise<void> {
   process.stdout.write(`     pipeline.id = ${pipeline.id}\n`);
 
   const finalPipeline = await pollPipelineCompletion(pipeline.id, 60);
-  const pipelineDuration = finalPipeline.startedAt && finalPipeline.completedAt
-    ? new Date(finalPipeline.completedAt).getTime() - new Date(finalPipeline.startedAt).getTime()
-    : 0;
+  const pipelineDuration =
+    finalPipeline.startedAt && finalPipeline.completedAt
+      ? new Date(finalPipeline.completedAt).getTime() - new Date(finalPipeline.startedAt).getTime()
+      : 0;
 
   const stepsRes = await api<DataEnvelope<PipelineStep[]>>(
     'GET',
@@ -389,7 +401,13 @@ async function main(): Promise<void> {
 
   process.stdout.write('\n  Verifying deployment via kubectl...\n');
   const verify = await runStep('4.0 kubectl get namespace e2e-13-7-ns', async () => {
-    const result = await execFileAsync('kubectl', ['get', 'namespace', 'e2e-13-7-ns', '-o', 'name']);
+    const result = await execFileAsync('kubectl', [
+      'get',
+      'namespace',
+      'e2e-13-7-ns',
+      '-o',
+      'name',
+    ]);
     const out = result.stdout.trim();
     process.stdout.write(`     ${out}\n`);
     if (!out.includes('e2e-13-7-ns')) {
@@ -423,8 +441,12 @@ async function main(): Promise<void> {
   process.stdout.write(`  Steps executed:     ${pipelineSteps.length}\n`);
   process.stdout.write(`  Total duration:     ${Date.now() - start}ms\n`);
   process.stdout.write('\n' + HORIZONTAL_RULE + '\n\n');
-  process.stdout.write('  Next: open the UI at http://localhost:3000/deployments/' + deployment.id + '\n');
-  process.stdout.write('  The DeploymentDetail page should display the pipeline timeline with all 4 steps in success state.\n\n');
+  process.stdout.write(
+    '  Next: open the UI at http://localhost:3000/deployments/' + deployment.id + '\n',
+  );
+  process.stdout.write(
+    '  The DeploymentDetail page should display the pipeline timeline with all 4 steps in success state.\n\n',
+  );
 
   logger.info(
     {

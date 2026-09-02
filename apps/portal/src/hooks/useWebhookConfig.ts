@@ -1,4 +1,10 @@
-import { useQuery, useMutation, useQueryClient, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type UseQueryResult,
+  type UseMutationResult,
+} from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 
 export interface WebhookConfig {

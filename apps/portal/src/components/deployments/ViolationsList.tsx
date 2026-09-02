@@ -46,10 +46,7 @@ export function ViolationsList({ violations }: ViolationsListProps): JSX.Element
         {violations.map((v) => {
           const severity = severityConfig[v.severity] ?? severityConfig.low;
           return (
-            <div
-              key={v.id}
-              className="rounded-lg border border-border p-3 space-y-2"
-            >
+            <div key={v.id} className="rounded-lg border border-border p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">{v.policyName}</span>
                 <Badge variant="outline" className={cn('text-xs', severity.className)}>
@@ -57,9 +54,7 @@ export function ViolationsList({ violations }: ViolationsListProps): JSX.Element
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground">{v.message}</p>
-              <p className="text-xs text-muted-foreground font-mono">
-                Resource: {v.resource}
-              </p>
+              <p className="text-xs text-muted-foreground font-mono">Resource: {v.resource}</p>
             </div>
           );
         })}
