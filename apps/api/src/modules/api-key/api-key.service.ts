@@ -13,7 +13,17 @@ function generateKey(): { plainKey: string; keyHash: string; prefix: string } {
   return { plainKey, keyHash, prefix: PREFIX };
 }
 
-function toApiKeyCreated(row: { id: string; name: string; prefix: string; expiresAt: Date | null; lastUsedAt: Date | null; createdAt: Date }, plainKey: string): ApiKeyCreated {
+function toApiKeyCreated(
+  row: {
+    id: string;
+    name: string;
+    prefix: string;
+    expiresAt: Date | null;
+    lastUsedAt: Date | null;
+    createdAt: Date;
+  },
+  plainKey: string,
+): ApiKeyCreated {
   return {
     id: row.id,
     name: row.name,
@@ -40,7 +50,16 @@ export const apiKeyService = {
     return toApiKeyCreated(key, plainKey);
   },
 
-  async listKeys(userId: string): Promise<Array<{ id: string; name: string; prefix: string; expiresAt: string | null; lastUsedAt: string | null; createdAt: string }>> {
+  async listKeys(userId: string): Promise<
+    Array<{
+      id: string;
+      name: string;
+      prefix: string;
+      expiresAt: string | null;
+      lastUsedAt: string | null;
+      createdAt: string;
+    }>
+  > {
     const keys = await db.apiKey.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -67,7 +86,7 @@ export const apiKeyService = {
   async deleteKey(userId: string, keyId: string): Promise<void> {
     const key = await db.apiKey.findUnique({ where: { id: keyId } });
     if (!key) throw new NotFoundError('ApiKey', keyId);
-    if (key.userId !== userId) throw new ForbiddenError('Cannot delete another user\'s API key');
+    if (key.userId !== userId) throw new ForbiddenError("Cannot delete another user's API key");
 
     await db.apiKey.delete({ where: { id: keyId } });
   },

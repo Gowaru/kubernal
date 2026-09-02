@@ -24,6 +24,8 @@ export interface User {
   role: UserRole;
   teamId: string | null;
   passwordHash?: string | null;
+  oidcProvider?: string | null;
+  oidcId?: string | null;
   lastLogin?: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -76,6 +78,7 @@ export interface Application {
   ownerId: string;
   repositoryUrl: string | null;
   status: ApplicationStatus;
+  archivedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   team?: Team;
@@ -217,7 +220,14 @@ export interface ApiError {
 export type ApiResult<T> = { success: true; data: T } | { success: false; error: ApiError };
 
 // --- K8s & Infrastructure ---
-export type K8sPodPhase = 'Running' | 'Pending' | 'Succeeded' | 'Failed' | 'CrashLoopBackOff' | 'Terminating' | 'Unknown';
+export type K8sPodPhase =
+  | 'Running'
+  | 'Pending'
+  | 'Succeeded'
+  | 'Failed'
+  | 'CrashLoopBackOff'
+  | 'Terminating'
+  | 'Unknown';
 
 export interface K8sContainerStatus {
   name: string;
@@ -318,7 +328,13 @@ export interface K8sClusterContext {
 export type K8sServiceType = 'ClusterIP' | 'NodePort' | 'LoadBalancer' | 'ExternalName';
 
 // --- Webhook Outbound ---
-export type WebhookEvent = 'started' | 'success' | 'failure' | 'rolled_back' | 'cancelled' | 'approval_needed';
+export type WebhookEvent =
+  | 'started'
+  | 'success'
+  | 'failure'
+  | 'rolled_back'
+  | 'cancelled'
+  | 'approval_needed';
 
 export interface WebhookConfig {
   id: string;
@@ -376,4 +392,18 @@ export interface K8sService {
   selector: Record<string, string>;
   status: 'Active' | 'Pending';
   createdAt: string;
+}
+
+// ─── API Key ──────────────────────────────────────────────────────────────────
+export interface ApiKey {
+  id: string;
+  name: string;
+  prefix: string;
+  expiresAt: string | null;
+  lastUsedAt: string | null;
+  createdAt: string;
+}
+
+export interface ApiKeyCreated extends ApiKey {
+  plainKey: string;
 }

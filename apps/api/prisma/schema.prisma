@@ -30,6 +30,8 @@ model User {
   ownedApplications   Application[]    @relation("Owner")
   approvedDeployments  Deployment[]     @relation("Approver")
   sessions             Session[]
+  apiKeys              ApiKey[]
+  notificationPreferences UserNotificationPreference[]
 
   @@unique([oidcProvider, oidcId])
 }
@@ -90,6 +92,7 @@ model Application {
   webhookSecret  String?
   status         String   @default("creating") // creating | active | failed | archived
   config         Json     @default("{}")
+  archivedAt     DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -254,6 +257,21 @@ model WebhookDelivery {
   @@index([status])
 }
 
+// ─── API Key ──────────────────────────────────────────────────────────────────
+model ApiKey {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  keyHash    String    @unique
+  prefix     String    @default("kpl_")
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
 // ─── Audit Log ────────────────────────────────────────────────────────────────
 model AuditLog {
   id         String   @id @default(uuid())
@@ -271,4 +289,19 @@ model AuditLog {
   @@index([actorId])
   @@index([action])
   @@index([createdAt])
+}
+
+// ─── User Notification Preferences ─────────────────────────────────────────
+model UserNotificationPreference {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
 }
