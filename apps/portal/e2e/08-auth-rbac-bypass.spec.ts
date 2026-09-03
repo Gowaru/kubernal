@@ -42,19 +42,30 @@ async function mockAuth(
   page: import('@playwright/test').Page,
   user: typeof mockAdmin,
 ): Promise<void> {
-  await page.route('**/api/auth/me', (route) => {
+  const handler = (route: import('@playwright/test').Route) =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ success: true, data: user }),
     });
-  });
+  await page.route('**/api/auth/me', handler);
+  await page.route('**/api/v1/auth/me', handler);
+  await page.route('**/api/**/auth/me', handler);
 }
 
 async function mockAllApi(
   page: import('@playwright/test').Page,
   user: typeof mockAdmin,
 ): Promise<void> {
+  // Catch-all for any unmocked API - prevents 401 from real server (ECONNREFUSED)
+  // Registered FIRST so specific mocks below override it (Playwright last handler wins)
+  await page.route('**/api/**', (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [] }),
+    });
+  });
   await mockAuth(page, user);
   await page.route('**/api/pipelines/worker/status', (route) => {
     route.fulfill({
@@ -140,39 +151,54 @@ test.describe(
         // Try to break C04: render as viewer and assert admin links are hidden.
         // Bug: Sidebar forgets hasRole filter and shows /teams etc. to everyone.
         await mockAllApi(page, mockViewer);
+        const authResponse = page.waitForResponse(
+          (resp) => resp.url().includes('/auth/me') && resp.status() === 200,
+        );
         await page.goto('/');
-        await expect(page).toHaveURL('/');
+        await authResponse;
+        await page.waitForLoadState('networkidle');
+        await expect(page).not.toHaveURL(/\/login/);
         // Sidebar is rendered inside <aside>. Admin sections require platform_engineer.
         await expect(page.locator('aside').first()).toBeVisible({ timeout: 10000 });
-        await expect(page.locator('a[href="/teams"]')).toBeHidden();
-        await expect(page.locator('a[href="/templates"]')).toBeHidden();
-        await expect(page.locator('a[href="/policies"]')).toBeHidden();
-        await expect(page.locator('a[href="/settings"]')).toBeHidden();
+        await expect(page.locator('a[href="/teams"]').first()).toBeHidden();
+        await expect(page.locator('a[href="/templates"]').first()).toBeHidden();
+        await expect(page.locator('a[href="/policies"]').first()).toBeHidden();
+        await expect(page.locator('a[href="/settings"]').first()).toBeHidden();
         // Non-admin links must still be visible
-        await expect(page.locator('a[href="/"]')).toBeVisible();
-        await expect(page.locator('a[href="/catalogue"]')).toBeVisible();
+        await expect(page.locator('a[href="/"]').first()).toBeVisible();
+        await expect(page.locator('a[href="/catalogue"]').first()).toBeVisible();
       });
 
       test('developer must NOT see admin navigation links', async ({ page }) => {
         // Try to break C04: developer (level 1) < platform_engineer (level 2) should be denied.
         // hasRole(developer, platform_engineer) must be false.
         await mockAllApi(page, mockDeveloper);
+        const authResponse = page.waitForResponse(
+          (resp) => resp.url().includes('/auth/me') && resp.status() === 200,
+        );
         await page.goto('/');
+        await authResponse;
+        await page.waitForLoadState('networkidle');
         await expect(page.locator('aside').first()).toBeVisible({ timeout: 10000 });
-        await expect(page.locator('a[href="/teams"]')).toBeHidden();
-        await expect(page.locator('a[href="/templates"]')).toBeHidden();
-        await expect(page.locator('a[href="/policies"]')).toBeHidden();
-        await expect(page.locator('a[href="/settings"]')).toBeHidden();
+        await expect(page.locator('a[href="/teams"]').first()).toBeHidden();
+        await expect(page.locator('a[href="/templates"]').first()).toBeHidden();
+        await expect(page.locator('a[href="/policies"]').first()).toBeHidden();
+        await expect(page.locator('a[href="/settings"]').first()).toBeHidden();
       });
 
       test('platform_engineer and admin MUST see admin links', async ({ page }) => {
         // Sanity: privileged roles must see admin navigation (no false positive)
         await mockAllApi(page, mockPlatformEngineer);
+        const authResponse = page.waitForResponse(
+          (resp) => resp.url().includes('/auth/me') && resp.status() === 200,
+        );
         await page.goto('/');
+        await authResponse;
+        await page.waitForLoadState('networkidle');
         await expect(page.locator('aside').first()).toBeVisible({ timeout: 10000 });
-        await expect(page.locator('a[href="/teams"]')).toBeVisible();
-        await expect(page.locator('a[href="/policies"]')).toBeVisible();
-        await expect(page.locator('a[href="/settings"]')).toBeVisible();
+        await expect(page.locator('a[href="/teams"]').first()).toBeVisible();
+        await expect(page.locator('a[href="/policies"]').first()).toBeVisible();
+        await expect(page.locator('a[href="/settings"]').first()).toBeVisible();
       });
 
       test('viewer direct navigation to /teams must not expose admin UI (hidden or blocked)', async ({
@@ -228,14 +254,19 @@ test.describe(
             body: JSON.stringify({ success: true, data: { running: false, total: 0 } }),
           }),
         );
+        const authResponse = page.waitForResponse(
+          (resp) => resp.url().includes('/auth/me') && resp.status() === 200,
+        );
         await page.goto('/teams');
+        await authResponse;
+        await page.waitForLoadState('networkidle');
         // Sidebar must still hide admin link, even on direct navigation
-        await expect(page.locator('a[href="/teams"]')).toBeHidden();
+        await expect(page.locator('a[href="/teams"]').first()).toBeHidden();
         // If RBAC is bypassed and teams page renders for viewer, this fails
         // We assert teams-specific content is NOT visible for viewer (or 403 is handled)
         // The teams heading is "Équipes" — viewer should not see it when forbidden
         // Alternatively, if frontend still renders page, we at least ensure sidebar hidden
-        await expect(page.locator('a[href="/teams"]')).toBeHidden();
+        await expect(page.locator('a[href="/teams"]').first()).toBeHidden();
       });
 
       test('viewer API bypass attempt to /api/teams must be forbidden (403)', async ({ page }) => {
@@ -244,12 +275,9 @@ test.describe(
         await mockAuth(page, mockViewer);
         await page.goto('/');
         // Direct fetch as viewer — should be rejected
-        const response = await page.request.get('http://localhost:3000/api/teams', {
-          headers: { 'Content-Type': 'application/json' },
-        });
-        // In mocked E2E, /api is intercepted; we route to assert 403 behavior
-        // Set up route that returns 403 for this test, then re-request via page.evaluate
-        await page.route('**/api/teams', (route) => {
+        // Set up routes that return 403 for this test (must be before page.evaluate fetch)
+        // Handle both /api/teams and /api/v1/teams (vite proxy)
+        const forbiddenHandler = (route: import('@playwright/test').Route): Promise<void> =>
           route.fulfill({
             status: 403,
             contentType: 'application/json',
@@ -258,15 +286,15 @@ test.describe(
               error: { code: 'FORBIDDEN', message: 'Insufficient permissions' },
             }),
           });
-        });
+        await page.route('**/api/teams', forbiddenHandler);
+        await page.route('**/api/v1/teams', forbiddenHandler);
+        await page.route('**/api/**/teams', forbiddenHandler);
         const forbidden = await page.evaluate(async () => {
           const res = await fetch('/api/teams');
           return { status: res.status, body: await res.text() };
         });
         expect(forbidden.status).toBe(403);
         expect(forbidden.body).not.toContain('"success":true');
-        // Cleanup to avoid affecting next tests — unroute is automatic per test
-        void response;
       });
 
       test('viewer cannot bypass RBAC via keyboard shortcuts (Ctrl+Shift+P / Ctrl+Shift+S)', async ({
@@ -275,7 +303,12 @@ test.describe(
         // Try to break C04: Sidebar shortcut handler navigates to /policies and /settings
         // without re-checking hasRole. Viewer pressing Cmd+Shift+P must not reach policies.
         await mockAllApi(page, mockViewer);
+        const authResponse = page.waitForResponse(
+          (resp) => resp.url().includes('/auth/me') && resp.status() === 200,
+        );
         await page.goto('/');
+        await authResponse;
+        await page.waitForLoadState('networkidle');
         await expect(page.locator('aside').first()).toBeVisible({ timeout: 10000 });
         // Attempt hotkey bypass for policies
         await page.keyboard.press('Control+Shift+P');
@@ -283,12 +316,12 @@ test.describe(
         await page.waitForTimeout(500);
         // If shortcut bypassed RBAC, URL would be /policies and sidebar would show it.
         // We assert viewer still cannot see the link (and ideally not on policies)
-        await expect(page.locator('a[href="/policies"]')).toBeHidden();
-        await expect(page.locator('a[href="/settings"]')).toBeHidden();
+        await expect(page.locator('a[href="/policies"]').first()).toBeHidden();
+        await expect(page.locator('a[href="/settings"]').first()).toBeHidden();
         // Also try settings shortcut
         await page.keyboard.press('Control+Shift+S');
         await page.waitForTimeout(500);
-        await expect(page.locator('a[href="/settings"]')).toBeHidden();
+        await expect(page.locator('a[href="/settings"]').first()).toBeHidden();
       });
     });
 

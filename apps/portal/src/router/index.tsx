@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import AppShell from '@/components/layout/AppShell';
-import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
+import { ProtectedRoute, RequireRole } from '@/components/layout/ProtectedRoute';
 import PageLoader from '@/components/ui/page-loader';
 import { ErrorFallback } from '@/components/ui/error-fallback';
 
@@ -106,33 +106,41 @@ const router = createBrowserRouter([
           {
             path: '/teams',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <Teams />
-              </Suspense>
+              <RequireRole role="platform_engineer">
+                <Suspense fallback={<PageLoader />}>
+                  <Teams />
+                </Suspense>
+              </RequireRole>
             ),
           },
           {
             path: '/templates',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <Templates />
-              </Suspense>
+              <RequireRole role="platform_engineer">
+                <Suspense fallback={<PageLoader />}>
+                  <Templates />
+                </Suspense>
+              </RequireRole>
             ),
           },
           {
             path: '/policies',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <Policies />
-              </Suspense>
+              <RequireRole role="platform_engineer">
+                <Suspense fallback={<PageLoader />}>
+                  <Policies />
+                </Suspense>
+              </RequireRole>
             ),
           },
           {
             path: '/settings',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <Settings />
-              </Suspense>
+              <RequireRole role="platform_engineer">
+                <Suspense fallback={<PageLoader />}>
+                  <Settings />
+                </Suspense>
+              </RequireRole>
             ),
           },
           {

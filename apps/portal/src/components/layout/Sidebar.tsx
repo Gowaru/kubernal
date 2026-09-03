@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { NAV_SECTIONS, PLATFORM_VERSION } from '@/lib/constants';
 import { useSidebar } from './SidebarStore';
 import { useAuth } from '@/hooks/useAuth';
+import type { UserRole } from '@kubernal/shared-types';
 import { useDeployments } from '@/hooks/useDeployments';
 import { useK8sEvents } from '@/hooks/useK8sEvents';
 import { useClusterInfo } from '@/hooks/useClusterInfo';
@@ -87,22 +88,37 @@ export function Sidebar(): JSX.Element {
       }
       if (e.shiftKey && e.key.toLowerCase() === 'p') {
         e.preventDefault();
+        if (!hasRole('platform_engineer')) return;
         navigate('/policies');
         return;
       }
       if (e.shiftKey && e.key.toLowerCase() === 's') {
         e.preventDefault();
+        if (!hasRole('platform_engineer')) return;
         navigate('/settings');
         return;
       }
       if (e.key in SHORTCUT_MAP) {
+        const targetHref = SHORTCUT_MAP[e.key];
+        // Admin routes require platform_engineer (keep in sync with NAV_SECTIONS requiredRole)
+        const adminRoutes: Record<string, UserRole> = {
+          '/teams': 'platform_engineer',
+          '/templates': 'platform_engineer',
+          '/policies': 'platform_engineer',
+          '/settings': 'platform_engineer',
+        };
+        const requiredRole = adminRoutes[targetHref];
+        if (requiredRole && !hasRole(requiredRole)) {
+          e.preventDefault();
+          return;
+        }
         e.preventDefault();
-        navigate(SHORTCUT_MAP[e.key]);
+        navigate(targetHref);
       }
     };
     window.addEventListener('keydown', handler);
     return (): void => window.removeEventListener('keydown', handler);
-  }, [navigate]);
+  }, [navigate, hasRole]);
 
   const warningEventCount = k8sEvents.filter((e) => e.type === 'Warning').length;
 
