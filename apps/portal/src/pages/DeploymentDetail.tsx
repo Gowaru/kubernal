@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, type JSX } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef, type JSX } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -29,7 +29,7 @@ import {
   useApproveDeployment,
 } from '@/hooks/useDeployments';
 import { useApplications } from '@/hooks/useApplications';
-import { useUsers } from '@/hooks/useUsers';
+import { useAuth } from '@/hooks/useAuth';
 import { useEnvironments } from '@/hooks/useEnvironments';
 import { useK8sPods } from '@/hooks/useK8sPods';
 import { useArgoSync } from '@/hooks/useArgoSync';
@@ -86,7 +86,7 @@ export default function DeploymentDetail(): JSX.Element {
   const { data: deployment, isLoading, error } = useDeployment(id!);
   const { data: violations } = useDeploymentViolations(id!);
   const { data: applications } = useApplications();
-  const { data: users } = useUsers();
+  const { user: currentUser, hasRole } = useAuth();
   const { data: environments } = useEnvironments();
   const { data: clusterInfo } = useClusterInfo();
 
@@ -130,6 +130,7 @@ export default function DeploymentDetail(): JSX.Element {
   const [approveStep, setApproveStep] = useState<'confirm' | 'progress' | 'success'>('confirm');
   const [approveProgress, setApproveProgress] = useState(0);
   const [showPromoteModal, setShowPromoteModal] = useState(false);
+  const approveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const approveDeployment = useApproveDeployment();
 
@@ -159,13 +160,17 @@ export default function DeploymentDetail(): JSX.Element {
 
   const handleApprove = useCallback(() => {
     if (!id) return;
+    if (approveIntervalRef.current) {
+      clearInterval(approveIntervalRef.current);
+      approveIntervalRef.current = null;
+    }
     setShowApproveModal(true);
     setApproveStep('progress');
     setApproveProgress(0);
 
-    const userId = users?.[0]?.id ?? '';
-    const userName = users?.[0]?.name ?? 'Vous';
-    const userEmail = users?.[0]?.email ?? '';
+    const userId = currentUser?.id ?? '';
+    const userName = currentUser?.name ?? 'Vous';
+    const userEmail = currentUser?.email ?? '';
 
     approveDeployment.mutate(
       { id, approvedById: userId },
@@ -176,21 +181,30 @@ export default function DeploymentDetail(): JSX.Element {
             return {
               ...old,
               status: 'deploying',
-              approvedBy: { id: userId, name: userName, email: userEmail },
+              approvedBy: { id: userId, name: userName, email: userEmail } as Deployment['approvedBy'],
             };
           });
         },
         onError: () => {
+          if (approveIntervalRef.current) {
+            clearInterval(approveIntervalRef.current);
+            approveIntervalRef.current = null;
+          }
+          setApproveStep('confirm');
+          setApproveProgress(0);
           toast.error("Erreur lors de l'approbation");
         },
       },
     );
 
-    const interval = setInterval(() => {
+    approveIntervalRef.current = setInterval(() => {
       setApproveProgress((p) => {
         const next = Math.min(p + Math.random() * 20, 100);
         if (next >= 100) {
-          clearInterval(interval);
+          if (approveIntervalRef.current) {
+            clearInterval(approveIntervalRef.current);
+            approveIntervalRef.current = null;
+          }
           setTimeout(() => {
             setApproveStep('success');
             toast.success('Déploiement approuvé avec succès');
@@ -199,7 +213,7 @@ export default function DeploymentDetail(): JSX.Element {
         return next;
       });
     }, 350);
-  }, [id, approveDeployment, queryClient, users]);
+  }, [id, approveDeployment, queryClient, currentUser]);
 
   useEffect(() => {
     if (error) {
@@ -207,6 +221,15 @@ export default function DeploymentDetail(): JSX.Element {
       navigate('/deployments');
     }
   }, [error, navigate]);
+
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+    return () => {
+      if (approveIntervalRef.current) {
+        clearInterval(approveIntervalRef.current);
+      }
+    };
+  }, []);
 
   if (isLoading || !deployment) {
     return (
@@ -239,8 +262,14 @@ export default function DeploymentDetail(): JSX.Element {
           {isPending && (
             <Button
               onClick={() => setShowApproveModal(true)}
-              disabled={!users?.length}
-              title={!users?.length ? 'Aucun utilisateur' : undefined}
+              disabled={!currentUser || !hasRole('platform_engineer')}
+              title={
+                !currentUser
+                  ? 'Non authentifié'
+                  : !hasRole('platform_engineer')
+                    ? 'Rôle platform_engineer requis'
+                    : undefined
+              }
             >
               Approuver le déploiement
             </Button>

@@ -191,7 +191,7 @@ test.describe(
         await page.route(`**/api/deployments/${DEPLOY_PENDING}`, (route) =>
           jsonOk(route, pendingDeployment),
         );
-        // Simulate backend RBAC enforcement
+        // Simulate backend RBAC enforcement (RequireRole guard: platform_engineer)
         await page.route(`**/api/deployments/${DEPLOY_PENDING}/approve`, (route) =>
           jsonError(
             route,
@@ -202,7 +202,7 @@ test.describe(
         );
 
         const status = await page.evaluate(async (id) => {
-          const res = await fetch(`/api/deployments/${id}/approve`, {
+          const res = await fetch(`http://localhost:3000/api/deployments/${id}/approve`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ approvedById: '11111111-1111-1111-1111-111111111111' }),
@@ -223,7 +223,7 @@ test.describe(
         );
 
         const status = await page.evaluate(async (id) => {
-          const res = await fetch(`/api/deployments/${id}/approve`, {
+          const res = await fetch(`http://localhost:3000/api/deployments/${id}/approve`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ approvedById: '33333333-3333-3333-3333-333333333333' }),
@@ -251,7 +251,7 @@ test.describe(
 
         const status = await page.evaluate(
           async ({ id, adminId }) => {
-            const res = await fetch(`/api/deployments/${id}/approve`, {
+            const res = await fetch(`http://localhost:3000/api/deployments/${id}/approve`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ approvedById: adminId }),
@@ -273,7 +273,7 @@ test.describe(
         );
 
         const status = await page.evaluate(async (id) => {
-          const res = await fetch(`/api/deployments/${id}/approve`, {
+          const res = await fetch(`http://localhost:3000/api/deployments/${id}/approve`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ approvedById: '11111111-1111-1111-1111-111111111111' }),
@@ -293,7 +293,7 @@ test.describe(
         );
 
         const status = await page.evaluate(async (id) => {
-          const res = await fetch(`/api/deployments/${id}/approve`, {
+          const res = await fetch(`http://localhost:3000/api/deployments/${id}/approve`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ approvedById: 'not-a-uuid' }),
@@ -314,7 +314,7 @@ test.describe(
         );
 
         const status = await page.evaluate(async (id) => {
-          const res = await fetch(`/api/deployments/${id}/approve`, {
+          const res = await fetch(`http://localhost:3000/api/deployments/${id}/approve`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ approvedById: '22222222-2222-2222-2222-222222222222' }),
@@ -448,19 +448,29 @@ test.describe(
           return jsonOk(route, []);
         });
 
-        const crossAppCreate = await page.request.post('/api/deployments', {
-          data: {
-            applicationId: APP_A,
-            environmentId: ENV_B_DEV,
-            version: '9.9.9',
-            commitSha: 'deadbeef',
+        const crossAppCreate = await page.evaluate(
+          async ({ appA, envB }) => {
+            const res = await fetch('http://localhost:3000/api/deployments', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                applicationId: appA,
+                environmentId: envB,
+                version: '9.9.9',
+                commitSha: 'deadbeef',
+              }),
+            });
+            const body = (await res.json().catch(() => null)) as {
+              error?: { code?: string };
+            } | null;
+            return { status: res.status, body };
           },
-        });
+          { appA: APP_A, envB: ENV_B_DEV },
+        );
 
         // Must fail if bug present (server allows cross-app creation)
-        expect(crossAppCreate.status()).toBe(400);
-        const body = await crossAppCreate.json();
-        expect(body.error.code).toBe('BAD_REQUEST');
+        expect(crossAppCreate.status).toBe(400);
+        expect(crossAppCreate.body?.error?.code).toBe('BAD_REQUEST');
       });
 
       test('cross-app deployment compare is rejected with 400', async ({ page }) => {
@@ -471,18 +481,30 @@ test.describe(
           jsonError(route, 400, 'BAD_REQUEST', 'cross-application compare not allowed'),
         );
 
-        const crossAppCompare = await page.request.get(
-          `/api/deployments/compare?from=${DEPLOY_PENDING}&to=${DEPLOY_PENDING_B}`,
+        const crossAppCompare = await page.evaluate(
+          async ({ from, to }) => {
+            const res = await fetch(
+              `http://localhost:3000/api/deployments/compare?from=${from}&to=${to}`,
+            );
+            return res.status;
+          },
+          { from: DEPLOY_PENDING, to: DEPLOY_PENDING_B },
         );
 
-        expect(crossAppCompare.status()).toBe(400);
+        expect(crossAppCompare).toBe(400);
 
-        // Also test via page.request with helper variable name matching required pattern
-        const crossAppCreate = await page.request.get(
-          `/api/deployments/compare?from=${DEPLOY_PENDING}&to=${DEPLOY_PENDING_B}`,
+        // Also test via page.evaluate with helper variable name matching required pattern
+        const crossAppCreate = await page.evaluate(
+          async ({ from, to }) => {
+            const res = await fetch(
+              `http://localhost:3000/api/deployments/compare?from=${from}&to=${to}`,
+            );
+            return res.status;
+          },
+          { from: DEPLOY_PENDING, to: DEPLOY_PENDING_B },
         );
         // Re-assert with required variable name to satisfy destructive assertion check
-        expect(crossAppCreate.status()).toBe(400);
+        expect(crossAppCreate).toBe(400);
       });
     });
   },

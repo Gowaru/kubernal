@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, ExternalLink, Timer, GitBranch } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeployments, useApproveDeployment } from '@/hooks/useDeployments';
-import { useUsers } from '@/hooks/useUsers';
+import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -63,7 +63,7 @@ function formatDuration(startedAt: string | Date, completedAt: string | Date | n
 export function DeploymentTable(): JSX.Element {
   const navigate = useNavigate();
   const { data: deployments, isLoading, error } = useDeployments();
-  const { data: users } = useUsers();
+  const { user: currentUser, hasRole } = useAuth();
   const approveDeployment = useApproveDeployment();
   const [search, setSearch] = useState('');
   const [envFilter, setEnvFilter] = useState('');
@@ -155,15 +155,23 @@ export function DeploymentTable(): JSX.Element {
                   variant="outline"
                   onClick={() =>
                     approveDeployment.mutate(
-                      { id: row.id, approvedById: users?.[0]?.id ?? '' },
+                      { id: row.id, approvedById: currentUser?.id ?? '' },
                       {
                         onSuccess: () => toast.success('Déploiement approuvé'),
                         onError: () => toast.error("Erreur lors de l'approbation"),
                       },
                     )
                   }
-                  disabled={approveDeployment.isPending || !users?.length}
-                  title={!users?.length ? 'Aucun utilisateur' : undefined}
+                  disabled={
+                    approveDeployment.isPending || !currentUser || !hasRole('platform_engineer')
+                  }
+                  title={
+                    !currentUser
+                      ? 'Non authentifié'
+                      : !hasRole('platform_engineer')
+                        ? 'Rôle platform_engineer requis'
+                        : undefined
+                  }
                 >
                   Approuver
                 </Button>
@@ -176,7 +184,7 @@ export function DeploymentTable(): JSX.Element {
         },
       }),
     ],
-    [navigate, approveDeployment, users],
+    [navigate, approveDeployment, currentUser, hasRole],
   );
 
   const table = useReactTable({
