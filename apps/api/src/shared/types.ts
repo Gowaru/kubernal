@@ -1,7 +1,8 @@
-import type { User } from '@kubernal/shared-types';
+import type { PublicUser } from './serializers.js';
 
 declare module 'express' {
   interface Request {
-    user?: User;
+    /** Always the sanitized projection – never contains `passwordHash`/`oidcId`. */
+    user?: PublicUser;
   }
 }

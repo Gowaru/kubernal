@@ -1,15 +1,14 @@
 import { InvalidTransitionError, NotFoundError } from '../../shared/errors.js';
 import { db } from '../../shared/database.js';
 import { deploymentRepository } from './deployment.repository.js';
+import type { DeploymentCreateRow, DeploymentListRow } from './deployment.repository.js';
 import { summarizeDiff, type DeploymentDiff } from '../../shared/git-diff.js';
 import { webhookOutboundService } from '../webhook-outbound/webhook-outbound.service.js';
 import { auditService } from '../audit/audit.service.js';
 import type { Deployment, DeploymentVulnerability } from '@prisma/client';
 
-interface DeploymentWithRelations extends Deployment {
-  application: { id: string; name: string };
-  environment: { id: string; name: string; type: string; namespace: string };
-}
+/** Sanitized row shape returned by the repository (no `passwordHash`/`webhookSecret`). */
+type DeploymentRow = NonNullable<Awaited<ReturnType<typeof deploymentRepository.findById>>>;
 
 const DEPLOYMENT_STATUS_FLOW: Record<string, string[]> = {
   pending: ['building', 'cancelled', 'failed'],
@@ -26,7 +25,7 @@ export function canTransition(from: string, to: string): boolean {
 }
 
 export const deploymentService = {
-  async list(): Promise<Deployment[]> {
+  async list(): Promise<DeploymentListRow[]> {
     return deploymentRepository.findAll();
   },
 
@@ -36,7 +35,7 @@ export const deploymentService = {
     return latest?.version ?? null;
   },
 
-  async getById(id: string): Promise<Deployment> {
+  async getById(id: string): Promise<DeploymentRow> {
     const deployment = await deploymentRepository.findById(id);
     if (!deployment) throw new NotFoundError('Deployment', id);
     return deployment;
@@ -49,7 +48,7 @@ export const deploymentService = {
     commitSha: string;
     trigger?: string;
     status?: string;
-  }): Promise<Deployment> {
+  }): Promise<DeploymentCreateRow> {
     const result = await deploymentRepository.create(data);
     auditService
       .log({
@@ -138,7 +137,7 @@ export const deploymentService = {
     return result;
   },
 
-  async promote(id: string, targetEnvType: 'staging' | 'prod'): Promise<Deployment> {
+  async promote(id: string, targetEnvType: 'staging' | 'prod'): Promise<DeploymentCreateRow> {
     const source = await deploymentRepository.findById(id);
     if (!source) throw new NotFoundError('Deployment', id);
     if (source.status !== 'healthy') {
@@ -185,10 +184,7 @@ export const deploymentService = {
   },
 
   async compare(fromId: string, toId: string): Promise<DeploymentDiff> {
-    const [from, to] = await Promise.all([
-      this.getById(fromId) as Promise<DeploymentWithRelations>,
-      this.getById(toId) as Promise<DeploymentWithRelations>,
-    ]);
+    const [from, to] = await Promise.all([this.getById(fromId), this.getById(toId)]);
     if (from.applicationId !== to.applicationId) {
       throw new InvalidTransitionError('cross-application compare', 'same application only');
     }

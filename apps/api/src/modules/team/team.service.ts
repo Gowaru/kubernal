@@ -1,6 +1,7 @@
 import type { Team } from '@prisma/client';
 import { NotFoundError, ConflictError } from '../../shared/errors.js';
 import { teamRepository } from './team.repository.js';
+import type { TeamCreateRow, TeamDetailRow, TeamListRow } from './team.repository.js';
 import { logger } from '../../shared/logger.js';
 import {
   getNamespaceLabels,
@@ -14,11 +15,11 @@ import {
 } from '../../shared/k8s-client.js';
 
 export const teamService = {
-  async list(): Promise<Team[]> {
+  async list(): Promise<TeamListRow[]> {
     return teamRepository.findAll();
   },
 
-  async getById(id: string): Promise<Team> {
+  async getById(id: string): Promise<TeamDetailRow> {
     const team = await teamRepository.findById(id);
     if (!team) throw new NotFoundError('Team', id);
     return team;
@@ -30,7 +31,7 @@ export const teamService = {
     quotaCpu?: string;
     quotaMemory?: string;
     namespacePrefix: string;
-  }): Promise<Team> {
+  }): Promise<TeamCreateRow> {
     const existing = await teamRepository.findByName(data.name);
     if (existing) throw new ConflictError(`Team '${data.name}' already exists`);
 

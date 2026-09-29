@@ -1,32 +1,42 @@
 import type { User } from '@prisma/client';
 import { db } from '../../shared/database.js';
-
+import { publicUserWithTeamSelect, type PublicUserWithTeam } from '../../shared/serializers.js';
 export const userRepository = {
-  findAll(): Promise<User[]> {
-    return db.user.findMany({ include: { team: true } });
+  findAll(): Promise<PublicUserWithTeam[]> {
+    return db.user.findMany({ select: publicUserWithTeamSelect });
   },
 
-  findById(id: string): Promise<User | null> {
-    return db.user.findUnique({ where: { id }, include: { team: true } });
+  findById(id: string): Promise<PublicUserWithTeam | null> {
+    return db.user.findUnique({ where: { id }, select: publicUserWithTeamSelect });
   },
 
+  /**
+   * Internal only – returns the complete row (incl. `passwordHash`).
+   * Used by the authentication flow and by the uniqueness check on create.
+   * Never expose the result of this query to a client: use `findAll`/`findById`.
+   */
   findByEmail(email: string): Promise<User | null> {
     return db.user.findUnique({ where: { email } });
   },
 
-  create(data: { email: string; name: string; role?: string; teamId?: string }): Promise<User> {
-    return db.user.create({ data, include: { team: true } });
+  create(data: {
+    email: string;
+    name: string;
+    role?: string;
+    teamId?: string;
+  }): Promise<PublicUserWithTeam> {
+    return db.user.create({ data, select: publicUserWithTeamSelect });
   },
 
   update(
     id: string,
     data: { name?: string; role?: string; teamId?: string | null },
-  ): Promise<User> {
-    return db.user.update({ where: { id }, data, include: { team: true } });
+  ): Promise<PublicUserWithTeam> {
+    return db.user.update({ where: { id }, data, select: publicUserWithTeamSelect });
   },
 
-  delete(id: string): Promise<User> {
-    return db.user.delete({ where: { id } });
+  delete(id: string): Promise<PublicUserWithTeam> {
+    return db.user.delete({ where: { id }, select: publicUserWithTeamSelect });
   },
 
   count(): Promise<number> {

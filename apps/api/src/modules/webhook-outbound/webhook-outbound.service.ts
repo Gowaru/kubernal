@@ -1,5 +1,10 @@
 import { db } from '../../shared/database.js';
-import type { Prisma, WebhookConfig, WebhookDelivery } from '@prisma/client';
+import type { Prisma, WebhookDelivery } from '@prisma/client';
+import {
+  redactSensitiveKeys,
+  toPublicWebhookConfig,
+  type PublicWebhookConfig,
+} from '../../shared/serializers.js';
 import { auditService } from '../audit/audit.service.js';
 
 type DeployEvent =
@@ -205,14 +210,18 @@ export const webhookOutboundService = {
     );
   },
 
-  async listConfigs(applicationId: string): Promise<WebhookConfig[]> {
-    return db.webhookConfig.findMany({ where: { applicationId }, orderBy: { createdAt: 'desc' } });
+  async listConfigs(applicationId: string): Promise<PublicWebhookConfig[]> {
+    const configs = await db.webhookConfig.findMany({
+      where: { applicationId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return configs.map(toPublicWebhookConfig);
   },
 
-  async getConfig(id: string): Promise<WebhookConfig> {
+  async getConfig(id: string): Promise<PublicWebhookConfig> {
     const config = await db.webhookConfig.findUnique({ where: { id } });
     if (!config) throw new Error(`WebhookConfig ${id} not found`);
-    return config;
+    return toPublicWebhookConfig(config);
   },
 
   async createConfig(data: {
@@ -221,7 +230,7 @@ export const webhookOutboundService = {
     url: string;
     secret?: string;
     events?: string[];
-  }): Promise<WebhookConfig> {
+  }): Promise<PublicWebhookConfig> {
     const count = await db.webhookConfig.count({ where: { applicationId: data.applicationId } });
     if (count >= 10) {
       throw new Error('Maximum 10 webhook configs per application');
@@ -240,41 +249,54 @@ export const webhookOutboundService = {
         action: 'CREATE',
         resource: 'WebhookConfig',
         resourceId: result.id,
-        details: { applicationId: data.applicationId, name: result.name } as Record<
-          string,
-          unknown
-        >,
+        details: redactSensitiveKeys({
+          applicationId: data.applicationId,
+          name: result.name,
+        }) as Record<string, unknown>,
       })
       .catch(() => {});
-    return result;
+    return toPublicWebhookConfig(result);
   },
 
   async updateConfig(
     id: string,
-    data: { name?: string; url?: string; secret?: string; events?: string[]; enabled?: boolean },
-  ): Promise<WebhookConfig> {
-    const result = await db.webhookConfig.update({ where: { id }, data });
+    data: {
+      name?: string;
+      url?: string;
+      secret?: string | null;
+      events?: string[];
+      enabled?: boolean;
+    },
+  ): Promise<PublicWebhookConfig> {
+    // The HMAC secret is never exposed to clients, so it can never be
+    // round-tripped either: `null`/empty means "keep the current secret",
+    // never "clear it" (the portal sends `null` when the field is left blank).
+    const { secret, ...rest } = data;
+    const sanitizedData: typeof data = secret ? { ...rest, secret } : rest;
+
+    const result = await db.webhookConfig.update({ where: { id }, data: sanitizedData });
     auditService
       .log({
         action: 'UPDATE',
         resource: 'WebhookConfig',
         resourceId: id,
-        details: data as Record<string, unknown>,
+        // Never persist the HMAC secret in the audit log.
+        details: redactSensitiveKeys(sanitizedData) as Record<string, unknown>,
       })
       .catch(() => {});
-    return result;
+    return toPublicWebhookConfig(result);
   },
 
-  async deleteConfig(id: string): Promise<WebhookConfig> {
+  /** The row is deleted; nothing is returned so the HMAC secret can never leak back. */
+  async deleteConfig(id: string): Promise<void> {
     const result = await db.webhookConfig.delete({ where: { id } });
     auditService
       .log({
         action: 'DELETE',
         resource: 'WebhookConfig',
-        resourceId: id,
+        resourceId: result.id,
       })
       .catch(() => {});
-    return result;
   },
 
   async testConfig(id: string): Promise<void> {

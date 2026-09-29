@@ -1,30 +1,13 @@
 import type { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'node:crypto';
 import { auditService } from '../../modules/audit/audit.service.js';
+import { redactSensitiveKeys } from '../serializers.js';
 
 type AuditedRequest = Request & {
   requestId: string;
   actor: { id: string; email: string } | null;
   realIp: string;
 };
-
-const SENSITIVE_BODY_KEYS = new Set(['secret', 'password', 'token', 'apiKey', 'webhookSecret']);
-
-function sanitizeBody(body: unknown): unknown {
-  if (!body || typeof body !== 'object') return body;
-  if (Array.isArray(body)) return body.map(sanitizeBody);
-  const sanitized: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(body as Record<string, unknown>)) {
-    if (SENSITIVE_BODY_KEYS.has(key)) {
-      sanitized[key] = '***';
-    } else if (typeof value === 'object' && value !== null) {
-      sanitized[key] = sanitizeBody(value);
-    } else {
-      sanitized[key] = value;
-    }
-  }
-  return sanitized;
-}
 
 export function auditContext(req: Request, _res: Response, next: NextFunction): void {
   const augmented = req as AuditedRequest;
@@ -56,7 +39,7 @@ export function auditContext(req: Request, _res: Response, next: NextFunction): 
             resourceId: rid,
             details: {
               params: req.params,
-              body: sanitizeBody(req.body),
+              body: redactSensitiveKeys(req.body),
               statusCode: _res.statusCode,
             },
             actorId: augmented.actor?.id,

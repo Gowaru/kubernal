@@ -1,9 +1,21 @@
-import type { Application } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import { NotFoundError } from '../../shared/errors.js';
 import { db } from '../../shared/database.js';
 import { applicationRepository } from './application.repository.js';
 import type { AppListQuery } from './application.repository.js';
 import { auditService } from '../audit/audit.service.js';
+import { publicApplicationWithRelationsSelect } from '../../shared/serializers.js';
+
+/** Sanitized projection reused by the transactional create below. */
+const CREATE_SELECT = {
+  ...publicApplicationWithRelationsSelect,
+  environments: true,
+} as const satisfies Prisma.ApplicationSelect;
+
+type AppRow = Prisma.ApplicationGetPayload<{ select: typeof CREATE_SELECT }>;
+type AppListRow = Awaited<ReturnType<typeof applicationRepository.findAll>>[number];
+/** Sanitized detail row returned by the repository (owner included, never its hash). */
+type AppDetailRow = NonNullable<Awaited<ReturnType<typeof applicationRepository.findById>>>;
 
 const DEFAULT_ENV_TYPES = [
   { type: 'dev', requiresApproval: false },
@@ -12,7 +24,7 @@ const DEFAULT_ENV_TYPES = [
 ] as const;
 
 export const applicationService = {
-  async list(q?: AppListQuery): Promise<{ data: Application[]; total: number }> {
+  async list(q?: AppListQuery): Promise<{ data: AppListRow[]; total: number }> {
     if (q?.search || q?.teamId || q?.status || q?.templateId || q?.page) {
       return applicationRepository.findAllPaginated(q);
     }
@@ -20,7 +32,7 @@ export const applicationService = {
     return { data, total: data.length };
   },
 
-  async getById(id: string): Promise<Application> {
+  async getById(id: string): Promise<AppDetailRow> {
     const app = await applicationRepository.findById(id);
     if (!app) throw new NotFoundError('Application', id);
     return app;
@@ -34,7 +46,7 @@ export const applicationService = {
     ownerId: string;
     repositoryUrl?: string;
     config?: Record<string, unknown>;
-  }): Promise<Application> {
+  }): Promise<AppRow> {
     const template = await db.goldenPathTemplate.findUnique({
       where: { id: data.templateId },
       select: { repository: true, steps: true },
@@ -61,7 +73,7 @@ export const applicationService = {
           repositoryUrl:
             data.repositoryUrl ?? (hasScaffoldStep ? null : (template?.repository ?? null)),
         },
-        include: { team: true, template: true, owner: true },
+        select: { id: true },
       });
 
       await tx.environment.createMany({
@@ -77,7 +89,7 @@ export const applicationService = {
 
       const created = await tx.application.findUniqueOrThrow({
         where: { id: app.id },
-        include: { team: true, template: true, owner: true, environments: true },
+        select: CREATE_SELECT,
       });
       auditService
         .log({
@@ -100,7 +112,7 @@ export const applicationService = {
       status?: string;
       archivedAt?: Date | null;
     },
-  ): Promise<Application> {
+  ): Promise<AppRow> {
     const app = await applicationRepository.findById(id);
     if (!app) throw new NotFoundError('Application', id);
     const result = await applicationRepository.update(id, data);
@@ -115,7 +127,7 @@ export const applicationService = {
     return result;
   },
 
-  async delete(id: string): Promise<Application> {
+  async delete(id: string): Promise<AppRow> {
     const app = await applicationRepository.findById(id);
     if (!app) throw new NotFoundError('Application', id);
     const result = await applicationRepository.delete(id);
@@ -129,13 +141,13 @@ export const applicationService = {
     return result;
   },
 
-  async archive(id: string): Promise<Application> {
+  async archive(id: string): Promise<AppRow> {
     const app = await applicationRepository.findById(id);
     if (!app) throw new NotFoundError('Application', id);
     return applicationRepository.update(id, { archivedAt: new Date() });
   },
 
-  async unarchive(id: string): Promise<Application> {
+  async unarchive(id: string): Promise<AppRow> {
     const app = await applicationRepository.findById(id);
     if (!app) throw new NotFoundError('Application', id);
     return applicationRepository.update(id, { archivedAt: null });

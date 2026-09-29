@@ -17,15 +17,18 @@ export function hasRole(userRole: UserRole, requiredRole: UserRole): boolean {
   return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
 }
 
+/**
+ * Public `User` shape – exactly what the API returns.
+ * Credential material (`passwordHash`, `oidcId`) is never part of the contract:
+ * see `apps/api/src/shared/serializers.ts`.
+ */
 export interface User {
   id: string;
   email: string;
   name: string;
   role: UserRole;
   teamId: string | null;
-  passwordHash?: string | null;
   oidcProvider?: string | null;
-  oidcId?: string | null;
   lastLogin?: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -341,7 +344,8 @@ export interface WebhookConfig {
   applicationId: string;
   name: string;
   url: string;
-  secret: string | null;
+  /** The HMAC secret is never returned by the API – only whether one is set. */
+  hasSecret: boolean;
   events: WebhookEvent[];
   enabled: boolean;
   createdAt: Date;

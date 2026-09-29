@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
-import type { User } from '@kubernal/shared-types';
 import { db } from '../database.js';
+import { toPublicUser } from '../serializers.js';
 
 export async function deserializeUser(
   req: Request,
@@ -25,9 +25,7 @@ export async function deserializeUser(
       return next();
     }
 
-    const { passwordHash, ...safeUser } = user;
-    void passwordHash;
-    req.user = safeUser as User;
+    req.user = toPublicUser(user);
     next();
   } catch (err) {
     next(err);

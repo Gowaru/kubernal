@@ -19,7 +19,8 @@ type CreateWebhookInput = {
 type UpdateWebhookInput = {
   name?: string;
   url?: string;
-  secret?: string | null;
+  /** Omitted when blank – the API keeps the existing HMAC secret. */
+  secret?: string;
   events?: string[];
   enabled?: boolean;
 };

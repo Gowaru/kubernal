@@ -1,5 +1,9 @@
-import type { Application, Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import { db } from '../../shared/database.js';
+import {
+  publicApplicationWithRelationsSelect,
+  publicApplicationSelect,
+} from '../../shared/serializers.js';
 
 export interface AppListQuery {
   search?: string;
@@ -12,7 +16,33 @@ export interface AppListQuery {
   sortOrder?: 'asc' | 'desc';
 }
 
-const LIST_INCLUDE = { team: true, template: true, owner: true, environments: true } as const;
+/** Sanitized projection – `webhookSecret` and the owner's `passwordHash` are never fetched. */
+const LIST_SELECT = {
+  ...publicApplicationWithRelationsSelect,
+  environments: true,
+} as const satisfies Prisma.ApplicationSelect;
+
+const DETAIL_SELECT = {
+  ...LIST_SELECT,
+  deployments: true,
+} as const satisfies Prisma.ApplicationSelect;
+
+/** Sanitized projection reused after every write (create/update/delete). */
+export const CREATE_SELECT = {
+  ...publicApplicationWithRelationsSelect,
+  environments: true,
+} as const satisfies Prisma.ApplicationSelect;
+
+/** Team listing only needs the scalars + environments, not the full relations. */
+const TEAM_SELECT = {
+  ...publicApplicationSelect,
+  environments: true,
+} as const satisfies Prisma.ApplicationSelect;
+
+type AppListRow = Prisma.ApplicationGetPayload<{ select: typeof LIST_SELECT }>;
+type AppDetailRow = Prisma.ApplicationGetPayload<{ select: typeof DETAIL_SELECT }>;
+type AppRow = Prisma.ApplicationGetPayload<{ select: typeof CREATE_SELECT }>;
+type AppTeamRow = Prisma.ApplicationGetPayload<{ select: typeof TEAM_SELECT }>;
 
 function buildWhere(q: AppListQuery): Prisma.ApplicationWhereInput {
   const where: Prisma.ApplicationWhereInput = {};
@@ -41,7 +71,7 @@ function buildOrderBy(
 }
 
 export const applicationRepository = {
-  async findAllPaginated(q: AppListQuery): Promise<{ data: Application[]; total: number }> {
+  async findAllPaginated(q: AppListQuery): Promise<{ data: AppListRow[]; total: number }> {
     const where = buildWhere(q);
     const orderBy = buildOrderBy(q.sortBy, q.sortOrder);
     const page = Math.max(1, q.page ?? 1);
@@ -54,26 +84,29 @@ export const applicationRepository = {
         orderBy,
         skip,
         take: pageSize,
-        include: LIST_INCLUDE,
+        select: LIST_SELECT,
       }),
       db.application.count({ where }),
     ]);
     return { data, total };
   },
 
-  findAll(): Promise<Application[]> {
-    return db.application.findMany({ include: LIST_INCLUDE });
+  findAll(): Promise<AppListRow[]> {
+    return db.application.findMany({ select: LIST_SELECT });
   },
 
-  findById(id: string): Promise<Application | null> {
+  findById(id: string): Promise<AppDetailRow | null> {
     return db.application.findUnique({
       where: { id },
-      include: { ...LIST_INCLUDE, deployments: true },
+      select: DETAIL_SELECT,
     });
   },
 
-  findByTeam(teamId: string): Promise<Application[]> {
-    return db.application.findMany({ where: { teamId }, include: { environments: true } });
+  findByTeam(teamId: string): Promise<AppTeamRow[]> {
+    return db.application.findMany({
+      where: { teamId },
+      select: TEAM_SELECT,
+    });
   },
 
   create(data: {
@@ -84,10 +117,10 @@ export const applicationRepository = {
     ownerId: string;
     repositoryUrl?: string;
     status?: string;
-  }): Promise<Application> {
+  }): Promise<AppRow> {
     return db.application.create({
       data,
-      include: { team: true, template: true, owner: true },
+      select: CREATE_SELECT,
     });
   },
 
@@ -100,11 +133,11 @@ export const applicationRepository = {
       status?: string;
       archivedAt?: Date | null;
     },
-  ): Promise<Application> {
-    return db.application.update({ where: { id }, data });
+  ): Promise<AppRow> {
+    return db.application.update({ where: { id }, data, select: CREATE_SELECT });
   },
 
-  delete(id: string): Promise<Application> {
-    return db.application.delete({ where: { id } });
+  delete(id: string): Promise<AppRow> {
+    return db.application.delete({ where: { id }, select: CREATE_SELECT });
   },
 };

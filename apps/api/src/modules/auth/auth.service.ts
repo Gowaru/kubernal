@@ -1,12 +1,9 @@
 import bcrypt from 'bcrypt';
-import type { User } from '@kubernal/shared-types';
 import { db } from '../../shared/database.js';
 import { UnauthorizedError } from '../../shared/errors.js';
+import { toPublicUser, type PublicUser } from '../../shared/serializers.js';
 
-export async function validateCredentials(
-  email: string,
-  password: string,
-): Promise<Omit<User, 'passwordHash'>> {
+export async function validateCredentials(email: string, password: string): Promise<PublicUser> {
   const user = await db.user.findUnique({ where: { email } });
   if (!user || !user.passwordHash) {
     throw new UnauthorizedError('Invalid email or password');
@@ -22,17 +19,13 @@ export async function validateCredentials(
     data: { lastLogin: new Date() },
   });
 
-  const { passwordHash, ...safeUser } = user;
-  void passwordHash;
-  return safeUser as Omit<User, 'passwordHash'>;
+  return toPublicUser(user);
 }
 
-export async function getCurrentUser(userId: string): Promise<Omit<User, 'passwordHash'> | null> {
+export async function getCurrentUser(userId: string): Promise<PublicUser | null> {
   const user = await db.user.findUnique({ where: { id: userId } });
   if (!user) return null;
-  const { passwordHash, ...safeUser } = user;
-  void passwordHash;
-  return safeUser as Omit<User, 'passwordHash'>;
+  return toPublicUser(user);
 }
 
 export async function findOrCreateOidcUser(profile: {
@@ -40,7 +33,7 @@ export async function findOrCreateOidcUser(profile: {
   email: string;
   name: string;
   oidcProvider: string;
-}): Promise<User> {
+}): Promise<PublicUser> {
   const existingByOidc = await db.user.findFirst({
     where: {
       oidcProvider: profile.oidcProvider,
@@ -53,7 +46,7 @@ export async function findOrCreateOidcUser(profile: {
       where: { id: existingByOidc.id },
       data: { lastLogin: new Date() },
     });
-    return existingByOidc as User;
+    return toPublicUser(existingByOidc);
   }
 
   const existingByEmail = await db.user.findUnique({
@@ -69,7 +62,7 @@ export async function findOrCreateOidcUser(profile: {
         lastLogin: new Date(),
       },
     });
-    return updated as User;
+    return toPublicUser(updated);
   }
 
   const newUser = await db.user.create({
@@ -83,5 +76,5 @@ export async function findOrCreateOidcUser(profile: {
     },
   });
 
-  return newUser as User;
+  return toPublicUser(newUser);
 }
