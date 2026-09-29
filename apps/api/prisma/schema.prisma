@@ -18,7 +18,9 @@ model User {
   name         String
   role         String    @default("developer") // viewer | developer | platform_engineer | admin | security_admin
   teamId       String?
-  team         Team?     @relation(fields: [teamId], references: [id])
+  // SET NULL explicite : aligne le schéma sur la DB (migrations initiales) et évite
+  // qu'un futur `migrate dev` régresse vers RESTRICT (suppression d'équipe = 500).
+  team         Team?     @relation(fields: [teamId], references: [id], onDelete: SetNull)
   passwordHash String?
   lastLogin    DateTime?
   createdAt    DateTime  @default(now())
@@ -85,9 +87,13 @@ model Application {
   templateId    String
   template      GoldenPathTemplate @relation(fields: [templateId], references: [id])
   teamId        String
-  team          Team     @relation(fields: [teamId], references: [id])
+  team          Team     @relation(fields: [teamId], references: [id], onDelete: Restrict)
   ownerId       String
-  owner         User     @relation("Owner", fields: [ownerId], references: [id])
+  // CASCADE : le portail promet « Supprime définitivement votre compte et toutes les
+  // données associées ». La FK est scopée à ownerId, donc ne supprime QUE les apps dont
+  // ownerId = cet utilisateur — jamais celles d'un autre owner. L'historique
+  // d'approbation des autres users est préservé (Deployment.approvedBy = SetNull).
+  owner         User     @relation("Owner", fields: [ownerId], references: [id], onDelete: Cascade)
   repositoryUrl  String?
   webhookSecret  String?
   status         String   @default("creating") // creating | active | failed | archived
@@ -107,7 +113,8 @@ model Environment {
   name             String
   type             String // dev | staging | prod
   applicationId    String
-  application      Application @relation(fields: [applicationId], references: [id])
+  // CASCADE : supprimer une application emporte ses environnements.
+  application      Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   namespace        String
   clusterName      String @default("kubernal")
   requiresApproval Boolean @default(false)
@@ -120,15 +127,24 @@ model Environment {
 model Deployment {
   id               String    @id @default(uuid())
   applicationId    String
-  application      Application @relation(fields: [applicationId], references: [id])
+  // CASCADE : la suppression d'une application est déjà un choix destructif assumé
+  // (l'app est la racine de son arbre : envs → déploiements → pipelines → étapes).
+  application      Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   environmentId    String
-  environment      Environment @relation(fields: [environmentId], references: [id])
+  // CASCADE : un environnement ne vit pas sans son application. Empêcher la suppression
+  // d'un env peuplé n'est pas tenable ici — l'API n'expose aucun DELETE /deployments/:id,
+  // donc un RESTRICT rendrait ces environnements définitivement indétruits. La voie
+  // non destructive reste POST /applications/:id/archive.
+  environment      Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
   version          String
   commitSha        String
   status           String    @default("pending") // pending | building | deploying | healthy | failed | rolled_back | cancelled
   trigger          String    @default("manual") // manual | git_push | scheduled | rollback
   approvedById     String?
-  approvedBy       User?     @relation("Approver", fields: [approvedById], references: [id])
+  // SET NULL (jamais CASCADE) : le déploiement, et donc la trace de son approbation,
+  // doit survivre à la suppression de l'utilisateur qui l'avait approuvé. Le champ est
+  // nullable, ce qui rend cette politique possible.
+  approvedBy       User?     @relation("Approver", fields: [approvedById], references: [id], onDelete: SetNull)
   artifacts        Json      @default("[]")
   policyViolations Json      @default("[]")
   startedAt        DateTime  @default(now())
@@ -143,7 +159,9 @@ model Deployment {
 model Pipeline {
   id           String    @id @default(uuid())
   deploymentId String
-  deployment   Deployment @relation(fields: [deploymentId], references: [id])
+  // CASCADE : un pipeline n'a aucun sens sans son déploiement (idem
+  // DeploymentVulnerability). Évite le 500 sur suppression d'un déploiement peuplé.
+  deployment   Deployment @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
   name         String
   status       String    @default("running") // running | success | failed | cancelled
   stages       Json      @default("[]")
