@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCreateTeam } from '@/hooks/useTeams';
+import { useSubmitLock } from '@/hooks/useSubmitLock';
 import { Loader2, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -32,6 +33,7 @@ interface CreateTeamModalProps {
 
 export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): JSX.Element {
   const createTeam = useCreateTeam();
+  const { busy: submitting, acquire, release } = useSubmitLock(createTeam.isPending);
 
   const [step, setStep] = useState<'step1' | 'step2' | 'progress' | 'success'>('step1');
   const [progress, setProgress] = useState(0);
@@ -102,6 +104,7 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): J
   };
 
   const handleSubmit = async (): Promise<void> => {
+    if (!acquire()) return;
     setStep('progress');
     setProgress(0);
 
@@ -130,6 +133,8 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): J
       clearInterval(interval);
       toast.error("Erreur lors de la création de l'équipe");
       setStep('step1');
+    } finally {
+      release();
     }
   };
 
@@ -267,9 +272,9 @@ export function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps): J
                 <ChevronLeft className="mr-2 h-4 w-4" />
                 Retour
               </Button>
-              <Button onClick={handleNext} disabled={createTeam.isPending}>
-                {createTeam.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Créer l'équipe
+              <Button onClick={handleNext} disabled={submitting} aria-busy={submitting}>
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {submitting ? 'Création…' : "Créer l'équipe"}
               </Button>
             </DialogFooter>
           </>

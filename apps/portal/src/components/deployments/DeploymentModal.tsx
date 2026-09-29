@@ -19,6 +19,7 @@ import { useApplications } from '@/hooks/useApplications';
 import { useCreateDeployment } from '@/hooks/useDeployments';
 import { useEnvironments } from '@/hooks/useEnvironments';
 import { useNextVersion, type BumpType } from '@/hooks/useNextVersion';
+import { useSubmitLock } from '@/hooks/useSubmitLock';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Loader2,
@@ -90,6 +91,7 @@ export function DeploymentModal({
   const [options, setOptions] = useState<string[]>([]);
 
   const { data: nextVersion } = useNextVersion(appId || undefined, { bump });
+  const { busy: submitting, acquire, release } = useSubmitLock(createDeployment.isPending);
 
   const version = nextVersion?.version ?? '';
 
@@ -123,6 +125,7 @@ export function DeploymentModal({
 
   const handleSubmit = (): void => {
     if (!appId || !version || !environmentId) return;
+    if (!acquire()) return;
 
     setStep('progress');
     setProgress(0);
@@ -166,6 +169,9 @@ export function DeploymentModal({
           toast.error('Erreur lors du déploiement', {
             description: 'Une erreur est survenue. Veuillez réessayer.',
           });
+        },
+        onSettled: () => {
+          release();
         },
       },
     );
@@ -323,19 +329,18 @@ export function DeploymentModal({
             </div>
 
             <DialogFooter className="gap-2">
-              <Button variant="outline" size="sm" onClick={handleClose}>
+              <Button variant="outline" size="sm" onClick={handleClose} disabled={submitting}>
                 Annuler
               </Button>
               <Button
                 size="sm"
                 onClick={handleSubmit}
-                disabled={!isValid || createDeployment.isPending}
+                disabled={!isValid || submitting}
+                aria-busy={submitting}
               >
-                {createDeployment.isPending && (
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                )}
+                {submitting && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
                 <Rocket className="mr-1.5 h-3.5 w-3.5" />
-                Lancer le déploiement
+                {submitting ? 'Lancement…' : 'Lancer le déploiement'}
               </Button>
             </DialogFooter>
           </>

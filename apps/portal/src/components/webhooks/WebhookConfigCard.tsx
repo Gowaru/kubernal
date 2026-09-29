@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useWebhookConfig, useRegenerateWebhook } from '@/hooks/useWebhookConfig';
+import { useSubmitLock } from '@/hooks/useSubmitLock';
 import { detectProvider } from '@/lib/repo-utils';
 import { toast } from 'sonner';
 
@@ -46,6 +47,11 @@ export function WebhookConfigCard({
 }: WebhookConfigCardProps): JSX.Element {
   const { data, isLoading } = useWebhookConfig(applicationId);
   const regenerate = useRegenerateWebhook();
+  const {
+    busy: regenerating,
+    acquire: acquireRegenerate,
+    release: releaseRegenerate,
+  } = useSubmitLock(regenerate.isPending);
   const [showSecret, setShowSecret] = useState(false);
   const [lastSecret, setLastSecret] = useState<string | null>(null);
 
@@ -74,24 +80,30 @@ export function WebhookConfigCard({
   if (!data) return <></>;
 
   const handleRegenerate = (): void => {
+    if (!acquireRegenerate()) return;
     if (
-      window.confirm(
+      !window.confirm(
         'Régénérer le secret ? Le nouveau secret sera affiché une seule fois, vous devrez le mettre à jour sur votre provider Git.',
       )
     ) {
-      regenerate.mutate(applicationId, {
-        onSuccess: (result) => {
-          setLastSecret(result.secret);
-          setShowSecret(true);
-          toast.success('Secret régénéré', {
-            description: 'Copiez-le maintenant et mettez à jour votre provider Git.',
-          });
-        },
-        onError: () => {
-          toast.error('Échec de la régénération du secret');
-        },
-      });
+      releaseRegenerate();
+      return;
     }
+    regenerate.mutate(applicationId, {
+      onSuccess: (result) => {
+        setLastSecret(result.secret);
+        setShowSecret(true);
+        toast.success('Secret régénéré', {
+          description: 'Copiez-le maintenant et mettez à jour votre provider Git.',
+        });
+      },
+      onError: () => {
+        toast.error('Échec de la régénération du secret');
+      },
+      onSettled: () => {
+        releaseRegenerate();
+      },
+    });
   };
 
   return (
@@ -169,13 +181,12 @@ export function WebhookConfigCard({
               variant="outline"
               size="sm"
               onClick={handleRegenerate}
-              disabled={regenerate.isPending}
+              disabled={regenerating}
+              aria-busy={regenerating}
               className="shrink-0"
             >
-              <RefreshCw
-                className={`mr-1.5 h-3.5 w-3.5 ${regenerate.isPending ? 'animate-spin' : ''}`}
-              />
-              Régénérer
+              <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${regenerating ? 'animate-spin' : ''}`} />
+              {regenerating ? 'Régénération…' : 'Régénérer'}
             </Button>
           </div>
           {lastSecret && (

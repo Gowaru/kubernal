@@ -1,4 +1,4 @@
-import { useEffect, type JSX } from 'react';
+import { useEffect, useRef, type JSX } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -65,6 +65,7 @@ export function Sidebar(): JSX.Element {
   const { collapsed, mobileOpen, toggle, setMobileOpen, pendingApprovals, setPendingApprovals } =
     useSidebar();
   const { user, logout, hasRole } = useAuth();
+  const logoutInFlightRef = useRef(false);
   const { data: deployments } = useDeployments();
   const { data: clusterInfo } = useClusterInfo();
   const { data: k8sEvents = [] } = useK8sEvents(clusterInfo?.namespace ?? 'default');
@@ -282,8 +283,14 @@ export function Sidebar(): JSX.Element {
               className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
               aria-label="Déconnexion"
               onClick={async () => {
-                await logout();
-                navigate('/login');
+                if (logoutInFlightRef.current) return;
+                logoutInFlightRef.current = true;
+                try {
+                  await logout();
+                  navigate('/login');
+                } finally {
+                  logoutInFlightRef.current = false;
+                }
               }}
             >
               <LogOut className="h-4 w-4" aria-hidden="true" />

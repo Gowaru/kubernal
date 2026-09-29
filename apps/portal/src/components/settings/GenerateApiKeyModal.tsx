@@ -17,10 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Key, Copy, Check, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Key, Copy, Check, AlertTriangle, ShieldCheck, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ApiKeyCreated } from '@kubernal/shared-types';
 import { useCreateApiKey } from '@/hooks/useApiKeys';
+import { useSubmitLock } from '@/hooks/useSubmitLock';
 
 interface GenerateApiKeyModalProps {
   open: boolean;
@@ -54,6 +55,7 @@ export function GenerateApiKeyModal({
   const [generatedName, setGeneratedName] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const createMutation = useCreateApiKey();
+  const { busy: submitting, acquire, release } = useSubmitLock(createMutation.isPending);
 
   const reset = useCallback(() => {
     setStep('form');
@@ -74,6 +76,7 @@ export function GenerateApiKeyModal({
       toast.error('Le nom de la clé est requis');
       return;
     }
+    if (!acquire()) return;
     const expiresInDays = expiry === 'never' ? undefined : parseInt(expiry, 10);
     createMutation.mutate(
       { name: name.trim(), expiresInDays },
@@ -88,6 +91,9 @@ export function GenerateApiKeyModal({
           toast.error('Erreur lors de la création de la clé', {
             description: err.message,
           });
+        },
+        onSettled: () => {
+          release();
         },
       },
     );
@@ -156,11 +162,17 @@ export function GenerateApiKeyModal({
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={handleClose} disabled={createMutation.isPending}>
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                disabled={submitting}
+                aria-busy={submitting}
+              >
                 Annuler
               </Button>
-              <Button onClick={handleGenerate} disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Création...' : 'Générer la clé'}
+              <Button onClick={handleGenerate} disabled={submitting} aria-busy={submitting}>
+                {submitting && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                {submitting ? 'Création…' : 'Générer la clé'}
               </Button>
             </DialogFooter>
           </>

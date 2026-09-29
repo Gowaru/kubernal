@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, ExternalLink, Timer, GitBranch } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDeployments, useApproveDeployment } from '@/hooks/useDeployments';
+import { useSubmitLock } from '@/hooks/useSubmitLock';
 import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -65,6 +66,11 @@ export function DeploymentTable(): JSX.Element {
   const { data: deployments, isLoading, error } = useDeployments();
   const { user: currentUser, hasRole } = useAuth();
   const approveDeployment = useApproveDeployment();
+  const {
+    busy: approving,
+    acquire: acquireApprove,
+    release: releaseApprove,
+  } = useSubmitLock(approveDeployment.isPending);
   const [search, setSearch] = useState('');
   const [envFilter, setEnvFilter] = useState('');
 
@@ -153,18 +159,19 @@ export function DeploymentTable(): JSX.Element {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() =>
+                  onClick={() => {
+                    if (!acquireApprove()) return;
                     approveDeployment.mutate(
                       { id: row.id, approvedById: currentUser?.id ?? '' },
                       {
                         onSuccess: () => toast.success('Déploiement approuvé'),
                         onError: () => toast.error("Erreur lors de l'approbation"),
+                        onSettled: () => releaseApprove(),
                       },
-                    )
-                  }
-                  disabled={
-                    approveDeployment.isPending || !currentUser || !hasRole('platform_engineer')
-                  }
+                    );
+                  }}
+                  disabled={approving || !currentUser || !hasRole('platform_engineer')}
+                  aria-busy={approving}
                   title={
                     !currentUser
                       ? 'Non authentifié'
@@ -173,7 +180,7 @@ export function DeploymentTable(): JSX.Element {
                         : undefined
                   }
                 >
-                  Approuver
+                  {approving ? 'Approbation…' : 'Approuver'}
                 </Button>
               )}
               <Button size="sm" variant="ghost" onClick={() => navigate(`/deployments/${row.id}`)}>
@@ -184,7 +191,7 @@ export function DeploymentTable(): JSX.Element {
         },
       }),
     ],
-    [navigate, approveDeployment, currentUser, hasRole],
+    [navigate, approveDeployment, currentUser, hasRole, acquireApprove, releaseApprove, approving],
   );
 
   const table = useReactTable({

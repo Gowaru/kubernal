@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useApplication, useArchiveApplication } from '@/hooks/useApplications';
+import { useSubmitLock } from '@/hooks/useSubmitLock';
 import { useTeam } from '@/hooks/useTeams';
 import { useTemplate } from '@/hooks/useTemplates';
 import { useDeployments } from '@/hooks/useDeployments';
@@ -57,6 +58,11 @@ export default function AppDetail(): JSX.Element {
   const { data: template } = useTemplate(application?.templateId ?? '');
   const { data: allDeployments } = useDeployments();
   const archiveMutation = useArchiveApplication();
+  const {
+    busy: archiving,
+    acquire: acquireArchive,
+    release: releaseArchive,
+  } = useSubmitLock(archiveMutation.isPending);
   const [showDeployModal, setShowDeployModal] = useState(false);
 
   const appDeployments = useMemo<Deployment[]>(() => {
@@ -124,19 +130,25 @@ export default function AppDetail(): JSX.Element {
           {!application.archivedAt && (
             <Button
               variant="outline"
-              disabled={archiveMutation.isPending}
+              disabled={archiving}
+              aria-busy={archiving}
               onClick={() => {
+                if (!acquireArchive()) return;
                 if (
                   !confirm(
                     `Archiver l'application "${application.name}" ? Elle ne sera plus visible dans le catalogue.`,
                   )
-                )
+                ) {
+                  releaseArchive();
                   return;
-                archiveMutation.mutate(id!);
+                }
+                archiveMutation.mutate(id!, {
+                  onSettled: () => releaseArchive(),
+                });
               }}
             >
               <Archive className="mr-2 h-4 w-4" />
-              {archiveMutation.isPending ? 'Archivage…' : 'Archiver'}
+              {archiving ? 'Archivage…' : 'Archiver'}
             </Button>
           )}
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, type JSX } from 'react';
+import { useState, useEffect, useRef, type JSX } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -44,9 +44,11 @@ export default function LoginPage(): JSX.Element {
   const [emailError, setEmailError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const submitLockRef = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
+    if (isLoading || submitLockRef.current) return;
 
     setEmailError('');
     toast.dismiss();
@@ -56,6 +58,7 @@ export default function LoginPage(): JSX.Element {
       return;
     }
 
+    submitLockRef.current = true;
     setIsLoading(true);
     try {
       await login(email, password, rememberMe);
@@ -67,6 +70,7 @@ export default function LoginPage(): JSX.Element {
         duration: 5000,
       });
     } finally {
+      submitLockRef.current = false;
       setIsLoading(false);
     }
   };
@@ -243,6 +247,7 @@ export default function LoginPage(): JSX.Element {
               type="submit"
               className="h-11 w-full text-sm font-medium bg-accent hover:bg-accent/90 text-accent-foreground shadow-md shadow-accent/20 transition-all hover:shadow-lg hover:shadow-accent/30"
               disabled={isLoading}
+              aria-busy={isLoading}
             >
               {isLoading ? (
                 <>

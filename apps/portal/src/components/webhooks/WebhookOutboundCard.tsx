@@ -10,6 +10,7 @@ import {
   useTestWebhookOutbound,
   useWebhookDeliveries,
 } from '@/hooks/useWebhookOutbound';
+import { useSubmitLock } from '@/hooks/useSubmitLock';
 import { WebhookOutboundModal } from './WebhookOutboundModal';
 import { toast } from 'sonner';
 import { formatRelativeTime } from '@/lib/utils';
@@ -66,6 +67,16 @@ function ConfigRow({
 }): JSX.Element {
   const del = useDeleteWebhookOutbound();
   const test = useTestWebhookOutbound();
+  const {
+    busy: testing,
+    acquire: acquireTest,
+    release: releaseTest,
+  } = useSubmitLock(test.isPending);
+  const {
+    busy: deleting,
+    acquire: acquireDelete,
+    release: releaseDelete,
+  } = useSubmitLock(del.isPending);
 
   return (
     <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
@@ -85,12 +96,15 @@ function ConfigRow({
             className="h-7 w-7"
             title="Tester"
             onClick={() => {
+              if (!acquireTest()) return;
               test.mutate(config.id, {
                 onSuccess: () => toast.success('Webhook de test envoyé'),
                 onError: () => toast.error('Échec du test'),
+                onSettled: () => releaseTest(),
               });
             }}
-            disabled={test.isPending}
+            disabled={testing}
+            aria-busy={testing}
           >
             <Play className="h-3.5 w-3.5" />
           </Button>
@@ -109,14 +123,19 @@ function ConfigRow({
             className="h-7 w-7 text-status-error"
             title="Supprimer"
             onClick={() => {
-              if (window.confirm('Supprimer ce webhook ?')) {
-                del.mutate(config.id, {
-                  onSuccess: () => toast.success('Webhook supprimé'),
-                  onError: () => toast.error('Échec de la suppression'),
-                });
+              if (!acquireDelete()) return;
+              if (!window.confirm('Supprimer ce webhook ?')) {
+                releaseDelete();
+                return;
               }
+              del.mutate(config.id, {
+                onSuccess: () => toast.success('Webhook supprimé'),
+                onError: () => toast.error('Échec de la suppression'),
+                onSettled: () => releaseDelete(),
+              });
             }}
-            disabled={del.isPending}
+            disabled={deleting}
+            aria-busy={deleting}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>

@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCreateTemplate } from '@/hooks/useTemplates';
+import { useSubmitLock } from '@/hooks/useSubmitLock';
 import { Loader2, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -47,6 +48,7 @@ interface CreateTemplateModalProps {
 
 export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalProps): JSX.Element {
   const createTemplate = useCreateTemplate();
+  const { busy: submitting, acquire, release } = useSubmitLock(createTemplate.isPending);
 
   const [step, setStep] = useState<'step1' | 'step2' | 'progress' | 'success'>('step1');
   const [progress, setProgress] = useState(0);
@@ -115,6 +117,7 @@ export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalP
   };
 
   const handleSubmit = async (): Promise<void> => {
+    if (!acquire()) return;
     setStep('progress');
     setProgress(0);
 
@@ -143,6 +146,8 @@ export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalP
       clearInterval(interval);
       toast.error('Erreur lors de la création du template');
       setStep('step1');
+    } finally {
+      release();
     }
   };
 
@@ -283,11 +288,9 @@ export function CreateTemplateModal({ open, onOpenChange }: CreateTemplateModalP
                 <ChevronLeft className="mr-2 h-4 w-4" />
                 Retour
               </Button>
-              <Button onClick={handleNext} disabled={createTemplate.isPending}>
-                {createTemplate.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Créer le template
+              <Button onClick={handleNext} disabled={submitting} aria-busy={submitting}>
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {submitting ? 'Création…' : 'Créer le template'}
               </Button>
             </DialogFooter>
           </>

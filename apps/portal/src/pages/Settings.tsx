@@ -14,6 +14,7 @@ import { useTeams } from '@/hooks/useTeams';
 import { useApiKeys, useDeleteApiKey } from '@/hooks/useApiKeys';
 import { useNotificationPrefs, useUpdateNotificationPrefs } from '@/hooks/useNotificationPrefs';
 import { useDeleteAccount } from '@/hooks/useDeleteAccount';
+import { useSubmitLock } from '@/hooks/useSubmitLock';
 import { GenerateApiKeyModal } from '@/components/settings/GenerateApiKeyModal';
 import type { ApiKeyCreated } from '@kubernal/shared-types';
 import { cn } from '@/lib/utils';
@@ -65,6 +66,16 @@ export default function Settings(): JSX.Element {
   const { data: apiKeys, error: apiKeysError } = useApiKeys();
   const deleteMutation = useDeleteApiKey();
   const deleteAccountMutation = useDeleteAccount();
+  const {
+    busy: deletingKey,
+    acquire: acquireDeleteKey,
+    release: releaseDeleteKey,
+  } = useSubmitLock(deleteMutation.isPending);
+  const {
+    busy: deletingAccount,
+    acquire: acquireDeleteAccount,
+    release: releaseDeleteAccount,
+  } = useSubmitLock(deleteAccountMutation.isPending);
 
   useEffect(() => {
     if (usersError) {
@@ -85,16 +96,24 @@ export default function Settings(): JSX.Element {
   }, [usersError, teamsError, apiKeysError]);
   const { data: prefs, isLoading: prefsLoading } = useNotificationPrefs();
   const updatePrefs = useUpdateNotificationPrefs();
+  const {
+    busy: updatingPrefs,
+    acquire: acquirePrefs,
+    release: releasePrefs,
+  } = useSubmitLock(updatePrefs.isPending);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [showGenerateKeyModal, setShowGenerateKeyModal] = useState(false);
 
   const toggleNotification = useCallback(
     (id: string) => {
+      if (!acquirePrefs()) return;
       const currentEnabled = prefs?.some((p) => p.type === id && p.enabled) ?? false;
-      updatePrefs.mutate([{ type: id, enabled: !currentEnabled }]);
+      updatePrefs.mutate([{ type: id, enabled: !currentEnabled }], {
+        onSettled: () => releasePrefs(),
+      });
     },
-    [prefs, updatePrefs],
+    [prefs, updatePrefs, acquirePrefs, releasePrefs],
   );
 
   const handleCopyKey = useCallback((keyId: string, keyValue: string) => {
@@ -118,7 +137,11 @@ export default function Settings(): JSX.Element {
 
   const handleDeleteKey = useCallback(
     (keyId: string, keyName: string) => {
-      if (!confirm(`Supprimer la clé "${keyName}" ? Cette action est irréversible.`)) return;
+      if (!acquireDeleteKey()) return;
+      if (!confirm(`Supprimer la clé "${keyName}" ? Cette action est irréversible.`)) {
+        releaseDeleteKey();
+        return;
+      }
       deleteMutation.mutate(keyId, {
         onSuccess: () => {
           toast.success(`Clé "${keyName}" supprimée`);
@@ -128,9 +151,12 @@ export default function Settings(): JSX.Element {
             description: err.message,
           });
         },
+        onSettled: () => {
+          releaseDeleteKey();
+        },
       });
     },
-    [deleteMutation],
+    [deleteMutation, acquireDeleteKey, releaseDeleteKey],
   );
 
   const formatDate = (dateStr: string | null): string => {
@@ -295,7 +321,8 @@ export default function Settings(): JSX.Element {
               <Checkbox
                 checked={prefs?.some((p) => p.type === opt.id && p.enabled) ?? false}
                 onCheckedChange={() => toggleNotification(opt.id)}
-                disabled={updatePrefs.isPending || prefsLoading}
+                disabled={updatingPrefs || prefsLoading}
+                aria-busy={updatingPrefs}
                 className="mt-0.5"
               />
               <div>
@@ -368,7 +395,8 @@ export default function Settings(): JSX.Element {
                     size="icon"
                     className="h-8 w-8 text-destructive hover:text-destructive"
                     onClick={() => handleDeleteKey(k.id, k.name)}
-                    disabled={deleteMutation.isPending}
+                    disabled={deletingKey}
+                    aria-busy={deletingKey}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -398,26 +426,33 @@ export default function Settings(): JSX.Element {
             <Button
               variant="outline"
               size="sm"
-              disabled={deleteAccountMutation.isPending}
+              disabled={deletingAccount}
+              aria-busy={deletingAccount}
               className="border-destructive/30 text-destructive hover:bg-destructive/10"
               onClick={() => {
+                if (!acquireDeleteAccount()) return;
                 if (
                   !confirm(
                     'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.',
                   )
-                )
+                ) {
+                  releaseDeleteAccount();
                   return;
+                }
                 deleteAccountMutation.mutate(undefined, {
                   onError: (err) => {
                     toast.error('Erreur lors de la suppression du compte', {
                       description: err.message,
                     });
                   },
+                  onSettled: () => {
+                    releaseDeleteAccount();
+                  },
                 });
               }}
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              {deleteAccountMutation.isPending ? 'Suppression…' : 'Supprimer'}
+              {deletingAccount ? 'Suppression…' : 'Supprimer'}
             </Button>
           </div>
         </CardContent>

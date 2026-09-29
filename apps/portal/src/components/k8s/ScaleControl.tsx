@@ -4,6 +4,7 @@ import { Minus, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useK8sScale } from '@/hooks/useK8sActions';
+import { useSubmitLock } from '@/hooks/useSubmitLock';
 import type { K8sHPAStatus } from '@kubernal/shared-types';
 
 interface ScaleControlProps {
@@ -20,6 +21,11 @@ export function ScaleControl({
   clusterReady,
 }: ScaleControlProps): JSX.Element {
   const scale = useK8sScale(namespace, deploymentName);
+  const {
+    busy: scaling,
+    acquire: acquireScale,
+    release: releaseScale,
+  } = useSubmitLock(scale.isPending);
   const [pendingDelta, setPendingDelta] = useState<number | null>(null);
 
   if (!hpa) {
@@ -34,7 +40,7 @@ export function ScaleControl({
   const minR = hpa.minReplicas;
   const maxR = hpa.maxReplicas;
   const current = hpa.currentReplicas;
-  const isPending = scale.isPending || pendingDelta !== null;
+  const isPending = scaling || pendingDelta !== null;
 
   const handleScale = (target: number): void => {
     if (!clusterReady) {
@@ -42,6 +48,7 @@ export function ScaleControl({
       return;
     }
     if (target < minR || target > maxR) return;
+    if (!acquireScale()) return;
     setPendingDelta(target);
     scale.mutate(target, {
       onSuccess: (result) => {
@@ -52,6 +59,7 @@ export function ScaleControl({
         toast.error(`Échec du scale : ${err.message}`);
         setPendingDelta(null);
       },
+      onSettled: () => releaseScale(),
     });
   };
 

@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useK8sRestart, useK8sDelete, useArgoSync } from '@/hooks/useK8sActions';
+import { useSubmitLock } from '@/hooks/useSubmitLock';
 import { useAuth } from '@/hooks/useAuth';
 import type { ArgoAppStatus } from '@kubernal/shared-types';
 
@@ -44,6 +45,21 @@ export function K8sActionsBar({
   const restart = useK8sRestart(namespace, deploymentName);
   const deleteDeployment = useK8sDelete(namespace, deploymentName);
   const argoSync = useArgoSync();
+  const {
+    busy: restarting,
+    acquire: acquireRestart,
+    release: releaseRestart,
+  } = useSubmitLock(restart.isPending);
+  const {
+    busy: deleting,
+    acquire: acquireDelete,
+    release: releaseDelete,
+  } = useSubmitLock(deleteDeployment.isPending);
+  const {
+    busy: syncing,
+    acquire: acquireSync,
+    release: releaseSync,
+  } = useSubmitLock(argoSync.isPending);
   const { hasRole } = useAuth();
   const navigate = useNavigate();
   const [showRestartDialog, setShowRestartDialog] = useState(false);
@@ -67,6 +83,7 @@ export function K8sActionsBar({
       return;
     }
     if (key === 'sync') {
+      if (!acquireSync()) return;
       argoSync.mutate(deploymentName, {
         onSuccess: (result) => {
           toast.success(result.message);
@@ -74,6 +91,7 @@ export function K8sActionsBar({
         onError: (err) => {
           toast.error(`Échec du sync : ${err.message}`);
         },
+        onSettled: () => releaseSync(),
       });
       return;
     }
@@ -101,6 +119,7 @@ export function K8sActionsBar({
   };
 
   const confirmRestart = (): void => {
+    if (!acquireRestart()) return;
     setShowRestartDialog(false);
     toast.info('Déclenchement du rollout...');
     restart.mutate(undefined, {
@@ -110,10 +129,12 @@ export function K8sActionsBar({
       onError: (err) => {
         toast.error(`Échec du rollout : ${err.message}`);
       },
+      onSettled: () => releaseRestart(),
     });
   };
 
   const confirmDelete = useCallback((): void => {
+    if (!acquireDelete()) return;
     setShowDeleteDialog(false);
     setDeleteConfirmName('');
     toast.info('Suppression du déploiement K8s...');
@@ -127,9 +148,10 @@ export function K8sActionsBar({
         onError: (err) => {
           toast.error(`Échec de la suppression : ${err.message}`);
         },
+        onSettled: () => releaseDelete(),
       },
     );
-  }, [deleteDeployment, navigate]);
+  }, [deleteDeployment, navigate, acquireDelete, releaseDelete]);
 
   const isDeleteConfirmValid = deleteConfirmName === deploymentName;
 
@@ -140,8 +162,7 @@ export function K8sActionsBar({
           const Icon = action.icon;
           const isSync = action.key === 'sync';
           const isRestart = action.key === 'restart';
-          const disabled =
-            (isRestart && restart.isPending) || (isSync && argoSync.isPending) || !clusterReady;
+          const disabled = (isRestart && restarting) || (isSync && syncing) || !clusterReady;
 
           return (
             <motion.button
@@ -151,12 +172,13 @@ export function K8sActionsBar({
               transition={{ delay: index * 0.05 }}
               disabled={disabled}
               onClick={() => handleAction(action.key)}
+              aria-busy={(isRestart && restarting) || (isSync && syncing)}
               title={
                 !clusterReady
                   ? 'Cluster K8s non branché'
-                  : isRestart && restart.isPending
+                  : isRestart && restarting
                     ? 'Rollout en cours...'
-                    : isSync && argoSync.isPending
+                    : isSync && syncing
                       ? 'Sync en cours...'
                       : action.label
               }
@@ -169,7 +191,7 @@ export function K8sActionsBar({
                 isRestart && isOutOfSync && 'border-k8s-pending/30 text-k8s-pending',
               )}
             >
-              {isRestart && restart.isPending ? (
+              {isRestart && restarting ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
                 <Icon className="h-3.5 w-3.5" />
@@ -184,8 +206,9 @@ export function K8sActionsBar({
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: ACTIONS.length * 0.05 }}
-            disabled={!clusterReady || isDeploying || deleteDeployment.isPending}
+            disabled={!clusterReady || isDeploying || deleting}
             onClick={() => setShowDeleteDialog(true)}
+            aria-busy={deleting}
             title={
               !clusterReady
                 ? 'Cluster K8s non branché'
@@ -195,12 +218,12 @@ export function K8sActionsBar({
             }
             className={cn(
               'inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ml-auto',
-              !clusterReady || isDeploying || deleteDeployment.isPending
+              !clusterReady || isDeploying || deleting
                 ? 'text-muted-foreground opacity-50 cursor-not-allowed border-border'
                 : 'text-destructive border-destructive/30 hover:bg-destructive/10',
             )}
           >
-            {deleteDeployment.isPending ? (
+            {deleting ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
               <Trash2 className="h-3.5 w-3.5" />
@@ -228,7 +251,10 @@ export function K8sActionsBar({
             <Button variant="outline" onClick={() => setShowRestartDialog(false)}>
               Annuler
             </Button>
-            <Button onClick={confirmRestart}>Confirmer le redémarrage</Button>
+            <Button onClick={confirmRestart} disabled={restarting} aria-busy={restarting}>
+              {restarting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {restarting ? 'Redémarrage…' : 'Confirmer le redémarrage'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -275,8 +301,14 @@ export function K8sActionsBar({
             >
               Annuler
             </Button>
-            <Button variant="destructive" disabled={!isDeleteConfirmValid} onClick={confirmDelete}>
-              Supprimer le déploiement
+            <Button
+              variant="destructive"
+              disabled={!isDeleteConfirmValid || deleting}
+              aria-busy={deleting}
+              onClick={confirmDelete}
+            >
+              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {deleting ? 'Suppression…' : 'Supprimer le déploiement'}
             </Button>
           </DialogFooter>
         </DialogContent>

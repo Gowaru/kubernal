@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCreateApplication } from '@/hooks/useApplications';
+import { useSubmitLock } from '@/hooks/useSubmitLock';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeams } from '@/hooks/useTeams';
 import { useTemplates } from '@/hooks/useTemplates';
@@ -95,6 +96,7 @@ export function CreateApplicationModal({
   const { data: teams } = useTeams();
   const { data: templates } = useTemplates();
   const createApplication = useCreateApplication();
+  const { busy: submitting, acquire, release } = useSubmitLock(createApplication.isPending);
 
   const [step, setStep] = useState<Step>('step1');
   const [form, setForm] = useState<FormData>({
@@ -196,6 +198,7 @@ export function CreateApplicationModal({
   };
 
   const handleSubmit = async (): Promise<void> => {
+    if (!acquire()) return;
     setStep('progress');
     try {
       await createApplication.mutateAsync({
@@ -211,6 +214,8 @@ export function CreateApplicationModal({
     } catch {
       toast.error("Erreur lors de la création de l'application");
       setStep('step1');
+    } finally {
+      release();
     }
   };
 
@@ -399,11 +404,20 @@ export function CreateApplicationModal({
                 <ChevronLeft className="mr-2 h-4 w-4" />
                 Retour
               </Button>
-              <Button onClick={handleNext}>
+              <Button
+                onClick={handleNext}
+                disabled={!hasParams(selectedTemplate) && submitting}
+                aria-busy={!hasParams(selectedTemplate) && submitting}
+              >
                 {hasParams(selectedTemplate) ? (
                   <>
                     Suivant
                     <ChevronRight className="ml-2 h-4 w-4" />
+                  </>
+                ) : submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Création…
                   </>
                 ) : (
                   "Créer l'application"
@@ -489,7 +503,16 @@ export function CreateApplicationModal({
                 <ChevronLeft className="mr-2 h-4 w-4" />
                 Retour
               </Button>
-              <Button onClick={handleNext}>Créer l'application</Button>
+              <Button onClick={handleNext} disabled={submitting} aria-busy={submitting}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Création…
+                  </>
+                ) : (
+                  "Créer l'application"
+                )}
+              </Button>
             </DialogFooter>
           </>
         )}

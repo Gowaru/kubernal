@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 import { useCreateWebhookOutbound, useUpdateWebhookOutbound } from '@/hooks/useWebhookOutbound';
+import { useSubmitLock } from '@/hooks/useSubmitLock';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { WebhookConfig } from '@kubernal/shared-types';
 
@@ -47,6 +49,11 @@ export function WebhookOutboundModal({
 
   const create = useCreateWebhookOutbound();
   const update = useUpdateWebhookOutbound();
+  const {
+    busy: submitting,
+    acquire,
+    release,
+  } = useSubmitLock(create.isPending || update.isPending);
 
   const isEditing = !!config;
 
@@ -54,7 +61,9 @@ export function WebhookOutboundModal({
     if (config) {
       setName(config.name);
       setUrl(config.url);
-      setSecret(config.secret ?? '');
+      // The API never returns the HMAC secret (only `hasSecret`), so the field
+      // always starts empty: leaving it blank keeps the current secret.
+      setSecret('');
       setEnabled(config.enabled);
       setSelectedEvents(config.events);
     } else {
@@ -87,12 +96,13 @@ export function WebhookOutboundModal({
       setError('Sélectionnez au moins un événement');
       return;
     }
+    if (!acquire()) return;
 
     if (isEditing) {
       update.mutate(
         {
           id: config.id,
-          data: { name, url, secret: secret || null, events: selectedEvents, enabled },
+          data: { name, url, ...(secret ? { secret } : {}), events: selectedEvents, enabled },
         },
         {
           onSuccess: () => {
@@ -100,6 +110,7 @@ export function WebhookOutboundModal({
             onSaved();
           },
           onError: (e) => setError(e.message),
+          onSettled: () => release(),
         },
       );
     } else {
@@ -117,6 +128,7 @@ export function WebhookOutboundModal({
             onSaved();
           },
           onError: (e) => setError(e.message),
+          onSettled: () => release(),
         },
       );
     }
@@ -158,6 +170,11 @@ export function WebhookOutboundModal({
               value={secret}
               onChange={(e) => setSecret(e.target.value)}
             />
+            {isEditing && config?.hasSecret && (
+              <p className="text-xs text-muted-foreground">
+                Un secret est déjà configuré (jamais affiché). Laissez vide pour le conserver.
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label>Événements</Label>
@@ -178,11 +195,23 @@ export function WebhookOutboundModal({
 
           {error && <p className="text-sm text-status-error">{error}</p>}
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={submitting}
+              aria-busy={submitting}
+            >
               Annuler
             </Button>
-            <Button onClick={handleSubmit} disabled={create.isPending || update.isPending}>
-              {isEditing ? 'Mettre à jour' : 'Créer'}
+            <Button onClick={handleSubmit} disabled={submitting} aria-busy={submitting}>
+              {submitting && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+              {submitting
+                ? isEditing
+                  ? 'Enregistrement…'
+                  : 'Création…'
+                : isEditing
+                  ? 'Mettre à jour'
+                  : 'Créer'}
             </Button>
           </div>
         </div>

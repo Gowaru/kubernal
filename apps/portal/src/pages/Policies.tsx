@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { usePolicies, useTogglePolicy } from '@/hooks/usePolicies';
+import { useSubmitLock } from '@/hooks/useSubmitLock';
 import { PolicyCard } from '@/components/policies/PolicyCard';
 import type { PolicyCategory } from '@kubernal/shared-types';
 
@@ -19,6 +20,11 @@ const categoryFilters: { label: string; value: PolicyCategory | '' }[] = [
 export default function Policies(): JSX.Element {
   const { data: policies, isLoading, error } = usePolicies();
   const togglePolicy = useTogglePolicy();
+  const {
+    busy: toggling,
+    acquire: acquireToggle,
+    release: releaseToggle,
+  } = useSubmitLock(togglePolicy.isPending);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<PolicyCategory | ''>('');
 
@@ -47,6 +53,7 @@ export default function Policies(): JSX.Element {
 
   const handleToggle = useCallback(
     (id: string, enabled: boolean) => {
+      if (!acquireToggle()) return;
       const name = (policies ?? []).find((p) => p.id === id)?.name ?? '';
       togglePolicy.mutate(
         { id, enabled },
@@ -54,10 +61,11 @@ export default function Policies(): JSX.Element {
           onSuccess: () =>
             toast.success(`Politique "${name}" ${enabled ? 'activée' : 'désactivée'}`),
           onError: () => toast.error('Erreur lors de la modification de la politique'),
+          onSettled: () => releaseToggle(),
         },
       );
     },
-    [togglePolicy, policies],
+    [togglePolicy, policies, acquireToggle, releaseToggle],
   );
 
   useEffect(() => {
@@ -132,12 +140,7 @@ export default function Policies(): JSX.Element {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => (
-            <PolicyCard
-              key={p.id}
-              policy={p}
-              onToggle={handleToggle}
-              toggling={togglePolicy.isPending}
-            />
+            <PolicyCard key={p.id} policy={p} onToggle={handleToggle} toggling={toggling} />
           ))}
         </div>
       )}

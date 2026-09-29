@@ -36,6 +36,7 @@ import { useArgoSync } from '@/hooks/useArgoSync';
 import { useCrossplaneClaims } from '@/hooks/useCrossplaneClaims';
 import { useHPA } from '@/hooks/useHPA';
 import { useK8sEvents } from '@/hooks/useK8sEvents';
+import { useSubmitLock } from '@/hooks/useSubmitLock';
 import { useClusterInfo } from '@/hooks/useClusterInfo';
 import { usePipelinesByDeployment } from '@/hooks/usePipelines';
 import { PipelineStepsTimeline } from '@/components/pipelines/PipelineStepsTimeline';
@@ -133,6 +134,11 @@ export default function DeploymentDetail(): JSX.Element {
   const approveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const approveDeployment = useApproveDeployment();
+  const {
+    busy: approving,
+    acquire: acquireApprove,
+    release: releaseApprove,
+  } = useSubmitLock(approveDeployment.isPending);
 
   const isPending = deployment?.status === 'pending';
   const isHealthy = deployment?.status === 'healthy';
@@ -160,6 +166,7 @@ export default function DeploymentDetail(): JSX.Element {
 
   const handleApprove = useCallback(() => {
     if (!id) return;
+    if (!acquireApprove()) return;
     if (approveIntervalRef.current) {
       clearInterval(approveIntervalRef.current);
       approveIntervalRef.current = null;
@@ -181,7 +188,11 @@ export default function DeploymentDetail(): JSX.Element {
             return {
               ...old,
               status: 'deploying',
-              approvedBy: { id: userId, name: userName, email: userEmail } as Deployment['approvedBy'],
+              approvedBy: {
+                id: userId,
+                name: userName,
+                email: userEmail,
+              } as Deployment['approvedBy'],
             };
           });
         },
@@ -193,6 +204,9 @@ export default function DeploymentDetail(): JSX.Element {
           setApproveStep('confirm');
           setApproveProgress(0);
           toast.error("Erreur lors de l'approbation");
+        },
+        onSettled: () => {
+          releaseApprove();
         },
       },
     );
@@ -213,7 +227,7 @@ export default function DeploymentDetail(): JSX.Element {
         return next;
       });
     }, 350);
-  }, [id, approveDeployment, queryClient, currentUser]);
+  }, [id, approveDeployment, queryClient, currentUser, acquireApprove, releaseApprove]);
 
   useEffect(() => {
     if (error) {
@@ -488,7 +502,10 @@ export default function DeploymentDetail(): JSX.Element {
                 <Button variant="outline" onClick={() => setShowApproveModal(false)}>
                   Annuler
                 </Button>
-                <Button onClick={handleApprove}>Confirmer l'approbation</Button>
+                <Button onClick={handleApprove} disabled={approving} aria-busy={approving}>
+                  {approving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {approving ? 'Approbation…' : "Confirmer l'approbation"}
+                </Button>
               </DialogFooter>
             </>
           )}

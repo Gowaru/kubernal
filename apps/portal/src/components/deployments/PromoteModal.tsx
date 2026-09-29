@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowUp, AlertTriangle, CheckCircle2, Loader2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePromoteDeployment } from '@/hooks/useDeployments';
+import { useSubmitLock } from '@/hooks/useSubmitLock';
 import type { Environment } from '@kubernal/shared-types';
 
 interface PromoteModalProps {
@@ -45,6 +46,7 @@ export function PromoteModal({
   onPromoted,
 }: PromoteModalProps): JSX.Element {
   const promote = usePromoteDeployment();
+  const { busy: submitting, acquire, release } = useSubmitLock(promote.isPending);
   const [step, setStep] = useState<'confirm' | 'progress' | 'success'>('confirm');
 
   const handleClose = useCallback(() => {
@@ -53,6 +55,7 @@ export function PromoteModal({
   }, [onOpenChange]);
 
   const handlePromote = useCallback(() => {
+    if (!acquire()) return;
     setStep('progress');
     promote.mutate(
       { id: deploymentId, targetEnv: targetEnv.type as 'staging' | 'prod' },
@@ -70,9 +73,21 @@ export function PromoteModal({
             description: err instanceof Error ? err.message : 'Erreur inconnue',
           });
         },
+        onSettled: () => {
+          release();
+        },
       },
     );
-  }, [deploymentId, targetEnv.type, targetEnv.name, version, promote, onPromoted]);
+  }, [
+    deploymentId,
+    targetEnv.type,
+    targetEnv.name,
+    version,
+    promote,
+    onPromoted,
+    acquire,
+    release,
+  ]);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -145,9 +160,18 @@ export function PromoteModal({
               <Button variant="outline" onClick={handleClose}>
                 Annuler
               </Button>
-              <Button onClick={handlePromote}>
-                <ArrowUp className="mr-2 h-4 w-4" />
-                Promouvoir {version}
+              <Button onClick={handlePromote} disabled={submitting} aria-busy={submitting}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Promotion…
+                  </>
+                ) : (
+                  <>
+                    <ArrowUp className="mr-2 h-4 w-4" />
+                    Promouvoir {version}
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </>
