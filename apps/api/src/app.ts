@@ -15,6 +15,10 @@ import { startPipelineWorker } from './modules/pipeline/worker.js';
 import { createAuthRouter } from './modules/auth/auth.router.js';
 import { deserializeUser } from './shared/middleware/deserialize-user.js';
 import { sessionRefresh } from './shared/middleware/session-refresh.js';
+import {
+  createLoginRateLimit,
+  createOidcCallbackRateLimit,
+} from './shared/middleware/login-rate-limit.js';
 import type { User } from '@kubernal/shared-types';
 
 const PgSession = connectPgSimple(session);
@@ -120,6 +124,11 @@ export function createApp(): express.Application {
     res.set('Content-Type', 'text/plain');
     res.send(await getMetrics());
   });
+
+  // Brute-force protection: checked before the auth routes so a throttled
+  // request never reaches the credential check (express.json() already ran).
+  app.post('/api/v1/auth/login', createLoginRateLimit());
+  app.get('/api/v1/auth/oidc/github/callback', createOidcCallbackRateLimit());
 
   app.use('/api/v1/auth', createAuthRouter());
 
