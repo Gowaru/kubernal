@@ -3,11 +3,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import type { JSX } from 'react';
-import { useDeploymentAccess } from '@/hooks/useDeploymentAccess';
+import { useDeploymentAccess, type DeploymentAccessInfo } from '@/hooks/useDeploymentAccess';
 
 interface DeploymentAccessCardProps {
   deploymentId: string;
 }
+
+/**
+ * Réponse réelle de `GET /deployments/:id/access` : l'API ajoute `publicUrl`
+ * (URL publique atteignable depuis la machine hôte via ingress-nginx) au
+ * type partagé du hook — affichée en premier avec le badge « Public ».
+ */
+type DeploymentAccessWithPublicUrl = DeploymentAccessInfo & {
+  publicUrl?: string | null;
+};
 
 function copyToClipboard(text: string, label: string): void {
   void navigator.clipboard
@@ -53,6 +62,8 @@ export function DeploymentAccessCard({ deploymentId }: DeploymentAccessCardProps
     );
   }
 
+  const publicUrl = (data as DeploymentAccessWithPublicUrl).publicUrl ?? null;
+
   const badgeClass = {
     nodeport: 'bg-status-success/10 text-status-success border-status-success/30',
     clusterip: 'bg-status-info/10 text-status-info border-status-info/30',
@@ -81,6 +92,46 @@ export function DeploymentAccessCard({ deploymentId }: DeploymentAccessCardProps
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {publicUrl && (
+          <div className="space-y-1.5 rounded-md border border-status-success/30 bg-status-success/5 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-1.5 text-xs font-medium text-status-success">
+                <Globe className="h-3 w-3" />
+                URL publique
+              </span>
+              <span className="rounded-full border border-status-success/30 bg-status-success/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-status-success">
+                Public
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 truncate text-xs font-mono text-foreground">{publicUrl}</code>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                onClick={() => copyToClipboard(publicUrl, 'URL publique')}
+                title="Copier l'URL publique"
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                asChild
+                title="Ouvrir dans un nouvel onglet"
+              >
+                <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Accessible depuis la machine hôte via l'Ingress nginx du cluster.
+            </p>
+          </div>
+        )}
+
         {data.serviceName && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Network className="h-3 w-3" />
