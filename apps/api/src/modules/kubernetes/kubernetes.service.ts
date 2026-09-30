@@ -1,4 +1,10 @@
-import { coreApi, appsApi, kubeConfig, customObjectsApi } from '../../shared/k8s-client.js';
+import {
+  coreApi,
+  appsApi,
+  kubeConfig,
+  customObjectsApi,
+  networkingApi,
+} from '../../shared/k8s-client.js';
 import { logger } from '../../shared/logger.js';
 import type {
   K8sPod,
@@ -234,9 +240,24 @@ export const kubernetesService = {
           | undefined
       )?.source;
       const conditions =
-        (res.status as { conditions?: Array<{ type?: string; message?: string }> } | undefined)
-          ?.conditions ?? [];
+        (
+          res.status as
+            | {
+                conditions?: Array<{ type?: string; status?: string; message?: string }>;
+              }
+            | undefined
+        )?.conditions ?? [];
       const degradedCondition = conditions.find((c) => c.type === 'Degraded');
+      // Erreurs de fetch/parse du repo ou de rendu des manifests : Argo les expose en
+      // `SyncError` / `ComparisonError` (souvent sans passer la health en `Degraded`).
+      const errorCondition =
+        degradedCondition ??
+        conditions.find(
+          (c) => (c.type === 'SyncError' || c.type === 'ComparisonError') && c.status !== 'False',
+        );
+      const hasComparisonError = conditions.some(
+        (c) => (c.type === 'SyncError' || c.type === 'ComparisonError') && c.status !== 'False',
+      );
       const lastSyncAt = (
         res.status as { history?: Array<{ revision?: string; deployedAt?: string }> } | undefined
       )?.history;
@@ -247,7 +268,8 @@ export const kubernetesService = {
         revision: source?.targetRevision ?? 'HEAD',
         branch: (source?.targetRevision ?? 'HEAD') as string,
         lastSyncAt: syncHistory?.deployedAt ?? new Date().toISOString(),
-        message: degradedCondition?.message ?? null,
+        message: errorCondition?.message ?? null,
+        error: hasComparisonError,
       };
     }, 'getArgoStatus');
   },
@@ -577,6 +599,8 @@ export const kubernetesService = {
     deploymentName: string,
     _cluster = 'kubernal-prod',
   ): Promise<{
+    /** URL publique joignable depuis la machine hôte (via ingress-nginx), si l'Ingress existe. */
+    publicUrl: string | null;
     namespace: string;
     deployment: string;
     type: 'nodeport' | 'clusterip' | 'none';
@@ -614,6 +638,26 @@ export const kubernetesService = {
         ).items ?? [];
       const matchingService =
         services.find((s) => s.metadata?.name === deploymentName) ?? services[0] ?? null;
+
+      // ─── URL publique joignable depuis la machine hôte ──────────────────────
+      // kind + ingress-nginx : service LoadBalancer sans EXTERNAL-IP, joignable via
+      // nodePort (30080 en HTTP) sur localhost. Renseignée uniquement si l'Ingress
+      // générée par le déploiement existe réellement (sinon l'URL ne mènerait nulle part).
+      const ingressItems =
+        (
+          (await networkingApi
+            .listNamespacedIngress({ namespace })
+            .catch(() => ({ items: [] }))) as {
+            items?: Array<{ metadata?: { name?: string } }>;
+          }
+        ).items ?? [];
+      const ingressReady = ingressItems.some((i) => i.metadata?.name === deploymentName);
+      const publicHost = process.env.INGRESS_PUBLIC_HOST ?? 'localhost';
+      const publicPort = process.env.INGRESS_PUBLIC_PORT ?? '30080';
+      const publicUrl =
+        matchingService && ingressReady
+          ? `http://${publicHost}:${publicPort}/${deploymentName}/`
+          : null;
 
       const urls: Array<{
         port: number;
@@ -668,6 +712,7 @@ export const kubernetesService = {
       }
 
       return {
+        publicUrl,
         namespace,
         deployment: deploymentName,
         type,

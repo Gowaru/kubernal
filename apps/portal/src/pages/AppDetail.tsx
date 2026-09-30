@@ -1,10 +1,20 @@
 import { useState, useMemo, useCallback, useEffect, type JSX } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Rocket, Archive, Timer, List, Clock } from 'lucide-react';
+import { ArrowLeft, Rocket, Archive, Timer, List, Clock, GitBranch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { usePagination } from '@/hooks/usePagination';
 import { PaginationBar } from '@/components/ui/pagination-bar';
@@ -17,7 +27,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useApplication, useArchiveApplication } from '@/hooks/useApplications';
+import {
+  useApplication,
+  useArchiveApplication,
+  useUpdateApplication,
+} from '@/hooks/useApplications';
 import { useSubmitLock } from '@/hooks/useSubmitLock';
 import { useTeam } from '@/hooks/useTeams';
 import { useTemplate } from '@/hooks/useTemplates';
@@ -33,10 +47,166 @@ import { WebhookConfigCard } from '@/components/webhooks/WebhookConfigCard';
 import { WebhookOutboundCard } from '@/components/webhooks/WebhookOutboundCard';
 import { useArgoSync } from '@/hooks/useArgoSync';
 import { formatRelativeTime, getEnvSlug } from '@/lib/utils';
+import { REPO_URL_REGEX } from '@/lib/repo-utils';
 import { getApplicationStatus } from '@/lib/status-config';
-import type { Deployment } from '@kubernal/shared-types';
+import type { Application, Deployment } from '@kubernal/shared-types';
 
 const ENVIRONMENT_IDS = ['dev', 'staging', 'prod'];
+
+interface GitRepoDialogProps {
+  application: Application;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+/**
+ * Édition du dépôt Git / de la branche / du path des manifests.
+ *
+ * Écrit `PATCH /applications/:id` avec `repositoryUrl` + `config` (les defaults du
+ * template sont conservés, `config.git` est ajouté ou retiré). `config.git` est le
+ * signal qui bascule l'application en **mode Argo CD** côté backend.
+ */
+function GitRepoDialog({ application, open, onOpenChange }: GitRepoDialogProps): JSX.Element {
+  const updateApplication = useUpdateApplication();
+  const { busy: saving, acquire, release } = useSubmitLock(updateApplication.isPending);
+  const [repo, setRepo] = useState('');
+  const [branch, setBranch] = useState('main');
+  const [path, setPath] = useState('.');
+  const [error, setError] = useState<string | null>(null);
+
+  const hasRepo = !!repo.trim();
+  const argoEnabled = hasRepo && REPO_URL_REGEX.test(repo.trim());
+
+  useEffect(() => {
+    if (!open) return;
+    const config = (application.config ?? {}) as Record<string, unknown>;
+    const rawGit = config.git;
+    const git =
+      rawGit && typeof rawGit === 'object' && !Array.isArray(rawGit)
+        ? (rawGit as Record<string, unknown>)
+        : null;
+    setRepo(application.repositoryUrl ?? '');
+    setBranch(typeof git?.branch === 'string' && git.branch ? git.branch : 'main');
+    setPath(typeof git?.path === 'string' && git.path ? git.path : '.');
+    setError(null);
+  }, [open, application]);
+
+  const handleClose = (): void => {
+    if (saving) return;
+    onOpenChange(false);
+  };
+
+  const handleSave = async (): Promise<void> => {
+    const trimmedRepo = repo.trim();
+    if (trimmedRepo && !REPO_URL_REGEX.test(trimmedRepo)) {
+      setError('URL invalide — GitHub, GitLab ou Bitbucket (.git attendu)');
+      return;
+    }
+    if (!acquire()) return;
+    setError(null);
+    try {
+      const config: Record<string, unknown> = { ...(application.config ?? {}) };
+      if (trimmedRepo) {
+        config.git = { branch: branch.trim() || 'main', path: path.trim() || '.' };
+      } else {
+        // Pas de dépôt → pas de mode Argo (un path sans repo n'a pas de sens).
+        delete config.git;
+      }
+      await updateApplication.mutateAsync({
+        id: application.id,
+        repositoryUrl: trimmedRepo || null,
+        config,
+      });
+      toast.success(
+        trimmedRepo
+          ? 'Dépôt Git mis à jour — Argo CD sera configuré au prochain déploiement'
+          : 'Dépôt Git retiré — mode placeholder réactivé',
+      );
+      onOpenChange(false);
+    } catch {
+      toast.error('Impossible de mettre à jour le dépôt Git');
+    } finally {
+      release();
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Modifier le dépôt Git</DialogTitle>
+          <DialogDescription>
+            Configurez le dépôt, la branche et le dossier des manifests synchronisés par Argo CD.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="git-repo-url">Dépôt Git</Label>
+            <Input
+              id="git-repo-url"
+              placeholder="https://github.com/owner/repo.git"
+              value={repo}
+              onChange={(e) => setRepo(e.target.value)}
+            />
+            {error && <p className="text-xs text-status-error">{error}</p>}
+            {!hasRepo && (
+              <p className="text-xs text-muted-foreground">
+                Aucun dépôt : l'application utilise le mode placeholder (workload généré par la
+                plateforme).
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="git-branch">Branche</Label>
+              <Input
+                id="git-branch"
+                placeholder="main"
+                value={branch}
+                disabled={!hasRepo}
+                onChange={(e) => setBranch(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="git-path">Path des manifests</Label>
+              <Input
+                id="git-path"
+                placeholder="kustomize"
+                value={path}
+                disabled={!hasRepo}
+                onChange={(e) => setPath(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <p
+            className={cn(
+              'text-xs rounded-lg border p-3',
+              argoEnabled
+                ? 'border-border bg-muted/50 text-muted-foreground'
+                : 'border-border bg-muted/30 text-muted-foreground',
+            )}
+          >
+            {argoEnabled
+              ? `Mode Argo CD : Argo clonera ${repo.trim()} (${branch.trim() || 'main'}) depuis "${path.trim() || '.'}" et pilotera les pods.`
+              : 'Mode Argo CD désactivé.'}
+          </p>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose} disabled={saving}>
+            Annuler
+          </Button>
+          <Button onClick={() => void handleSave()} disabled={saving} aria-busy={saving}>
+            {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function formatDuration(startedAt: string | Date, completedAt: string | Date | null): string {
   if (!completedAt) return '-';
@@ -64,6 +234,7 @@ export default function AppDetail(): JSX.Element {
     release: releaseArchive,
   } = useSubmitLock(archiveMutation.isPending);
   const [showDeployModal, setShowDeployModal] = useState(false);
+  const [showGitDialog, setShowGitDialog] = useState(false);
 
   const appDeployments = useMemo<Deployment[]>(() => {
     if (!allDeployments || !id) return [];
@@ -83,7 +254,7 @@ export default function AppDetail(): JSX.Element {
   const [tab, setTab] = useState<'recent' | 'history'>('recent');
 
   function AppEnvCardWithArgo({ envId }: { envId: string }): JSX.Element {
-    const { data: argoStatus } = useArgoSync(id!, envId);
+    const { data: argoStatus } = useArgoSync(application?.name ?? '', envId);
     return (
       <AppEnvCard key={envId} envId={envId} deployments={appDeployments} argoStatus={argoStatus} />
     );
@@ -122,7 +293,11 @@ export default function AppDetail(): JSX.Element {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Retour au catalogue
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button variant="outline" onClick={() => setShowGitDialog(true)}>
+            <GitBranch className="mr-2 h-4 w-4" />
+            Modifier le dépôt Git
+          </Button>
           <Button onClick={() => setShowDeployModal(true)}>
             <Rocket className="mr-2 h-4 w-4" />
             Déployer
@@ -319,6 +494,12 @@ export default function AppDetail(): JSX.Element {
         )}
         <WebhookOutboundCard applicationId={application.id} />
       </div>
+
+      <GitRepoDialog
+        application={application}
+        open={showGitDialog}
+        onOpenChange={setShowGitDialog}
+      />
 
       <DeploymentModal
         open={showDeployModal}

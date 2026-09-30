@@ -3,6 +3,7 @@ import {
   KubeConfig,
   CoreV1Api,
   AppsV1Api,
+  NetworkingV1Api,
   RbacAuthorizationV1Api,
   CustomObjectsApi,
   Exec,
@@ -30,6 +31,7 @@ export const k8sLog = new Log(kc);
 export const getK8sConfig = (): KubeConfig => kc;
 export const coreApi = kc.makeApiClient(CoreV1Api);
 export const appsApi = kc.makeApiClient(AppsV1Api);
+export const networkingApi = kc.makeApiClient(NetworkingV1Api);
 export const rbacApi = kc.makeApiClient(RbacAuthorizationV1Api);
 export const customObjectsApi = kc.makeApiClient(CustomObjectsApi);
 
@@ -190,10 +192,11 @@ export async function ensureLimitRange(namespace: string): Promise<void> {
   }
 }
 
-function isK8sNotFound(err: unknown): boolean {
+/** True quand l'erreur K8s correspond à une ressource absente (404). */
+export function isK8sNotFound(err: unknown): boolean {
   if (typeof err === 'object' && err !== null) {
     const e = err as Record<string, unknown>;
-    return e['code'] === 404;
+    return e['code'] === 404 || e['statusCode'] === 404;
   }
   return false;
 }

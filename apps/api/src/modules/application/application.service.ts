@@ -1,5 +1,5 @@
 import type { Prisma } from '@prisma/client';
-import { NotFoundError } from '../../shared/errors.js';
+import { NotFoundError, ValidationError } from '../../shared/errors.js';
 import { db } from '../../shared/database.js';
 import { applicationRepository } from './application.repository.js';
 import type { AppListQuery } from './application.repository.js';
@@ -22,6 +22,30 @@ const DEFAULT_ENV_TYPES = [
   { type: 'staging', requiresApproval: true },
   { type: 'prod', requiresApproval: true },
 ] as const;
+
+/**
+ * Normalise `config.git` avant écriture :
+ *  - `git` absent / `path` vide → la clé est retirée (mode Argo désactivé,
+ *    c'est exactement le signal lu par `resolveDeploymentMode`) ;
+ *  - `branch` vide/absente → omise (le backend applique le défaut `main`).
+ *
+ * @throws ValidationError si `git` n'est pas un objet exploitable.
+ */
+export function normalizeGitConfig(config: Record<string, unknown>): Record<string, unknown> {
+  if (!('git' in config)) return config;
+  const git = config.git;
+  const { git: _removed, ...rest } = config;
+  void _removed;
+  if (git === undefined || git === null) return rest;
+  if (typeof git !== 'object' || Array.isArray(git)) {
+    throw new ValidationError('config.git doit être un objet { branch, path }');
+  }
+  const g = git as Record<string, unknown>;
+  const path = typeof g.path === 'string' ? g.path.trim() : '';
+  if (!path) return rest;
+  const branch = typeof g.branch === 'string' ? g.branch.trim() : '';
+  return { ...rest, git: { ...(branch ? { branch } : {}), path } };
+}
 
 export const applicationService = {
   async list(q?: AppListQuery): Promise<{ data: AppListRow[]; total: number }> {
@@ -111,11 +135,25 @@ export const applicationService = {
       repositoryUrl?: string | null;
       status?: string;
       archivedAt?: Date | null;
+      config?: Record<string, unknown>;
     },
   ): Promise<AppRow> {
     const app = await applicationRepository.findById(id);
     if (!app) throw new NotFoundError('Application', id);
-    const result = await applicationRepository.update(id, data);
+
+    const config = data.config !== undefined ? normalizeGitConfig(data.config) : undefined;
+    const effectiveRepositoryUrl =
+      data.repositoryUrl !== undefined ? data.repositoryUrl : app.repositoryUrl;
+    if (config && 'git' in config && !effectiveRepositoryUrl) {
+      throw new ValidationError(
+        'Une configuration Git (config.git) nécessite un dépôt Git (repositoryUrl)',
+      );
+    }
+
+    const result = await applicationRepository.update(id, {
+      ...data,
+      ...(config !== undefined ? { config } : {}),
+    });
     auditService
       .log({
         action: 'UPDATE',

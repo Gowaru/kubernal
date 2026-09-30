@@ -132,9 +132,19 @@ export const applicationRepository = {
       repositoryUrl?: string | null;
       status?: string;
       archivedAt?: Date | null;
+      config?: Record<string, unknown>;
     },
   ): Promise<AppRow> {
-    return db.application.update({ where: { id }, data, select: CREATE_SELECT });
+    const { config, ...rest } = data;
+    return db.application.update({
+      where: { id },
+      data: {
+        ...rest,
+        // `config` stocke `config.git` (mode Argo) en plus des defaults du template.
+        ...(config !== undefined ? { config: config as Record<string, never> } : {}),
+      },
+      select: CREATE_SELECT,
+    });
   },
 
   delete(id: string): Promise<AppRow> {

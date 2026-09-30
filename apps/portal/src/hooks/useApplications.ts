@@ -113,6 +113,36 @@ export function useDeleteApplication(): UseMutationResult<void, Error, string> {
   });
 }
 
+export type UpdateApplicationInput = {
+  name?: string;
+  description?: string | null;
+  repositoryUrl?: string | null;
+  /** Config complète (defaults du template + `git: { branch, path }` pour Argo CD). */
+  config?: Record<string, unknown>;
+};
+
+/**
+ * `PATCH /applications/:id` — utilisé notamment pour éditer le dépôt Git /
+ * la branche / le path des manifests d'une application existante (mode Argo CD).
+ */
+export function useUpdateApplication(): UseMutationResult<
+  Application,
+  Error,
+  UpdateApplicationInput & { id: string }
+> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...payload }: UpdateApplicationInput & { id: string }) => {
+      const { data } = await apiClient.patch<{ data: Application }>(`/applications/${id}`, payload);
+      return data.data;
+    },
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['applications'] });
+      void queryClient.invalidateQueries({ queryKey: ['applications', variables.id] });
+    },
+  });
+}
+
 export function useArchiveApplication(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient();
   const navigate = useNavigate();

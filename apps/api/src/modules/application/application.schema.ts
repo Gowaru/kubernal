@@ -36,4 +36,10 @@ export const updateApplicationSchema = z.object({
     .nullable()
     .optional(),
   status: z.enum(['creating', 'active', 'failed', 'archived']).optional(),
+  /**
+   * Config complète de l'application (defaults du template + éventuel
+   * `git: { branch, path }`). Envoyée en entier : l'absence de clé `git`
+   * désactive le mode Argo.
+   */
+  config: z.record(z.string(), z.unknown()).optional(),
 });

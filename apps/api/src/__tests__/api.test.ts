@@ -69,6 +69,8 @@ beforeEach(() => {
 
 afterEach(() => {
   setTestUser(undefined);
+  // Restore factory default (vi.clearAllMocks() keeps implementations set by tests).
+  mockDb.deployment.create.mockResolvedValue({ id: 'mock-id' });
 });
 
 function adminApp() { setTestUser(mockUsers.admin); return createApp(); }
@@ -145,6 +147,69 @@ describe('Deployments API', () => {
       commitSha: 'abc',
     });
     expect(res.status).toBe(400);
+  });
+
+  it('POST /api/v1/deployments starts in building when the environment needs no approval', async () => {
+    mockDb.environment.findUnique.mockResolvedValue({ requiresApproval: false });
+    mockDb.deployment.create.mockImplementation(
+      async (args: { data: Record<string, unknown> }) => ({ id: 'dep-1', ...args.data }),
+    );
+
+    const res = await request(devApp()).post('/api/v1/deployments').send({
+      applicationId: '11111111-1111-1111-1111-111111111111',
+      environmentId: '22222222-2222-2222-2222-222222222222',
+      version: '1.2.3',
+      commitSha: 'abc1234',
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.status).toBe('building');
+    expect(mockDb.deployment.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: 'building' }),
+      }),
+    );
+    // Un déploiement parti doit déclencher la réconciliation immédiatement.
+    expect(mockDb.deployment.findUnique).toHaveBeenCalled();
+  });
+
+  it('POST /api/v1/deployments stays pending when the environment requires approval', async () => {
+    mockDb.environment.findUnique.mockResolvedValue({ requiresApproval: true });
+    mockDb.deployment.create.mockImplementation(
+      async (args: { data: Record<string, unknown> }) => ({ id: 'dep-2', ...args.data }),
+    );
+
+    const res = await request(devApp()).post('/api/v1/deployments').send({
+      applicationId: '11111111-1111-1111-1111-111111111111',
+      environmentId: '33333333-3333-3333-3333-333333333333',
+      version: '1.2.3',
+      commitSha: 'abc1234',
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.status).toBe('pending');
+    expect(mockDb.deployment.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: 'pending' }),
+      }),
+    );
+    // BUG FIX : pas de réconciliation tant que le déploiement n'est pas approuvé —
+    // sinon `reconcileStatus` créait les ressources K8s avant approbation.
+    expect(mockDb.deployment.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('POST /api/v1/deployments returns 404 when the environment does not exist', async () => {
+    mockDb.environment.findUnique.mockResolvedValue(null);
+
+    const res = await request(devApp()).post('/api/v1/deployments').send({
+      applicationId: '11111111-1111-1111-1111-111111111111',
+      environmentId: '22222222-2222-2222-2222-222222222222',
+      version: '1.2.3',
+      commitSha: 'abc1234',
+    });
+
+    expect(res.status).toBe(404);
+    expect(mockDb.deployment.create).not.toHaveBeenCalled();
   });
 
   it('POST /api/v1/deployments/:id/transition validates status', async () => {

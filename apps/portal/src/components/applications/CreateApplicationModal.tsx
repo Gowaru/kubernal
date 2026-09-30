@@ -55,6 +55,10 @@ const formSchema = z.object({
     .trim()
     .optional()
     .refine((v) => !v || REPO_URL_REGEX.test(v), 'URL invalide (GitHub, GitLab ou Bitbucket)'),
+  /** Branche cible de la sync Argo CD (mode Argo). Défaut : `main`. */
+  gitBranch: z.string().trim().max(255).optional(),
+  /** Dossier contenant les manifests K8s (mode Argo). Défaut : `.` (racine du dépôt). */
+  gitPath: z.string().trim().max(255).optional(),
   teamId: z.string().min(1, "L'équipe est requise"),
   templateId: z.string().min(1, 'Le template est requis'),
 });
@@ -103,6 +107,8 @@ export function CreateApplicationModal({
     name: '',
     description: '',
     repositoryUrl: '',
+    gitBranch: 'main',
+    gitPath: '.',
     teamId: '',
     templateId: '',
   });
@@ -127,7 +133,15 @@ export function CreateApplicationModal({
 
   const reset = useCallback(() => {
     setStep('step1');
-    setForm({ name: '', description: '', repositoryUrl: '', teamId: '', templateId: '' });
+    setForm({
+      name: '',
+      description: '',
+      repositoryUrl: '',
+      gitBranch: 'main',
+      gitPath: '.',
+      teamId: '',
+      templateId: '',
+    });
     setFormConfig({});
     setErrors({});
   }, []);
@@ -201,6 +215,17 @@ export function CreateApplicationModal({
     if (!acquire()) return;
     setStep('progress');
     try {
+      // Mode Argo CD : activé uniquement quand un dépôt Git valide est saisi —
+      // `config.git = { branch, path }` est le signal lu par le backend
+      // (`resolveDeploymentMode`). Sans dépôt, pas de `git` → comportement
+      // placeholder historique.
+      const config: Record<string, unknown> = { ...formConfig };
+      if (form.repositoryUrl && isValidRepoUrl(form.repositoryUrl)) {
+        config.git = {
+          branch: form.gitBranch?.trim() || 'main',
+          path: form.gitPath?.trim() || '.',
+        };
+      }
       await createApplication.mutateAsync({
         name: form.name,
         description: form.description || undefined,
@@ -208,7 +233,7 @@ export function CreateApplicationModal({
         teamId: form.teamId,
         templateId: form.templateId,
         ownerId: currentUser?.id ?? '',
-        config: Object.keys(formConfig).length > 0 ? formConfig : undefined,
+        config: Object.keys(config).length > 0 ? config : undefined,
       });
       setStep('success');
     } catch {
@@ -227,6 +252,8 @@ export function CreateApplicationModal({
   };
 
   const selectedTeam = teams?.find((t) => t.id === form.teamId);
+  /** Mode Argo CD : un dépôt Git valide est requis pour proposer branche/path. */
+  const gitModeEnabled = !!form.repositoryUrl && isValidRepoUrl(form.repositoryUrl);
   const anyTemplateHasParams =
     templates?.some((t) => {
       if (!t.parameters || typeof t.parameters !== 'object') return false;
@@ -308,6 +335,40 @@ export function CreateApplicationModal({
                   utilisé.
                 </p>
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="gitBranch">
+                    Branche
+                    <span className="text-xs text-muted-foreground font-normal"> (optionnel)</span>
+                  </Label>
+                  <Input
+                    id="gitBranch"
+                    placeholder="main"
+                    value={form.gitBranch ?? ''}
+                    disabled={!gitModeEnabled}
+                    onChange={(e) => setField('gitBranch', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="gitPath">
+                    Path des manifests
+                    <span className="text-xs text-muted-foreground font-normal"> (optionnel)</span>
+                  </Label>
+                  <Input
+                    id="gitPath"
+                    placeholder="kustomize"
+                    value={form.gitPath ?? ''}
+                    disabled={!gitModeEnabled}
+                    onChange={(e) => setField('gitPath', e.target.value)}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {gitModeEnabled
+                  ? 'Argo CD synchronisera ce dépôt (branche + path) vers les environnements.'
+                  : 'Renseignez un dépôt Git valide pour activer la synchronisation Argo CD.'}
+              </p>
             </div>
 
             <DialogFooter>

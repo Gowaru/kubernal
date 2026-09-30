@@ -80,6 +80,8 @@ export interface Application {
   teamId: string;
   ownerId: string;
   repositoryUrl: string | null;
+  /** Config libre du template + `git: { branch, path }` quand le mode Argo est actif. */
+  config?: Record<string, unknown> | null;
   status: ApplicationStatus;
   archivedAt: Date | null;
   createdAt: Date;
@@ -305,6 +307,8 @@ export interface ArgoAppStatus {
   branch: string;
   lastSyncAt: string | null;
   message: string | null;
+  /** True quand Argo remonte une erreur de comparaison/parsing (`SyncError`, `ComparisonError`). */
+  error?: boolean;
 }
 
 export type K8sEventType = 'Normal' | 'Warning';
