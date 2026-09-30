@@ -49,7 +49,18 @@ export const deploymentService = {
     trigger?: string;
     status?: string;
   }): Promise<DeploymentCreateRow> {
-    const result = await deploymentRepository.create(data);
+    // Initial status follows the destination environment approval policy:
+    // - requiresApproval = false (dev) → 'building' so the worker picks it up right away
+    // - requiresApproval = true (staging/prod) → 'pending' awaiting an explicit approval
+    const environment = await db.environment.findUnique({
+      where: { id: data.environmentId },
+      select: { requiresApproval: true },
+    });
+    if (!environment) {
+      throw new NotFoundError('Environment', data.environmentId);
+    }
+    const status = data.status ?? (environment.requiresApproval ? 'pending' : 'building');
+    const result = await deploymentRepository.create({ ...data, status });
     auditService
       .log({
         action: 'CREATE',

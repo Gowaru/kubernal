@@ -19,7 +19,14 @@ export const deploymentController = {
 
   async create(req: Request, res: Response): Promise<void> {
     const deployment = await deploymentService.create(req.body);
-    void triggerReconcile(deployment.id);
+    // Ne déclenche la réconciliation que si le déploiement est réellement parti :
+    // sur `pending` (environnement à approbation), `reconcileStatus` crée les
+    // ressources K8s AVANT l'approbation — bug observé sur staging.
+    // `approve`/`promote`/webhook déclenchent eux-mêmes le worker (sinon le poll
+    // toutes les 5 s le fait), donc rien n'est perdu après approbation.
+    if (deployment.status === 'building') {
+      void triggerReconcile(deployment.id);
+    }
     res.status(201).json({ data: deployment });
   },
 

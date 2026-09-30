@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { canTransition, deploymentService } from '../deployment.service.js';
 import { NotFoundError, InvalidTransitionError } from '../../../shared/errors.js';
+import { db } from '../../../shared/database.js';
+
+const mockDb = db as unknown as Record<string, Record<string, ReturnType<typeof vi.fn>>>;
 
 const mockRepository = vi.hoisted(() => ({
   findAll: vi.fn(),
@@ -84,20 +87,40 @@ describe('deploymentService', () => {
   });
 
   describe('create', () => {
-    it('creates a deployment', async () => {
-      const input = {
-        applicationId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
-        environmentId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
-        version: '1.0.0',
-        commitSha: 'abc123',
-      };
-      const mock = { id: 'new-id', ...input };
+    const input = {
+      applicationId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+      environmentId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+      version: '1.0.0',
+      commitSha: 'abc123',
+    };
+
+    it('creates a deployment in building when the environment needs no approval', async () => {
+      mockDb.environment.findUnique.mockResolvedValue({ requiresApproval: false });
+      const mock = { id: 'new-id', ...input, status: 'building' };
       mockRepository.create.mockResolvedValue(mock as any);
 
       const result = await deploymentService.create(input);
 
       expect(result).toEqual(mock);
-      expect(mockRepository.create).toHaveBeenCalledWith(input);
+      expect(mockRepository.create).toHaveBeenCalledWith({ ...input, status: 'building' });
+    });
+
+    it('creates a deployment pending when the environment requires approval', async () => {
+      mockDb.environment.findUnique.mockResolvedValue({ requiresApproval: true });
+      const mock = { id: 'new-id', ...input, status: 'pending' };
+      mockRepository.create.mockResolvedValue(mock as any);
+
+      const result = await deploymentService.create(input);
+
+      expect(result).toEqual(mock);
+      expect(mockRepository.create).toHaveBeenCalledWith({ ...input, status: 'pending' });
+    });
+
+    it('throws NotFoundError when the environment does not exist', async () => {
+      mockDb.environment.findUnique.mockResolvedValue(null);
+
+      await expect(deploymentService.create(input)).rejects.toThrow(NotFoundError);
+      expect(mockRepository.create).not.toHaveBeenCalled();
     });
   });
 
