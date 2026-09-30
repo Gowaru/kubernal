@@ -64,11 +64,28 @@ function getBadgeStyle(sync: ArgoSyncStatus, health: ArgoHealthStatus): BadgeSty
 }
 
 interface ArgoSyncBadgeProps {
-  sync: ArgoSyncStatus;
-  health: ArgoHealthStatus;
+  /** `null` = aucune Application Argo CD détectée (Argo non configuré). */
+  sync: ArgoSyncStatus | null;
+  /** `null` = aucune Application Argo CD détectée (Argo non configuré). */
+  health: ArgoHealthStatus | null;
 }
 
 export function ArgoSyncBadge({ sync, health }: ArgoSyncBadgeProps): JSX.Element {
+  if (sync === null || health === null) {
+    return (
+      <span
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border',
+          'bg-k8s-unknown/10 text-k8s-unknown border-k8s-unknown/20',
+        )}
+        title="Aucune Application Argo CD pour ce déploiement"
+      >
+        <HelpCircle className="h-3.5 w-3.5" />
+        Argo non configuré
+      </span>
+    );
+  }
+
   const style = getBadgeStyle(sync, health);
   const Icon = style.icon;
 

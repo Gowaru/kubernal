@@ -117,7 +117,8 @@ export default function DeploymentDetail(): JSX.Element {
     undefined,
     `app=${appId},env=${envId},version=${deployment?.version ?? ''}`,
   );
-  const { data: argoStatus } = useArgoSync(appId, envId);
+  const argoAppName = deployment?.application?.name ?? appName;
+  const { data: argoStatus } = useArgoSync(argoAppName, envId);
   const { data: claimsData } = useCrossplaneClaims(namespace);
   const { data: hpaData } = useHPA(namespace);
   const { data: events } = useK8sEvents(namespace);
@@ -307,10 +308,9 @@ export default function DeploymentDetail(): JSX.Element {
             <span className="text-muted-foreground font-mono text-lg">{deployment.version}</span>
           </h2>
           <StatusBadge status={deployment.status} />
-          <ArgoSyncBadge
-            sync={isPending ? 'Unknown' : defaultArgoStatus.sync}
-            health={isPending ? 'Unknown' : defaultArgoStatus.health}
-          />
+          {argoStatus !== undefined && (
+            <ArgoSyncBadge sync={argoStatus?.sync ?? null} health={argoStatus?.health ?? null} />
+          )}
         </div>
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
@@ -338,7 +338,7 @@ export default function DeploymentDetail(): JSX.Element {
           )}
         </div>
         <K8sActionsBar
-          argoStatus={defaultArgoStatus}
+          argoStatus={argoStatus ?? null}
           namespace={namespace}
           deploymentName={k8sName}
           clusterReady={clusterReady}

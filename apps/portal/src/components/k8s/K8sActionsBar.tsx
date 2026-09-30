@@ -20,7 +20,8 @@ import { useAuth } from '@/hooks/useAuth';
 import type { ArgoAppStatus } from '@kubernal/shared-types';
 
 interface K8sActionsBarProps {
-  argoStatus: ArgoAppStatus;
+  /** Statut Argo CD réel ; `null` = aucune Application Argo CD (Argo non configuré). */
+  argoStatus: ArgoAppStatus | null;
   namespace: string;
   deploymentName: string;
   clusterReady: boolean;
@@ -65,7 +66,8 @@ export function K8sActionsBar({
   const [showRestartDialog, setShowRestartDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
-  const isOutOfSync = argoStatus.sync === 'OutOfSync';
+  const isOutOfSync = argoStatus?.sync === 'OutOfSync';
+  const isArgoConfigured = argoStatus !== null;
 
   const canDelete = hasRole('platform_engineer');
   const isDeploying =
@@ -83,13 +85,22 @@ export function K8sActionsBar({
       return;
     }
     if (key === 'sync') {
+      if (!isArgoConfigured) {
+        toast.info('Argo CD non configuré', {
+          description: 'Aucune Application Argo CD à synchroniser pour ce déploiement.',
+        });
+        return;
+      }
       if (!acquireSync()) return;
       argoSync.mutate(deploymentName, {
         onSuccess: (result) => {
           toast.success(result.message);
         },
         onError: (err) => {
-          toast.error(`Échec du sync : ${err.message}`);
+          toast.error(`Échec du sync : ${err.message}`, {
+            description:
+              "La synchronisation a échoué côté serveur. Vérifiez qu'Argo CD est joignable et que l'Application Argo CD existe.",
+          });
         },
         onSettled: () => releaseSync(),
       });
@@ -162,7 +173,11 @@ export function K8sActionsBar({
           const Icon = action.icon;
           const isSync = action.key === 'sync';
           const isRestart = action.key === 'restart';
-          const disabled = (isRestart && restarting) || (isSync && syncing) || !clusterReady;
+          const disabled =
+            (isRestart && restarting) ||
+            (isSync && syncing) ||
+            (isSync && !isArgoConfigured) ||
+            !clusterReady;
 
           return (
             <motion.button
@@ -180,7 +195,9 @@ export function K8sActionsBar({
                     ? 'Rollout en cours...'
                     : isSync && syncing
                       ? 'Sync en cours...'
-                      : action.label
+                      : isSync && !isArgoConfigured
+                        ? 'Argo CD non configuré pour ce déploiement'
+                        : action.label
               }
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium transition-colors',

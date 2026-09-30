@@ -39,7 +39,9 @@ export function AppEnvCard({ envId, deployments, argoStatus }: AppEnvCardProps):
             {envLabels[envId] ?? envId}
           </CardTitle>
           <div className="flex items-center gap-2">
-            {argoStatus && <ArgoSyncBadge sync={argoStatus.sync} health={argoStatus.health} />}
+            {argoStatus !== undefined && (
+              <ArgoSyncBadge sync={argoStatus?.sync ?? null} health={argoStatus?.health ?? null} />
+            )}
             {lastDeploy && <StatusBadge status={lastDeploy.status} />}
           </div>
         </div>
